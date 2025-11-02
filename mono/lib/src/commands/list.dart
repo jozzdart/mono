@@ -5,8 +5,7 @@ import 'package:mono_cli/mono_cli.dart';
 class ListCommand {
   static Future<int> run(
       {required CliInvocation inv,
-      required IOSink out,
-      required IOSink err,
+      required Logger logger,
       required WorkspaceConfig workspaceConfig,
       GroupStore Function(String monocfgPath)? groupStoreFactory}) async {
     final what =
@@ -25,11 +24,11 @@ class ListCommand {
         );
         for (final p in pkgs) {
           final kind = p.kind.name;
-          out.writeln('- ${p.name.value} → ${p.path} ($kind)');
+          logger.log('- ${p.name.value} → ${p.path} ($kind)');
         }
       } else {
         for (final p in projects) {
-          out.writeln('- ${p.name} → ${p.path} (${p.kind})');
+          logger.log('- ${p.name} → ${p.path} (${p.kind})');
         }
       }
       return 0;
@@ -48,7 +47,7 @@ class ListCommand {
       final names = await store.listGroups();
       for (final name in names) {
         final members = await store.readGroup(name);
-        out.writeln('- $name → ${members.join(', ')}');
+        logger.log('- $name → ${members.join(', ')}');
       }
       return 0;
     }
@@ -66,11 +65,11 @@ class ListCommand {
       merged.addAll(extra);
       for (final e in merged.entries) {
         final plugin = (e.value['plugin'] ?? 'exec').toString();
-        out.writeln('- ${e.key} (plugin: $plugin)');
+        logger.log('- ${e.key} (plugin: $plugin)');
       }
       return 0;
     }
-    err.writeln('Unknown list target: $what');
+    logger.log('Unknown list target: $what', level: 'error');
     return 1;
   }
 }

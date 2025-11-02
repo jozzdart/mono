@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:mono_cli/mono_cli.dart';
 import 'package:mono_core/mono_core.dart';
 
@@ -21,13 +19,12 @@ class DefaultCommandRouter implements CommandRouter {
   @override
   Future<int?> tryDispatch({
     required CliInvocation inv,
-    required IOSink out,
-    required IOSink err,
+    required Logger logger,
   }) async {
     if (inv.commandPath.isEmpty) return null;
     final key = inv.commandPath.first;
     final handler = _handlers[key];
     if (handler == null) return null;
-    return handler(inv: inv, out: out, err: err);
+    return handler(inv: inv, logger: logger);
   }
 }

@@ -1,3 +1,10 @@
+## 0.0.5
+
+- Breaking: Moved CLI IO to `Logger` across router and executor implementations.
+  - `DefaultCommandRouter.tryDispatch` now accepts `{ required CliInvocation inv, required Logger logger }`.
+  - `DefaultTaskExecutor.execute` now takes a `Logger` and logs messages instead of writing to `IOSink`.
+  - Updated tests to use an in-memory `Logger` buffer.
+
 ## 0.0.4
 
 - Implemented `DefaultCommandEnvironmentBuilder` that assembles the command environment from disk and invocation options.

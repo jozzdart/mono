@@ -5,8 +5,7 @@ import 'package:mono_cli/mono_cli.dart';
 class ScanCommand {
   static Future<int> run(
       {required CliInvocation inv,
-      required IOSink out,
-      required IOSink err,
+      required Logger logger,
       required WorkspaceConfig workspaceConfig}) async {
     final root = Directory.current.path;
     final loaded = await workspaceConfig.loadRootConfig();
@@ -26,7 +25,7 @@ class ScanCommand {
         )
     ];
     await workspaceConfig.writeMonocfgProjects(loaded.monocfgPath, records);
-    out.writeln(
+    logger.log(
         'Detected ${records.length} packages and wrote ${loaded.monocfgPath}/mono_projects.yaml');
     return 0;
   }

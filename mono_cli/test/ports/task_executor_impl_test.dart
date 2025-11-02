@@ -1,24 +1,19 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:mono_cli/mono_cli.dart' hide equals;
 import 'package:test/test.dart';
 
-class _CapturingSink implements StreamConsumer<List<int>> {
-  _CapturingSink(this.buffer);
-  final StringBuffer buffer;
+class _BufferingLogger implements Logger {
+  _BufferingLogger(this.out, this.err);
+  final StringBuffer out;
+  final StringBuffer err;
   @override
-  Future addStream(Stream<List<int>> stream) async {
-    await for (final chunk in stream) {
-      buffer.write(String.fromCharCodes(chunk));
+  void log(String message, {String? scope, String level = 'info'}) {
+    if (level == 'error') {
+      err.writeln(message);
+    } else {
+      out.writeln(message);
     }
   }
-
-  @override
-  Future close() async {}
 }
-
-IOSink _makeSink(StringBuffer b) => IOSink(_CapturingSink(b));
 
 class _EnvBuilderEmpty implements CommandEnvironmentBuilder {
   const _EnvBuilderEmpty();
@@ -121,8 +116,7 @@ void main() {
         task:
             TaskSpec(id: const CommandId('get'), plugin: const PluginId('pub')),
         inv: const CliInvocation(commandPath: ['get']),
-        out: _makeSink(outB),
-        err: _makeSink(errB),
+        logger: _BufferingLogger(outB, errB),
         groupStoreFactory: _groups,
         envBuilder: const _EnvBuilderEmpty(),
         plugins: PluginRegistry({}),
@@ -147,8 +141,7 @@ void main() {
           },
           targets: [TargetAll()],
         ),
-        out: _makeSink(outB),
-        err: _makeSink(errB),
+        logger: _BufferingLogger(outB, errB),
         groupStoreFactory: _groups,
         envBuilder: const _EnvBuilderSingle(),
         plugins: PluginRegistry({}),
@@ -171,8 +164,7 @@ void main() {
           commandPath: ['get'],
           targets: [TargetAll()],
         ),
-        out: _makeSink(outB),
-        err: _makeSink(errB),
+        logger: _BufferingLogger(outB, errB),
         groupStoreFactory: _groups,
         envBuilder: const _EnvBuilderSingle(selector: _SelectorNone()),
         plugins: PluginRegistry({}),
@@ -193,8 +185,7 @@ void main() {
           commandPath: ['noop'],
           targets: [TargetAll()],
         ),
-        out: _makeSink(outB),
-        err: _makeSink(errB),
+        logger: _BufferingLogger(outB, errB),
         groupStoreFactory: _groups,
         envBuilder: const _EnvBuilderSingle(),
         plugins: _Plugins(plugin),

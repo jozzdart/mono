@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import '../util/fs_fixtures.dart';
+import '../util/fakes.dart';
 
 void main() {
   late WorkspaceConfig workspaceConfig;
@@ -27,20 +28,19 @@ void main() {
           'build:\n  plugin: exec\n  run: ["dart compile exe bin/main.dart"]\n',
         );
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['tasks']);
         final code = await TasksCommand.run(
             inv: inv,
-            out: outCap.sink,
-            err: errCap.sink,
+            logger: BufferingLogger(outB, errB),
             workspaceConfig: workspaceConfig);
         expect(code, 0);
-        final out = outCap.text;
+        final out = outB.toString();
         expect(out, contains('- fmt (plugin: format)'));
         expect(out, contains('- clean (plugin: pub)'));
         expect(out, contains('- build (plugin: exec)'));
-        expect(errCap.text.trim(), isEmpty);
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();

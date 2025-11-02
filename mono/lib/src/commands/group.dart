@@ -5,19 +5,18 @@ import 'package:mono_cli/mono_cli.dart';
 class GroupCommand {
   static Future<int> run({
     required CliInvocation inv,
-    required IOSink out,
-    required IOSink err,
+    required Logger logger,
     required Prompter prompter,
     required WorkspaceConfig workspaceConfig,
     GroupStore Function(String monocfgPath)? groupStoreFactory,
   }) async {
     if (inv.positionals.isEmpty) {
-      err.writeln('Usage: mono group <group_name>');
+      logger.log('Usage: mono group <group_name>', level: 'error');
       return 2;
     }
     final groupName = inv.positionals.first.trim();
     if (groupName.isEmpty || groupName.startsWith(':')) {
-      err.writeln('Invalid group name: "$groupName"');
+      logger.log('Invalid group name: "$groupName"', level: 'error');
       return 2;
     }
 
@@ -56,13 +55,14 @@ class GroupCommand {
           'Group "$groupName" already exists. Overwrite?',
           defaultValue: false);
       if (!ok) {
-        err.writeln('Aborted.');
+        logger.log('Aborted.', level: 'error');
         return 1;
       }
     }
     if (packageNames.contains(groupName)) {
-      err.writeln(
-          'Cannot create group with same name as a package: "$groupName"');
+      logger.log(
+          'Cannot create group with same name as a package: "$groupName"',
+          level: 'error');
       return 2;
     }
 
@@ -74,7 +74,7 @@ class GroupCommand {
         items: packageNames,
       );
     } on SelectionError {
-      err.writeln('Aborted.');
+      logger.log('Aborted.', level: 'error');
       return 1;
     }
     if (indices.isEmpty) {
@@ -82,13 +82,13 @@ class GroupCommand {
           'No packages selected. Create empty group "$groupName"?',
           defaultValue: false);
       if (!ok) {
-        err.writeln('Aborted.');
+        logger.log('Aborted.', level: 'error');
         return 1;
       }
     }
     final members = [for (final i in indices) packageNames[i]];
     await store.writeGroup(groupName, members);
-    out.writeln('Group "$groupName" saved with ${members.length} member(s).');
+    logger.log('Group "$groupName" saved with ${members.length} member(s).');
     return 0;
   }
 }

@@ -21,18 +21,17 @@ void main() {
       ws.enter();
       try {
         await writeMonoYaml();
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['ungroup']);
         final code = await UngroupCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
           workspaceConfig: workspaceConfig,
         );
         expect(code, 2);
-        expect(errCap.text, contains('Usage: mono ungroup <group_name>'));
+        expect(errB.toString(), contains('Usage: mono ungroup <group_name>'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -45,19 +44,18 @@ void main() {
       try {
         await writeMonoYaml();
         await ensureMonocfg('monocfg');
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['ungroup'], positionals: ['dev']);
         final code = await UngroupCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
           workspaceConfig: workspaceConfig,
         );
         expect(code, 2);
-        expect(errCap.text, contains('Group "dev" does not exist.'));
+        expect(errB.toString(), contains('Group "dev" does not exist.'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -72,19 +70,18 @@ void main() {
         await ensureMonocfg('monocfg');
         await writeFile(p.join('monocfg', 'groups', 'dev.list'), 'a\n');
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['ungroup'], positionals: ['dev']);
         final code = await UngroupCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(nextConfirm: false),
           workspaceConfig: workspaceConfig,
         );
         expect(code, 1);
-        expect(errCap.text, contains('Aborted.'));
+        expect(errB.toString(), contains('Aborted.'));
         expect(
             File(p.join('monocfg', 'groups', 'dev.list')).existsSync(), isTrue);
       } finally {
@@ -101,22 +98,21 @@ void main() {
         await ensureMonocfg('monocfg');
         await writeFile(p.join('monocfg', 'groups', 'dev.list'), 'a\n');
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['ungroup'], positionals: ['dev']);
         final code = await UngroupCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(nextConfirm: true),
           workspaceConfig: workspaceConfig,
         );
         expect(code, 0);
-        expect(outCap.text, contains('Group "dev" removed.'));
+        expect(outB.toString(), contains('Group "dev" removed.'));
         expect(File(p.join('monocfg', 'groups', 'dev.list')).existsSync(),
             isFalse);
-        expect(errCap.text.trim(), isEmpty);
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();

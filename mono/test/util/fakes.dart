@@ -15,3 +15,17 @@ class FakePrompter implements Prompter {
           {required String title, required List<String> items}) async =>
       checklistIndices;
 }
+
+class BufferingLogger implements Logger {
+  BufferingLogger(this.out, this.err);
+  final StringBuffer out;
+  final StringBuffer err;
+  @override
+  void log(String message, {String? scope, String level = 'info'}) {
+    if (level == 'error') {
+      err.writeln(message);
+    } else {
+      out.writeln(message);
+    }
+  }
+}

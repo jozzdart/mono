@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:mono_cli/mono_cli.dart';
 
 import 'commands/setup.dart';
@@ -58,9 +56,7 @@ class CliWiring {
 }
 
 Future<int> runCli(
-  List<String> argv,
-  IOSink out,
-  IOSink err, {
+  List<String> argv, {
   CliWiring? wiring,
 }) async {
   try {
@@ -70,7 +66,7 @@ Future<int> runCli(
         inv.commandPath.first == 'help' ||
         inv.commandPath.first == '--help' ||
         inv.commandPath.first == '-h') {
-      out.writeln(_helpText);
+      (wiring?.logger ?? const StdLogger()).log(_helpText);
       return 0;
     }
     final prompter = wiring?.prompter ?? const ConsolePrompter();
@@ -78,39 +74,34 @@ Future<int> runCli(
         const StaticVersionInfo(name: 'mono', version: 'unknown');
     final workspaceConfig =
         wiring?.workspaceConfig ?? const FileWorkspaceConfig();
+    final logger = wiring?.logger ?? const StdLogger();
 
     // Router-based dispatch
     final router = DefaultCommandRouter();
-    router.register('version', (
-        {required inv, required out, required err}) async {
-      return VersionCommand.run(
-          inv: inv, out: out, err: err, version: versionInfo);
+    router.register('version', ({required inv, required logger}) async {
+      return VersionCommand.run(inv: inv, logger: logger, version: versionInfo);
     }, aliases: const ['--version', '-v', '--v']);
 
-    router.register('setup', (
-        {required inv, required out, required err}) async {
+    router.register('setup', ({required inv, required logger}) async {
       return SetupCommand.run(
         inv: inv,
-        out: out,
-        err: err,
+        logger: logger,
         workspaceConfig: workspaceConfig,
       );
     });
 
-    router.register('scan', ({required inv, required out, required err}) async {
+    router.register('scan', ({required inv, required logger}) async {
       return ScanCommand.run(
         inv: inv,
-        out: out,
-        err: err,
+        logger: logger,
         workspaceConfig: workspaceConfig,
       );
     });
 
-    router.register('get', ({required inv, required out, required err}) async {
+    router.register('get', ({required inv, required logger}) async {
       return GetCommand.run(
         inv: inv,
-        out: out,
-        err: err,
+        logger: logger,
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
         plugins: wiring.plugins,
@@ -118,12 +109,10 @@ Future<int> runCli(
       );
     });
 
-    router.register('format', (
-        {required inv, required out, required err}) async {
+    router.register('format', ({required inv, required logger}) async {
       return FormatCommand.run(
         inv: inv,
-        out: out,
-        err: err,
+        logger: logger,
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
         plugins: wiring.plugins,
@@ -131,11 +120,10 @@ Future<int> runCli(
       );
     });
 
-    router.register('test', ({required inv, required out, required err}) async {
+    router.register('test', ({required inv, required logger}) async {
       return TestCommand.run(
         inv: inv,
-        out: out,
-        err: err,
+        logger: logger,
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
         plugins: wiring.plugins,
@@ -143,57 +131,49 @@ Future<int> runCli(
       );
     });
 
-    router.register('list', ({required inv, required out, required err}) async {
+    router.register('list', ({required inv, required logger}) async {
       return ListCommand.run(
         inv: inv,
-        out: out,
-        err: err,
+        logger: logger,
         workspaceConfig: workspaceConfig,
         groupStoreFactory: wiring!.groupStoreFactory,
       );
     });
 
-    router.register('tasks', (
-        {required inv, required out, required err}) async {
+    router.register('tasks', ({required inv, required logger}) async {
       return TasksCommand.run(
         inv: inv,
-        out: out,
-        err: err,
+        logger: logger,
         workspaceConfig: workspaceConfig,
       );
     });
 
-    router.register('group', (
-        {required inv, required out, required err}) async {
+    router.register('group', ({required inv, required logger}) async {
       return GroupCommand.run(
         inv: inv,
-        out: out,
-        err: err,
+        logger: logger,
         prompter: prompter,
         workspaceConfig: workspaceConfig,
         groupStoreFactory: wiring!.groupStoreFactory,
       );
     });
 
-    router.register('ungroup', (
-        {required inv, required out, required err}) async {
+    router.register('ungroup', ({required inv, required logger}) async {
       return UngroupCommand.run(
         inv: inv,
-        out: out,
-        err: err,
+        logger: logger,
         prompter: prompter,
         workspaceConfig: workspaceConfig,
         groupStoreFactory: wiring!.groupStoreFactory,
       );
     });
 
-    final dispatched = await router.tryDispatch(inv: inv, out: out, err: err);
+    final dispatched = await router.tryDispatch(inv: inv, logger: logger);
     if (dispatched != null) return dispatched;
     // Attempt to resolve as a task name
     final maybe = await TaskCommand.tryRun(
       inv: inv,
-      out: out,
-      err: err,
+      logger: logger,
       groupStoreFactory: wiring!.groupStoreFactory,
       plugins: wiring.plugins,
       workspaceConfig: workspaceConfig,
@@ -202,12 +182,13 @@ Future<int> runCli(
     );
     if (maybe != null) return maybe;
 
-    err.writeln('Unknown command: ${inv.commandPath.join(' ')}');
-    err.writeln('Use `mono help`');
+    logger.log('Unknown command: ${inv.commandPath.join(' ')}', level: 'error');
+    logger.log('Use `mono help`', level: 'error');
     return 1;
   } catch (e, st) {
-    err.writeln('mono failed: $e');
-    err.writeln(st);
+    (wiring?.logger ?? const StdLogger())
+        .log('mono failed: $e', level: 'error');
+    (wiring?.logger ?? const StdLogger()).log('$st', level: 'error');
     return 1;
   }
 }
