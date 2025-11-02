@@ -1,3 +1,11 @@
+## 0.0.4
+
+- Implemented `DefaultCommandEnvironmentBuilder` that assembles the command environment from disk and invocation options.
+  - Loads `mono.yaml`, extracts `monocfgPath`.
+  - Scans packages, builds dependency graph, loads file-based groups.
+  - Computes effective order and concurrency; provides a `TargetSelector`.
+- Exported the builder via `src/src.dart`.
+
 ## 0.0.3
 
 - Plugins: added `FormatPlugin` (format, format:check) and `TestPlugin` (test).

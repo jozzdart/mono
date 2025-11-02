@@ -1,3 +1,9 @@
+## 0.0.4
+
+- Added `CommandEnvironment` abstraction and `CommandEnvironmentBuilder` interface to `ports/`.
+- Exported from `src/src.dart` for consumers.
+- No behavior change; enables cleaner layering and reuse across CLI implementations.
+
 ## 0.0.3
 
 - Added comprehensive test coverage for all core functionality.

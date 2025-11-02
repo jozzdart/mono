@@ -1,3 +1,7 @@
+## 0.0.4
+
+- Commands now use a centralized environment builder. Behavior is unchanged; this improves reliability and future extensibility.
+
 ## 0.0.3
 
 - New: Built-in commands `format` and `test`.
