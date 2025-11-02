@@ -34,6 +34,7 @@ class CliWiring {
     required this.envBuilder,
     required this.plugins,
     required this.workspaceConfig,
+    required this.taskExecutor,
   });
 
   final CliParser parser;
@@ -53,6 +54,7 @@ class CliWiring {
   final CommandEnvironmentBuilder envBuilder;
   final PluginResolver plugins;
   final WorkspaceConfig workspaceConfig;
+  final TaskExecutor taskExecutor;
 }
 
 Future<int> runCli(
@@ -112,6 +114,7 @@ Future<int> runCli(
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
         plugins: wiring.plugins,
+        executor: wiring.taskExecutor,
       );
     });
 
@@ -124,6 +127,7 @@ Future<int> runCli(
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
         plugins: wiring.plugins,
+        executor: wiring.taskExecutor,
       );
     });
 
@@ -135,6 +139,7 @@ Future<int> runCli(
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
         plugins: wiring.plugins,
+        executor: wiring.taskExecutor,
       );
     });
 
@@ -192,6 +197,8 @@ Future<int> runCli(
       groupStoreFactory: wiring!.groupStoreFactory,
       plugins: wiring.plugins,
       workspaceConfig: workspaceConfig,
+      envBuilder: wiring.envBuilder,
+      executor: wiring.taskExecutor,
     );
     if (maybe != null) return maybe;
 

@@ -40,6 +40,8 @@ void main() {
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          envBuilder: const DefaultCommandEnvironmentBuilder(),
+          executor: const DefaultTaskExecutor(),
         );
         expect(code, isNull);
       } finally {
@@ -69,6 +71,8 @@ void main() {
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          envBuilder: const DefaultCommandEnvironmentBuilder(),
+          executor: const DefaultTaskExecutor(),
         );
         expect(code, 2);
         expect(
@@ -106,6 +110,8 @@ void main() {
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          envBuilder: const DefaultCommandEnvironmentBuilder(),
+          executor: const DefaultTaskExecutor(),
         );
         expect(code, 0);
         expect(outCap.text,
@@ -141,6 +147,8 @@ void main() {
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          envBuilder: const DefaultCommandEnvironmentBuilder(),
+          executor: const DefaultTaskExecutor(),
         );
         expect(codeGet, 0);
         expect(outCap.text, contains('Would run get for 1 packages'));
@@ -160,6 +168,8 @@ void main() {
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          envBuilder: const DefaultCommandEnvironmentBuilder(),
+          executor: const DefaultTaskExecutor(),
         );
         expect(codeClean, 0);
         expect(outCap2.text, contains('Would run clean for 1 packages'));
@@ -192,6 +202,8 @@ void main() {
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          envBuilder: const DefaultCommandEnvironmentBuilder(),
+          executor: const DefaultTaskExecutor(),
         );
         expect(code, 1);
         expect(errCap.text, contains('Unsupported pub task: upgrade'));
@@ -225,6 +237,8 @@ void main() {
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          envBuilder: const DefaultCommandEnvironmentBuilder(),
+          executor: const DefaultTaskExecutor(),
         );
         expect(code, 0);
         expect(outCap.text, contains('Would run fmt for 1 packages'));
@@ -257,6 +271,8 @@ void main() {
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          envBuilder: const DefaultCommandEnvironmentBuilder(),
+          executor: const DefaultTaskExecutor(),
         );
         expect(code, 1);
       } finally {
@@ -289,6 +305,8 @@ void main() {
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          envBuilder: const DefaultCommandEnvironmentBuilder(),
+          executor: const DefaultTaskExecutor(),
         );
         expect(code, 1);
       } finally {

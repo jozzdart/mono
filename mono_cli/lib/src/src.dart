@@ -19,6 +19,7 @@ export 'ports/pub_plugin.dart';
 export 'ports/runner.dart';
 export 'ports/scanner_fs.dart';
 export 'ports/target_selector_impl.dart';
+export 'ports/task_executor_impl.dart';
 export 'ports/test_plugin.dart';
 export 'system_io/clock.dart';
 export 'system_io/group_store_fs.dart';

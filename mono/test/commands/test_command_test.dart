@@ -35,6 +35,7 @@ void main() {
           groupStoreFactory: groupStoreFactory,
           envBuilder: envBuilder,
           plugins: PluginRegistry({}),
+          executor: const DefaultTaskExecutor(),
         );
         expect(code, 1);
         expect(
@@ -77,6 +78,7 @@ void main() {
           groupStoreFactory: groupStoreFactory,
           envBuilder: envBuilder,
           plugins: PluginRegistry({}),
+          executor: const DefaultTaskExecutor(),
         );
         expect(code, 0);
         expect(outCap.text,

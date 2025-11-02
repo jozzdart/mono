@@ -43,6 +43,7 @@ CliWiring _makeWiring() {
     envBuilder: const DefaultCommandEnvironmentBuilder(),
     plugins: PluginRegistry({}),
     workspaceConfig: const FileWorkspaceConfig(),
+    taskExecutor: const DefaultTaskExecutor(),
   );
 }
 

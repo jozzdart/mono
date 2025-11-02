@@ -12,6 +12,8 @@ class TaskCommand {
     required GroupStore Function(String monocfgPath) groupStoreFactory,
     required PluginResolver plugins,
     required WorkspaceConfig workspaceConfig,
+    required CommandEnvironmentBuilder envBuilder,
+    required TaskExecutor executor,
   }) async {
     final taskName = inv.commandPath.first;
     // Load config and merged tasks
@@ -30,45 +32,6 @@ class TaskCommand {
       err.writeln(
           'External tasks require explicit targets. Use "all" to run on all packages.');
       return 2;
-    }
-
-    // Build package list
-    final root = Directory.current.path;
-    final scanner = const FileSystemPackageScanner();
-    final packages = await scanner.scan(
-      rootPath: root,
-      includeGlobs: loaded.config.include,
-      excludeGlobs: loaded.config.exclude,
-    );
-    if (packages.isEmpty) {
-      err.writeln('No packages found. Run `mono scan` first.');
-      return 1;
-    }
-
-    // Build graph and resolve targets
-    final graph = const DefaultGraphBuilder().build(packages);
-
-    final store = groupStoreFactory(loaded.monocfgPath);
-    final groups = <String, Set<String>>{};
-    final groupNames = await store.listGroups();
-    for (final name in groupNames) {
-      final members = await store.readGroup(name);
-      groups[name] = members.toSet();
-    }
-
-    final selector = const DefaultTargetSelector();
-    final dependencyOrder = _effectiveOrder(inv, loaded.config) == 'dependency';
-    final targets = selector.resolve(
-      expressions: inv.targets,
-      packages: packages,
-      groups: groups,
-      graph: graph,
-      dependencyOrder: dependencyOrder,
-    );
-
-    if (targets.isEmpty) {
-      err.writeln('No target packages matched.');
-      return 1;
     }
 
     // Build TaskSpec from definition
@@ -99,52 +62,26 @@ class TaskCommand {
       err.writeln('Unknown plugin for task "$taskName": ${pluginId.value}');
       return 1;
     }
+    // Additional policy: external tasks require explicit targets
+    if (pluginId.value == 'exec' && inv.targets.isEmpty) {
+      err.writeln(
+          'External tasks require explicit targets. Use "all" to run on all packages.');
+      return 2;
+    }
 
-    final planner = const DefaultCommandPlanner();
     final task = TaskSpec(id: commandId, plugin: pluginId);
-    final plan = planner.plan(task: task, targets: targets);
-
-    final pluginsRegistry = plugins;
-
-    final runner = Runner(
-      processRunner: const DefaultProcessRunner(),
-      logger: const StdLogger(),
-      options: RunnerOptions(
-        concurrency: _effectiveConcurrency(inv, loaded.config),
-        env: def.env,
-      ),
+    return executor.execute(
+      task: task,
+      inv: inv,
+      out: out,
+      err: err,
+      groupStoreFactory: groupStoreFactory,
+      envBuilder: envBuilder,
+      plugins: plugins,
+      env: def.env,
+      dryRunLabel: taskName,
     );
-
-    if (_isDryRun(inv)) {
-      out.writeln(
-          'Would run $taskName for ${targets.length} packages in ${dependencyOrder ? 'dependency' : 'input'} order.');
-      return 0;
-    }
-
-    return runner.execute(plan as SimpleExecutionPlan, pluginsRegistry);
   }
-
-  static String _effectiveOrder(CliInvocation inv, MonoConfig cfg) {
-    final list = inv.options['order'];
-    final fromCli = (list != null && list.isNotEmpty) ? list.first : null;
-    return fromCli ?? cfg.settings.defaultOrder;
-  }
-
-  static int _effectiveConcurrency(CliInvocation inv, MonoConfig cfg) {
-    final list = inv.options['concurrency'];
-    final fromCli = (list != null && list.isNotEmpty) ? list.first : null;
-    final str = fromCli ?? cfg.settings.concurrency;
-    final n = int.tryParse(str);
-    if (n != null && n > 0) return n;
-    try {
-      return Platform.numberOfProcessors.clamp(1, 8);
-    } catch (_) {
-      return 4;
-    }
-  }
-
-  static bool _isDryRun(CliInvocation inv) =>
-      inv.options['dry-run']?.isNotEmpty == true;
 
   static Map<String, TaskDefinition> _taskDefsFromExtra(
       Map<String, Map<String, Object?>> extra) {

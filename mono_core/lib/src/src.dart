@@ -16,6 +16,7 @@ export 'ports/plugin_resolver.dart';
 export 'ports/prompt.dart';
 export 'ports/system.dart';
 export 'ports/target_selector.dart';
+export 'ports/task_executor.dart';
 export 'ports/task_plugin.dart';
 export 'ports/version.dart';
 export 'ports/workspace_config.dart';

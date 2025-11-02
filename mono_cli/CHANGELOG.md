@@ -9,6 +9,10 @@
 - `PluginRegistry` implements `PluginResolver` (no behavior change).
 - New port: `WorkspaceConfig` for workspace configuration IO (read/write `mono.yaml`, `monocfg/*`).
   - Added types: `LoadedRootConfig`, `PackageRecord`.
+- New: `DefaultTaskExecutor` implementation of core `TaskExecutor`.
+  - Centralizes env → target → plan → run and dry-run output.
+  - Emits "No packages found. Run `mono scan` first." when workspace is empty.
+  - Uses optional `dryRunLabel` so task dry-run uses user task names.
 
 ## 0.0.3
 
