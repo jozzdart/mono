@@ -1,9 +1,15 @@
 name: mono_core
-description: "Mono Core"
+description: "Core library for managing the mono CLI"
 resolution: workspace
 version: 0.0.1
-homepage:
-publish_to: "none"
+homepage: https://github.com/jozzdart/mono
+repository: https://github.com/jozzdart/mono/tree/main/mono_core
+issue_tracker: https://github.com/jozzdart/mono/issues
+topics:
+  - mono
+  - monorepo
+  - cli
+  - tool
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
