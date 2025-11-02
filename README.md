@@ -1,4 +1,4 @@
-![Mono](assets/mono_banner.png)
+![Mono](https://github.com/jozzdart/mono/blob/main/assets/mono_banner.png?raw=true)
 
 <h3 align="center"><i>The fast, flexible CLI for managing Dart and Flutter monorepos</i></h3>
 <p align="center">
