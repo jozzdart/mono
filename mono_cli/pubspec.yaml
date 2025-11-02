@@ -15,7 +15,7 @@ environment:
   sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
-  mono_core:
+  mono_core: ^0.0.1
   args: ^2.5.0
   yaml: ^3.1.2
   glob: ^2.1.2
@@ -25,6 +25,3 @@ dependencies:
 dev_dependencies:
   lints:
   test:
-
-executables:
-  mono: mono
