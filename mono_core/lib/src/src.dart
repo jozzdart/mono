@@ -2,6 +2,7 @@ export 'cli/cli_ast.dart';
 export 'cli/completion_contracts.dart';
 export 'cli/parser_contracts.dart';
 export 'cli/usage_contracts.dart';
+export 'cli/command_router.dart';
 export 'config/config_interfaces.dart';
 export 'config/config_types.dart';
 export 'external_exports/meta.dart';

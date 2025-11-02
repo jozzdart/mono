@@ -4,7 +4,7 @@
   - Loads `mono.yaml`, extracts `monocfgPath`.
   - Scans packages, builds dependency graph, loads file-based groups.
   - Computes effective order and concurrency; provides a `TargetSelector`.
-- Exported the builder via `src/src.dart`.
+- Implemented `DefaultCommandRouter` (CLI wiring helper) and exported it via `src/src.dart`.
 
 ## 0.0.3
 

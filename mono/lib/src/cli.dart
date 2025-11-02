@@ -67,17 +67,28 @@ Future<int> runCli(
       out.writeln(_helpText);
       return 0;
     }
-    final cmd = inv.commandPath.first;
     final prompter = wiring?.prompter ?? const ConsolePrompter();
     final versionInfo = wiring?.versionInfo ??
         const StaticVersionInfo(name: 'mono', version: 'unknown');
-    if (cmd == 'version' || cmd == '--version' || cmd == '-v' || cmd == '--v') {
+
+    // Router-based dispatch
+    final router = DefaultCommandRouter();
+    router.register('version', (
+        {required inv, required out, required err}) async {
       return VersionCommand.run(
           inv: inv, out: out, err: err, version: versionInfo);
-    }
-    if (cmd == 'setup') return SetupCommand.run(inv: inv, out: out, err: err);
-    if (cmd == 'scan') return ScanCommand.run(inv: inv, out: out, err: err);
-    if (cmd == 'get') {
+    }, aliases: const ['--version', '-v', '--v']);
+
+    router.register('setup', (
+        {required inv, required out, required err}) async {
+      return SetupCommand.run(inv: inv, out: out, err: err);
+    });
+
+    router.register('scan', ({required inv, required out, required err}) async {
+      return ScanCommand.run(inv: inv, out: out, err: err);
+    });
+
+    router.register('get', ({required inv, required out, required err}) async {
       return GetCommand.run(
         inv: inv,
         out: out,
@@ -85,8 +96,10 @@ Future<int> runCli(
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
       );
-    }
-    if (cmd == 'format') {
+    });
+
+    router.register('format', (
+        {required inv, required out, required err}) async {
       return FormatCommand.run(
         inv: inv,
         out: out,
@@ -94,8 +107,9 @@ Future<int> runCli(
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
       );
-    }
-    if (cmd == 'test') {
+    });
+
+    router.register('test', ({required inv, required out, required err}) async {
       return TestCommand.run(
         inv: inv,
         out: out,
@@ -103,34 +117,46 @@ Future<int> runCli(
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
       );
-    }
-    if (cmd == 'list') {
+    });
+
+    router.register('list', ({required inv, required out, required err}) async {
       return ListCommand.run(
         inv: inv,
         out: out,
         err: err,
         groupStoreFactory: wiring!.groupStoreFactory,
       );
-    }
-    if (cmd == 'tasks') {
+    });
+
+    router.register('tasks', (
+        {required inv, required out, required err}) async {
       return TasksCommand.run(inv: inv, out: out, err: err);
-    }
-    if (cmd == 'group') {
+    });
+
+    router.register('group', (
+        {required inv, required out, required err}) async {
       return GroupCommand.run(
-          inv: inv,
-          out: out,
-          err: err,
-          prompter: prompter,
-          groupStoreFactory: wiring!.groupStoreFactory);
-    }
-    if (cmd == 'ungroup') {
+        inv: inv,
+        out: out,
+        err: err,
+        prompter: prompter,
+        groupStoreFactory: wiring!.groupStoreFactory,
+      );
+    });
+
+    router.register('ungroup', (
+        {required inv, required out, required err}) async {
       return UngroupCommand.run(
-          inv: inv,
-          out: out,
-          err: err,
-          prompter: prompter,
-          groupStoreFactory: wiring!.groupStoreFactory);
-    }
+        inv: inv,
+        out: out,
+        err: err,
+        prompter: prompter,
+        groupStoreFactory: wiring!.groupStoreFactory,
+      );
+    });
+
+    final dispatched = await router.tryDispatch(inv: inv, out: out, err: err);
+    if (dispatched != null) return dispatched;
     // Attempt to resolve as a task name
     final maybe = await TaskCommand.tryRun(
       inv: inv,
