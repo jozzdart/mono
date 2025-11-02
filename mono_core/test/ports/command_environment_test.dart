@@ -97,5 +97,3 @@ class _NoopGroupStore implements GroupStore {
   @override
   Future<void> writeGroup(String groupName, List<String> members) async {}
 }
-
-

@@ -28,7 +28,8 @@ tasks: {}
         final env = await const DefaultCommandEnvironmentBuilder().build(
           const CliInvocation(commandPath: ['x']),
           groupStoreFactory: (String monocfgPath) {
-            final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
+            final groupsPath =
+                const DefaultPathService().join([monocfgPath, 'groups']);
             final folder = FileListConfigFolder(
               basePath: groupsPath,
               namePolicy: const DefaultSlugNamePolicy(),
@@ -48,7 +49,8 @@ tasks: {}
       }
     });
 
-    test('reads custom monocfgPath and loads groups, packages, and graph', () async {
+    test('reads custom monocfgPath and loads groups, packages, and graph',
+        () async {
       final ws = await Directory.systemTemp.createTemp('mono_cli_env_');
       final prev = Directory.current.path;
       try {
@@ -93,7 +95,8 @@ version: 1.0.0
         final env = await const DefaultCommandEnvironmentBuilder().build(
           const CliInvocation(commandPath: ['x']),
           groupStoreFactory: (String monocfgPath) {
-            final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
+            final groupsPath =
+                const DefaultPathService().join([monocfgPath, 'groups']);
             final folder = FileListConfigFolder(
               basePath: groupsPath,
               namePolicy: const DefaultSlugNamePolicy(),
@@ -153,9 +156,14 @@ tasks: {}
 ''');
 
         final env = await const DefaultCommandEnvironmentBuilder().build(
-          const CliInvocation(commandPath: ['x'], options: {'order': ['none']}),
+          const CliInvocation(commandPath: [
+            'x'
+          ], options: {
+            'order': ['none']
+          }),
           groupStoreFactory: (String monocfgPath) {
-            final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
+            final groupsPath =
+                const DefaultPathService().join([monocfgPath, 'groups']);
             final folder = FileListConfigFolder(
               basePath: groupsPath,
               namePolicy: const DefaultSlugNamePolicy(),
@@ -171,5 +179,3 @@ tasks: {}
     });
   });
 }
-
-
