@@ -6,6 +6,7 @@ import 'package:mono/src/cli.dart';
 
 Future<void> main(List<String> argv) async {
   final wiring = CliWiring(
+    prompter: const ConsolePrompter(),
     parser: const ArgsCliParser(),
     configLoader: const YamlConfigLoader(),
     configValidator: const YamlConfigValidator(),

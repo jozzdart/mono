@@ -12,6 +12,7 @@ export 'ports/package_scanner.dart';
 export 'ports/system.dart';
 export 'ports/target_selector.dart';
 export 'ports/task_plugin.dart';
+export 'ports/prompt.dart';
 export 'selector/target_expr.dart';
 export 'types/errors.dart';
 export 'types/types.dart';
