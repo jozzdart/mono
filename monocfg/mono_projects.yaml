@@ -1,52 +1,10 @@
 packages:
-  - name: mono_graph_contracts
-    path: mono_graph_contracts
-    kind: dart
-  - name: mono_system_io
-    path: mono_system_io
-    kind: dart
-  - name: mono_selector_contracts
-    path: mono_selector_contracts
-    kind: dart
-  - name: mono_plugin_pub
-    path: mono_plugin_pub
-    kind: dart
-  - name: mono_ports
-    path: mono_ports
-    kind: dart
-  - name: mono_config_contracts
-    path: mono_config_contracts
-    kind: dart
-  - name: mono_graph_builder_impl
-    path: mono_graph_builder_impl
-    kind: dart
-  - name: mono_scanner_fs
-    path: mono_scanner_fs
-    kind: dart
-  - name: mono_selector_impl
-    path: mono_selector_impl
-    kind: dart
-  - name: mono_cli_parser_args
-    path: mono_cli_parser_args
-    kind: dart
-  - name: mono_core_types
-    path: mono_core_types
+  - name: mono_cli
+    path: mono_cli
     kind: dart
   - name: mono
     path: mono
     kind: dart
-  - name: mono_runner
-    path: mono_runner
-    kind: dart
-  - name: mono_config_yaml
-    path: mono_config_yaml
-    kind: dart
-  - name: mono_cli_shared_contracts
-    path: mono_cli_shared_contracts
-    kind: dart
   - name: mono_core
     path: mono_core
-    kind: dart
-  - name: mono_plugin_exec
-    path: mono_plugin_exec
     kind: dart
