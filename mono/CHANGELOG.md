@@ -1,3 +1,10 @@
+## 0.0.5
+
+- Breaking: Switched CLI IO to `Logger` and simplified `runCli` signature.
+  - `runCli` is now `Future<int> runCli(List<String> argv, { CliWiring? wiring })`.
+  - Command handlers and error/help output use the injected `Logger`.
+  - Updated `bin/mono.dart`, tests, and example to the new signature.
+
 ## 0.0.4
 
 - Refactor: Commands now delegate execution to a centralized TaskExecutor. Behavior unchanged; see `mono_cli` and `mono_core` changelogs for internals.

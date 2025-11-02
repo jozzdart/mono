@@ -6,6 +6,7 @@ import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../util/fs_fixtures.dart';
+import '../util/fakes.dart';
 
 void main() {
   group('TestCommand', () {
@@ -14,8 +15,8 @@ void main() {
       ws.enter();
       try {
         await writeMonoYaml();
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['test']);
         final envBuilder = const DefaultCommandEnvironmentBuilder();
         groupStoreFactory(String monocfgPath) {
@@ -30,16 +31,15 @@ void main() {
 
         final code = await cmd.TestCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           groupStoreFactory: groupStoreFactory,
           envBuilder: envBuilder,
           plugins: PluginRegistry({}),
           executor: const DefaultTaskExecutor(),
         );
         expect(code, 1);
-        expect(
-            errCap.text, contains('No packages found. Run `mono scan` first.'));
+        expect(errB.toString(),
+            contains('No packages found. Run `mono scan` first.'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -52,8 +52,8 @@ void main() {
       try {
         await writeMonoYaml();
         writePubspec(p.join(Directory.current.path, 'a'), 'a');
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(
           commandPath: ['test'],
           options: {
@@ -73,17 +73,16 @@ void main() {
 
         final code = await cmd.TestCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           groupStoreFactory: groupStoreFactory,
           envBuilder: envBuilder,
           plugins: PluginRegistry({}),
           executor: const DefaultTaskExecutor(),
         );
         expect(code, 0);
-        expect(outCap.text,
+        expect(outB.toString(),
             contains('Would run test for 1 packages in dependency order.'));
-        expect(errCap.text.trim(), isEmpty);
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();

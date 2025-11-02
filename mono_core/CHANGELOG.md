@@ -1,3 +1,11 @@
+## 0.0.5
+
+- Breaking: Replaced IOSink-based IO in core ports with `Logger`.
+  - `CommandHandler` now takes `{ required CliInvocation inv, required Logger logger }`.
+  - `CommandRouter.tryDispatch` now requires a `Logger` instead of `out`/`err`.
+  - `TaskExecutor.execute` now requires a `Logger` instead of `out`/`err`.
+  - Tests updated to use in-memory `Logger` doubles.
+
 ## 0.0.4
 
 - Added `CommandEnvironment` abstraction and `CommandEnvironmentBuilder` interface to `ports/`.

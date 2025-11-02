@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:mono_core/mono_core.dart';
 
 /// High-level executor for running a TaskSpec across selected targets.
@@ -13,8 +11,7 @@ abstract class TaskExecutor {
   Future<int> execute({
     required TaskSpec task,
     required CliInvocation inv,
-    required IOSink out,
-    required IOSink err,
+    required Logger logger,
     required GroupStore Function(String monocfgPath) groupStoreFactory,
     required CommandEnvironmentBuilder envBuilder,
     required PluginResolver plugins,

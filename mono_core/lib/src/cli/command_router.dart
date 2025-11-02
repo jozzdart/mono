@@ -1,12 +1,9 @@
-import 'dart:io';
-
 import 'package:mono_core/mono_core.dart';
 
 /// Signature for a command handler used by the router.
 typedef CommandHandler = Future<int> Function({
   required CliInvocation inv,
-  required IOSink out,
-  required IOSink err,
+  required Logger logger,
 });
 
 /// Abstract interface for a simple command router.
@@ -23,7 +20,6 @@ abstract class CommandRouter {
   /// Returns the exit code if a matching command is found, or null otherwise.
   Future<int?> tryDispatch({
     required CliInvocation inv,
-    required IOSink out,
-    required IOSink err,
+    required Logger logger,
   });
 }

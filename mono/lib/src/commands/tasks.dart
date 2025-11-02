@@ -1,12 +1,9 @@
-import 'dart:io';
-
 import 'package:mono_cli/mono_cli.dart';
 
 class TasksCommand {
   static Future<int> run({
     required CliInvocation inv,
-    required IOSink out,
-    required IOSink err,
+    required Logger logger,
     required WorkspaceConfig workspaceConfig,
   }) async {
     final loaded = await workspaceConfig.loadRootConfig();
@@ -23,7 +20,7 @@ class TasksCommand {
     merged.addAll(extra);
     for (final e in merged.entries) {
       final plugin = (e.value['plugin'] ?? 'exec').toString();
-      out.writeln('- ${e.key} (plugin: $plugin)');
+      logger.log('- ${e.key} (plugin: $plugin)');
     }
     return 0;
   }

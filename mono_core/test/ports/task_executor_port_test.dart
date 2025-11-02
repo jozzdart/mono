@@ -1,24 +1,11 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:mono_core/mono_core.dart';
 import 'package:test/test.dart';
 
-class _CapturingSink implements StreamConsumer<List<int>> {
-  _CapturingSink(this.buffer);
-  final StringBuffer buffer;
+class _NoopLogger implements Logger {
+  const _NoopLogger();
   @override
-  Future addStream(Stream<List<int>> stream) async {
-    await for (final chunk in stream) {
-      buffer.write(String.fromCharCodes(chunk));
-    }
-  }
-
-  @override
-  Future close() async {}
+  void log(String message, {String? scope, String level = 'info'}) {}
 }
-
-IOSink _makeSink(StringBuffer b) => IOSink(_CapturingSink(b));
 
 class _FakeEnvBuilder implements CommandEnvironmentBuilder {
   const _FakeEnvBuilder(this._env);
@@ -72,8 +59,7 @@ class _ProbeExecutor implements TaskExecutor {
   Future<int> execute({
     required TaskSpec task,
     required CliInvocation inv,
-    required IOSink out,
-    required IOSink err,
+    required Logger logger,
     required GroupStore Function(String monocfgPath) groupStoreFactory,
     required CommandEnvironmentBuilder envBuilder,
     required PluginResolver plugins,
@@ -93,8 +79,6 @@ class _ProbeExecutor implements TaskExecutor {
 void main() {
   group('TaskExecutor port', () {
     test('execute forwards env and dryRunLabel, returns code', () async {
-      final outB = StringBuffer();
-      final errB = StringBuffer();
       final task =
           TaskSpec(id: const CommandId('x'), plugin: const PluginId('p'));
       final inv = const CliInvocation(commandPath: ['x']);
@@ -113,8 +97,7 @@ void main() {
       final code = await const _ProbeExecutor().execute(
         task: task,
         inv: inv,
-        out: _makeSink(outB),
-        err: _makeSink(errB),
+        logger: const _NoopLogger(),
         groupStoreFactory: (_) => const _FakeGroupStore(),
         envBuilder: _FakeEnvBuilder(env),
         plugins: const _FakePlugins(),

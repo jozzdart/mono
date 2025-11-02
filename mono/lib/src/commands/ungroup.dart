@@ -1,23 +1,20 @@
-import 'dart:io';
-
 import 'package:mono_cli/mono_cli.dart';
 
 class UngroupCommand {
   static Future<int> run({
     required CliInvocation inv,
-    required IOSink out,
-    required IOSink err,
+    required Logger logger,
     required Prompter prompter,
     required WorkspaceConfig workspaceConfig,
     GroupStore Function(String monocfgPath)? groupStoreFactory,
   }) async {
     if (inv.positionals.isEmpty) {
-      err.writeln('Usage: mono ungroup <group_name>');
+      logger.log('Usage: mono ungroup <group_name>', level: 'error');
       return 2;
     }
     final groupName = inv.positionals.first.trim();
     if (groupName.isEmpty || groupName.startsWith(':')) {
-      err.writeln('Invalid group name: "$groupName"');
+      logger.log('Invalid group name: "$groupName"', level: 'error');
       return 2;
     }
 
@@ -33,7 +30,7 @@ class UngroupCommand {
           return FileGroupStore(folder);
         })(loaded.monocfgPath);
     if (!await store.exists(groupName)) {
-      err.writeln('Group "$groupName" does not exist.');
+      logger.log('Group "$groupName" does not exist.', level: 'error');
       return 2;
     }
 
@@ -42,12 +39,12 @@ class UngroupCommand {
       defaultValue: false,
     );
     if (!ok) {
-      err.writeln('Aborted.');
+      logger.log('Aborted.', level: 'error');
       return 1;
     }
 
     await store.deleteGroup(groupName);
-    out.writeln('Group "$groupName" removed.');
+    logger.log('Group "$groupName" removed.');
     return 0;
   }
 }

@@ -1,12 +1,9 @@
-import 'dart:io';
-
 import 'package:mono_cli/mono_cli.dart';
 
 class GetCommand {
   static Future<int> run(
       {required CliInvocation inv,
-      required IOSink out,
-      required IOSink err,
+      required Logger logger,
       required GroupStore Function(String monocfgPath) groupStoreFactory,
       required CommandEnvironmentBuilder envBuilder,
       required PluginResolver plugins,
@@ -18,8 +15,7 @@ class GetCommand {
     return executor.execute(
       task: task,
       inv: inv,
-      out: out,
-      err: err,
+      logger: logger,
       groupStoreFactory: groupStoreFactory,
       envBuilder: envBuilder,
       plugins: plugins,

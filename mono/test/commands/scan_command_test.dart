@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import '../util/fs_fixtures.dart';
+import '../util/fakes.dart';
 
 void main() {
   late WorkspaceConfig workspaceConfig;
@@ -21,13 +22,12 @@ void main() {
       try {
         await writeMonoYaml();
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['scan']);
         final code = await ScanCommand.run(
             inv: inv,
-            out: outCap.sink,
-            err: errCap.sink,
+            logger: BufferingLogger(outB, errB),
             workspaceConfig: workspaceConfig);
         expect(code, 0);
 
@@ -35,8 +35,8 @@ void main() {
         expect(proj.existsSync(), isTrue);
         final contents = await proj.readAsString();
         expect(contents.trim(), startsWith('packages:'));
-        expect(outCap.text, contains('Detected 0 packages'));
-        expect(errCap.text.trim(), isEmpty);
+        expect(outB.toString(), contains('Detected 0 packages'));
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();
@@ -54,13 +54,12 @@ void main() {
         writePubspec(aDir, 'a');
         writePubspec(bDir, 'b', flutter: true);
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['scan']);
         final code = await ScanCommand.run(
             inv: inv,
-            out: outCap.sink,
-            err: errCap.sink,
+            logger: BufferingLogger(outB, errB),
             workspaceConfig: workspaceConfig);
         expect(code, 0);
 
@@ -69,8 +68,8 @@ void main() {
         final contents = await proj.readAsString();
         expect(contents, contains('name: a'));
         expect(contents, contains('name: b'));
-        expect(outCap.text, contains('Detected 2 packages'));
-        expect(errCap.text.trim(), isEmpty);
+        expect(outB.toString(), contains('Detected 2 packages'));
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();
