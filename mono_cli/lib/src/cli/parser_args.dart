@@ -28,6 +28,7 @@ class ArgsCliParser implements CliParser {
       ..addOption('concurrency', abbr: 'j')
       ..addOption('order')
       ..addFlag('dry-run', defaultsTo: false)
+      ..addFlag('check', defaultsTo: false)
       ..addMultiOption('targets', abbr: 't');
 
     final results = parser.parse(rest);
@@ -42,12 +43,14 @@ class ArgsCliParser implements CliParser {
       } else {
         list.add('$v');
       }
+      if (list.isEmpty) return;
       options[k] = list;
     }
 
     put('concurrency', results['concurrency']);
     put('order', results['order']);
     if (results['dry-run'] == true) put('dry-run', 'true');
+    if (results['check'] == true) put('check', 'true');
     put('targets', results['targets']);
 
     final targets = <TargetExpr>[];

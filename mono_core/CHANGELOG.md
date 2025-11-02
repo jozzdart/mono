@@ -1,3 +1,7 @@
+## 0.0.3
+
+- Added comprehensive test coverage for all core functionality.
+
 ## 0.0.2
 
 - New ports to support folder-of-lists configuration patterns:

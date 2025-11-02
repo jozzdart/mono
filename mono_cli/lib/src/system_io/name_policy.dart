@@ -3,7 +3,7 @@ import 'package:mono_cli/mono_cli.dart';
 class DefaultSlugNamePolicy implements NamePolicy {
   const DefaultSlugNamePolicy();
 
-  static final RegExp _allowed = RegExp(r'^[a-z0-9][a-z0-9-_]*');
+  static final RegExp _allowed = RegExp(r'^[a-z0-9][a-z0-9-_]*$');
 
   @override
   bool isValid(String name) => _allowed.hasMatch(name);

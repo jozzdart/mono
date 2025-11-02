@@ -5,6 +5,8 @@ import 'package:mono_cli/mono_cli.dart';
 import 'commands/setup.dart';
 import 'commands/scan.dart';
 import 'commands/get.dart';
+import 'commands/format.dart';
+import 'commands/test.dart';
 import 'commands/list.dart';
 import 'commands/group.dart';
 import 'commands/ungroup.dart';
@@ -81,6 +83,22 @@ Future<int> runCli(
         groupStoreFactory: wiring!.groupStoreFactory,
       );
     }
+    if (cmd == 'format') {
+      return FormatCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        groupStoreFactory: wiring!.groupStoreFactory,
+      );
+    }
+    if (cmd == 'test') {
+      return TestCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        groupStoreFactory: wiring!.groupStoreFactory,
+      );
+    }
     if (cmd == 'list') {
       return ListCommand.run(
         inv: inv,
@@ -132,6 +150,8 @@ const String _helpText = 'mono - Manage Dart/Flutter monorepos\n\n'
     '  mono setup\n'
     '  mono scan\n'
     '  mono get [targets]\n'
+    '  mono format [targets] [--check]\n'
+    '  mono test [targets]\n'
     '  mono [taskname] [targets]\n'
     '  mono list packages|groups|tasks\n'
     '  mono tasks\n'
