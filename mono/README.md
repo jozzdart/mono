@@ -1,6 +1,18 @@
-# mono
+![Mono](../assets/mono_banner.png)
 
-The fast, flexible CLI for managing Dart and Flutter monorepos.
+<h3 align="center"><i>The fast, flexible CLI for managing Dart and Flutter monorepos</i></h3>
+<p align="center">
+        <img src="https://img.shields.io/codefactor/grade/github/jozzdart/mono/main?style=flat-square">
+        <img src="https://img.shields.io/github/license/jozzdart/mono?style=flat-square">
+        <img src="https://img.shields.io/pub/points/mono?style=flat-square">
+        <img src="https://img.shields.io/pub/v/mono?style=flat-square">
+        
+</p>
+<p align="center">
+  <a href="https://buymeacoffee.com/yosefd99v" target="https://buymeacoffee.com/yosefd99v">
+    <img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-Support (:-blue?logo=buymeacoffee&style=flat-square" />
+  </a>
+</p>
 
 Mono helps teams scan, organize, and operate large workspaces with consistent, repeatable workflows. It pairs intelligent target selection and dependency-aware ordering with simple commands you already know.
 
@@ -34,17 +46,6 @@ mono get all
 - [Why mono?](#why-mono)
 - [Usage](#usage)
 - [Commands](#commands)
-  - [setup](#setup)
-  - [scan](#scan)
-  - [list](#list)
-  - [get](#get)
-  - [format](#format)
-  - [test](#test)
-  - [tasks](#tasks)
-  - [group](#group)
-  - [ungroup](#ungroup)
-  - [version](#version)
-  - [help](#help)
 - [Compact command reference](#compact-command-reference)
 - [Target selection](#target-selection)
 - [Configuration](#configuration)
@@ -53,6 +54,10 @@ mono get all
 - [Concurrency and order](#concurrency-and-order)
 - [Custom tasks (exec plugin)](#custom-tasks-exec-plugin)
 - [Notes and tips](#notes-and-tips)
+
+### Quick links
+
+[setup](#setup) | [scan](#scan) | [list](#list) | [get](#get) | [format](#format) | [test](#test) | [tasks](#tasks) | [group](#group) | [ungroup](#ungroup) | [version](#version) | [help](#help)
 
 ## Why mono?
 
@@ -69,61 +74,49 @@ mono <command> [targets] [options]
 
 Targets are optional for built-ins (`get`, `format`, `test`) and required for external `exec` tasks. See [Target selection](#target-selection).
 
-## Commands
+# Commands
 
-### setup
+### `setup`
 
-Synopsis:
+**What it does**: Creates base config files and folders if they don't exist.
 
 ```bash
 mono setup
 ```
 
-Description:
+#### Notes
 
 - Creates `mono.yaml` if missing
 - Creates `monocfg/` with `mono_projects.yaml`, `tasks.yaml`, and `groups/` if missing
 
-Examples:
+---
 
-```bash
-mono setup
-```
+### `scan`
 
-### scan
-
-Synopsis:
+**What it does**: Scans the workspace for projects and caches the results.
 
 ```bash
 mono scan
 ```
-
-Description:
 
 - Scans the workspace for `pubspec.yaml` using `include`/`exclude` globs
 - Writes the cache to `monocfg/mono_projects.yaml`
 
-Examples:
+---
 
-```bash
-mono scan
-```
+### `list`
 
-### list
-
-Synopsis:
+**What it does**: Lists cached packages, defined groups, or merged tasks.
 
 ```bash
 mono list packages|groups|tasks
 ```
 
-Description:
-
 - `packages`: Prints cached projects (falls back to a quick scan if empty)
 - `groups`: Prints groups from `monocfg/groups/*.list` with members
 - `tasks`: Prints merged tasks from `mono.yaml` + `monocfg/tasks.yaml`
 
-Examples:
+#### Examples
 
 ```bash
 mono list packages
@@ -131,187 +124,174 @@ mono list groups
 mono list tasks
 ```
 
-### get
+---
 
-Synopsis:
+### `get`
+
+**What it does**: Runs `flutter pub get` for Flutter packages and `dart pub get` for Dart packages.
 
 ```bash
 mono get [targets]
 ```
 
-Description:
+- Targets are optional; omit them to run on all packages
 
-- Runs `flutter pub get` for Flutter packages and `dart pub get` for Dart packages
+#### Options
 
-Options:
+| Flag                    | Description                | Default         | Example      |                |
+| ----------------------- | -------------------------- | --------------- | ------------ | -------------- |
+| `-j, --concurrency <n>` | Max parallel executions    | `auto`          | `-j 8`       |                |
+| `--order dependency     | none`                      | Execution order | `dependency` | `--order none` |
+| `--dry-run`             | Print plan without running | `false`         | `--dry-run`  |                |
 
-- `-j, --concurrency <n>`
-- `--order dependency|none`
-- `--dry-run`
-
-Examples:
+#### Examples
 
 ```bash
+mono get
 mono get all
 mono get :apps
 mono get core_*
 ```
 
-### format
+---
 
-Synopsis:
+### `format`
+
+**What it does**: Formats Dart code in each target package.
 
 ```bash
 mono format [targets] [--check]
 ```
 
-Description:
-
 - Runs `dart format .` on each target (write by default)
 - `--check` runs `dart format --output=none --set-exit-if-changed .`
 
-Options: same as [get](#get) plus `--check`.
+#### Options
 
-Examples:
+| Flag                    | Description                          | Default         | Example      |                |
+| ----------------------- | ------------------------------------ | --------------- | ------------ | -------------- |
+| `-j, --concurrency <n>` | Max parallel executions              | `auto`          | `-j 8`       |                |
+| `--order dependency     | none`                                | Execution order | `dependency` | `--order none` |
+| `--check`               | Validate formatting only (no writes) | `false`         | `--check`    |                |
+| `--dry-run`             | Print plan without running           | `false`         | `--dry-run`  |                |
+
+#### Examples
 
 ```bash
 mono format all
 mono format :apps --check
 ```
 
-### test
+---
 
-Synopsis:
+### `test`
+
+**What it does**: Runs tests using `flutter test` or `dart test` based on package type.
 
 ```bash
 mono test [targets]
 ```
 
-Description:
+#### Options
 
-- Runs `flutter test` for Flutter packages and `dart test` for Dart packages
+| Flag                    | Description                | Default         | Example      |                |
+| ----------------------- | -------------------------- | --------------- | ------------ | -------------- |
+| `-j, --concurrency <n>` | Max parallel executions    | `auto`          | `-j 8`       |                |
+| `--order dependency     | none`                      | Execution order | `dependency` | `--order none` |
+| `--dry-run`             | Print plan without running | `false`         | `--dry-run`  |                |
 
-Options: same as [get](#get).
-
-Examples:
+#### Examples
 
 ```bash
-mono test all
+mono test
 mono test ui
 ```
 
-### tasks
+---
 
-Synopsis:
+### `tasks`
 
-```bash
-mono tasks
-```
-
-Description:
-
-- Prints all merged tasks with their plugin
-
-Examples:
+**What it does**: Prints all merged tasks with their configured plugin.
 
 ```bash
 mono tasks
 ```
 
-### group
+---
 
-Synopsis:
+### `group`
+
+**What it does**: Interactively create a named group and select member packages.
 
 ```bash
 mono group <name>
 ```
 
-Description:
-
 - Interactively select packages for the group and save to `monocfg/groups/<name>.list`
 - Prevents conflicts (cannot use a package name as a group name)
 - Prompts to overwrite if the group already exists
 
-Examples:
+#### Examples
 
 ```bash
 mono group apps
 ```
 
-### ungroup
+---
 
-Synopsis:
+### `ungroup`
+
+**What it does**: Remove a previously created group after confirmation.
 
 ```bash
 mono ungroup <name>
 ```
 
-Description:
-
 - Confirms and removes `monocfg/groups/<name>.list`
 
-Examples:
+---
+
+### `version`
+
+**What it does**: Prints the CLI version.
+
+- Alias: `-v`, `--version`
+
+#### Examples
 
 ```bash
-mono ungroup apps
+mono version
+mono -v
+mono --version
 ```
 
-### version
+> Run `mono` with no arguments to see help
 
-Synopsis:
-
-```bash
-mono version | -v | --version
-```
-
-Description:
-
-- Prints the CLI version
-
-### help
-
-Synopsis:
-
-```bash
-mono help
-```
-
-Description:
-
-- Prints usage instructions
+---
 
 ## Compact command reference
 
-- `mono setup`  
-  Creates _mono.yaml_ if missing. Creates _monocfg/_ with _mono_projects.yaml_, _tasks.yaml_, and _groups/_ if missing.
-- `mono scan`  
-  Scans the workspace for _pubspec.yaml_ using _include_/_exclude_ globs. Writes the cache to _monocfg/mono_projects.yaml_.
-- `mono list packages`  
-  Prints cached projects (falls back to a quick scan if empty). Prints groups from _monocfg/groups/\*.list_ with members. Prints merged tasks from _mono.yaml_ + _monocfg/tasks.yaml_.
-- `mono list groups`  
-  Prints groups from _monocfg/groups/\*.list_ with members.
-- `mono list tasks`  
-  Prints merged tasks from _mono.yaml_ + _monocfg/tasks.yaml_.
-- `mono get [targets]`  
-  Runs _flutter pub get_ for Flutter packages and _dart pub get_ for Dart packages.
-- `mono format [targets] [--check]`  
-  Runs _dart format ._ on each target (write by default). _--check_ runs _dart format --output=none --set-exit-if-changed ._
-- `mono test [targets]`  
-  Runs _flutter test_ for Flutter packages and _dart test_ for Dart packages.
-- `mono tasks`  
-  Prints all merged tasks with their plugin.
-- `mono group <name>`  
-  Interactively select packages for the group and save to _monocfg/groups/\<name\>.list_. Prevents conflicts (cannot use a package name as a group name). Prompts to overwrite if the group already exists.
-- `mono ungroup <name>`  
-  Confirms and removes _monocfg/groups/\<name\>.list_.
-- `mono version` / `-v` / `--version`  
-  Prints the CLI version.
-- `mono help` or no args  
-  Prints usage instructions.
+| Command                                 | Summary                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------ |
+| [`setup`](#setup)                       | Create `mono.yaml` and `monocfg/` defaults if missing.                   |
+| [`scan`](#scan)                         | Scan for `pubspec.yaml` and write cache to `monocfg/mono_projects.yaml`. |
+| [`list packages`](#list)                | Print cached projects (quick scan fallback if empty).                    |
+| [`list groups`](#list)                  | Print groups from `monocfg/groups/*.list` with members.                  |
+| [`list tasks`](#list)                   | Print merged tasks from `mono.yaml` + `monocfg/tasks.yaml`.              |
+| [`get [targets]`](#get)                 | Run pub get across targets (Flutter/Dart aware).                         |
+| [`format [targets] [--check]`](#format) | Format code; `--check` validates only.                                   |
+| [`test [targets]`](#test)               | Run tests across targets.                                                |
+| [`tasks`](#tasks)                       | Show all merged tasks with plugin.                                       |
+| [`group <name>`](#group)                | Interactively create a group.                                            |
+| [`ungroup <name>`](#ungroup)            | Delete a group after confirmation.                                       |
+| [`version`](#version)                   | Print CLI version.                                                       |
+| [`help`](#help)                         | Show usage instructions.                                                 |
 
 ## Target selection
 
 Targets can be mixed and comma‑separated:
+
+#### Examples
 
 ```bash
 mono get all
@@ -319,14 +299,17 @@ mono get :apps
 mono get core_*
 mono get app,ui,core
 mono build :apps
+mono get app,core_*,:apps --order none
 ```
 
 - Default order is dependency-based; disable with `--order none`
 - Tokens:
-  - `all` – all packages
-  - `:group` – named group from `monocfg/groups/<name>.list`
-  - `glob*` – glob match by package name
-  - `name` – exact package name
+- - `all` – all packages
+- - `:group` – named group from `monocfg/groups/<name>.list`
+- - `glob*` – glob match by package name
+- - `name` – exact package name
+
+> Note: Dependency order ensures dependents see up-to-date local changes. Use `--order none` to preserve your input order when you need strict sequence control.
 
 ## Configuration
 
@@ -346,10 +329,15 @@ groups: {}
 tasks: {}
 ```
 
-- `settings.monocfgPath`: path to the config folder
-- `include`/`exclude`: globs for scanning `pubspec.yaml`
-- `groups`: map of groupName -> list (names, globs, or nested `:group`)
-- `tasks`: task definitions (merged with `monocfg/tasks.yaml`)
+| Key                     | Meaning                                                     | Default                           |
+| ----------------------- | ----------------------------------------------------------- | --------------------------------- |
+| `settings.monocfgPath`  | Path to the config folder                                   | `monocfg`                         |
+| `settings.concurrency`  | Default concurrency                                         | `auto`                            |
+| `settings.defaultOrder` | Default execution order                                     | `dependency`                      |
+| `include`               | Globs to include when scanning for `pubspec.yaml`           | `["**"]`                          |
+| `exclude`               | Globs to exclude when scanning                              | `["monocfg/**", ".dart_tool/**"]` |
+| `groups`                | Map of `groupName -> selectors` (names, globs, or `:group`) | `{}`                              |
+| `tasks`                 | Task definitions (merged with `monocfg/tasks.yaml`)         | `{}`                              |
 
 ## monocfg folder
 
@@ -407,6 +395,8 @@ Notes:
 - Group files are simple lists; blank lines and `#` comments are ignored
 - Group names are derived from filenames: `<name>.list` using lowercase slugs `[a-z0-9][a-z0-9-_]*`
 
+> Tip: Keep group names short and stable, avoid overlapping membership across groups, and prefer lowercase slugs for consistent anchors.
+
 ## Custom tasks (exec plugin)
 
 You can define reusable tasks under `tasks` in `mono.yaml` or `monocfg/tasks.yaml`. These are merged, with `monocfg/tasks.yaml` taking precedence. Tasks are runnable as top‑level commands: `mono <task> [targets]`.
@@ -442,6 +432,8 @@ Notes:
 - Built-in commands like `get`, `format`, and `test` run on all packages when no targets are given
 - You can set environment variables with `env:` and express dependencies between tasks with `dependsOn:` in `mono.yaml`
 - Tasks in `monocfg/tasks.yaml` override/extend those in `mono.yaml`
+
+> Tip: External (exec) tasks often work best when combined with named groups (e.g., `mono build :apps`). Use `--dry-run` first to verify the execution plan.
 
 ## Notes and tips
 
