@@ -3,6 +3,7 @@
 - New: Built-in commands `format` and `test`.
   - `mono format [targets] [--check]` uses `dart format` (write by default; `--check` verifies formatting).
   - `mono test [targets]` runs `flutter test` for Flutter packages and `dart test` for Dart packages.
+- Added comprehensive test coverage for all commands and functionality.
 
 ## 0.0.2
 

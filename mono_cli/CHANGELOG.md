@@ -1,6 +1,7 @@
 ## 0.0.3
 
 - Plugins: added `FormatPlugin` (format, format:check) and `TestPlugin` (test).
+- Added comprehensive test coverage for all ports and functionality.
 
 ## 0.0.2
 
