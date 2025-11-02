@@ -70,7 +70,7 @@ settings:
   concurrency: auto
   defaultOrder: dependency
 include:
-  - "**/*"
+  - "**"
 exclude:
   - "monocfg/**"
   - ".dart_tool/**"

@@ -19,9 +19,16 @@ class FileSystemPackageScanner implements PackageScanner {
   }) async {
     final root = p.normalize(rootPath);
     final include = includeGlobs.isEmpty ? ['**/pubspec.yaml'] : includeGlobs;
+    String _toPubspecPattern(String pattern) {
+      final t = pattern.trim();
+      if (t == '**' || t == '**/' || t == '**/*' || t == '**/*/') {
+        return '**/pubspec.yaml';
+      }
+      return t.endsWith('pubspec.yaml') ? t : p.join(t, 'pubspec.yaml');
+    }
     final includeGlobsFiles = <Glob>{
       for (final pat in include)
-        Glob(pat.endsWith('pubspec.yaml') ? pat : p.join(pat, 'pubspec.yaml'), recursive: true)
+        Glob(_toPubspecPattern(pat), recursive: true)
     };
     final exclude = excludeGlobs.map((e) => Glob(e, recursive: true)).toList();
 

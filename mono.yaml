@@ -1,0 +1,12 @@
+# mono configuration
+settings:
+  monocfgPath: monocfg
+  concurrency: auto
+  defaultOrder: dependency
+include:
+  - "**"
+exclude:
+  - "monocfg/**"
+  - ".dart_tool/**"
+groups: {}
+tasks: {}
