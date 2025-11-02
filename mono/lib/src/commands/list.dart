@@ -35,14 +35,16 @@ class ListCommand {
       return 0;
     }
     if (what == 'groups') {
-      final store = (groupStoreFactory ?? (String monocfgPath) {
-        final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
-        final folder = FileListConfigFolder(
-          basePath: groupsPath,
-          namePolicy: const DefaultSlugNamePolicy(),
-        );
-        return FileGroupStore(folder);
-      })(loaded.monocfgPath);
+      final store = (groupStoreFactory ??
+          (String monocfgPath) {
+            final groupsPath =
+                const DefaultPathService().join([monocfgPath, 'groups']);
+            final folder = FileListConfigFolder(
+              basePath: groupsPath,
+              namePolicy: const DefaultSlugNamePolicy(),
+            );
+            return FileGroupStore(folder);
+          })(loaded.monocfgPath);
       final names = await store.listGroups();
       for (final name in names) {
         final members = await store.readGroup(name);

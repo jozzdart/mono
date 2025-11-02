@@ -23,14 +23,16 @@ class GroupCommand {
     }
 
     final loaded = await loadRootConfig();
-    final store = (groupStoreFactory ?? (String monocfgPath) {
-      final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
-      final folder = FileListConfigFolder(
-        basePath: groupsPath,
-        namePolicy: const DefaultSlugNamePolicy(),
-      );
-      return FileGroupStore(folder);
-    })(loaded.monocfgPath);
+    final store = (groupStoreFactory ??
+        (String monocfgPath) {
+          final groupsPath =
+              const DefaultPathService().join([monocfgPath, 'groups']);
+          final folder = FileListConfigFolder(
+            basePath: groupsPath,
+            namePolicy: const DefaultSlugNamePolicy(),
+          );
+          return FileGroupStore(folder);
+        })(loaded.monocfgPath);
 
     // Load packages from cache or fallback scanner
     final projects = await readMonocfgProjects(loaded.monocfgPath);
@@ -59,7 +61,8 @@ class GroupCommand {
       }
     }
     if (packageNames.contains(groupName)) {
-      err.writeln('Cannot create group with same name as a package: "$groupName"');
+      err.writeln(
+          'Cannot create group with same name as a package: "$groupName"');
       return 2;
     }
 
@@ -89,5 +92,3 @@ class GroupCommand {
     return 0;
   }
 }
-
-

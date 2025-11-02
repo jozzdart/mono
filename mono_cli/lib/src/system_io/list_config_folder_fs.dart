@@ -84,5 +84,3 @@ class FileListConfigFolder implements ListConfigFolder {
     await tmp.rename(f.path);
   }
 }
-
-

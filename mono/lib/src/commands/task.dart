@@ -172,5 +172,3 @@ class TaskCommand {
     return out;
   }
 }
-
-

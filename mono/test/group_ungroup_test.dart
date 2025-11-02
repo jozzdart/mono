@@ -25,7 +25,8 @@ class _BufferSink implements IOSink {
   @override
   Future<void> flush() async {}
   @override
-  void writeAll(Iterable objects, [String sep = '']) => _buffer.writeAll(objects, sep);
+  void writeAll(Iterable objects, [String sep = '']) =>
+      _buffer.writeAll(objects, sep);
   @override
   void writeCharCode(int charCode) => _buffer.writeCharCode(charCode);
   void writeFrom(List<int> data, [int start = 0, int? end]) {}
@@ -42,9 +43,12 @@ class _FakePrompter implements Prompter {
   final bool confirmValue;
   final List<int> indices;
   @override
-  Future<bool> confirm(String message, {bool defaultValue = false}) async => confirmValue;
+  Future<bool> confirm(String message, {bool defaultValue = false}) async =>
+      confirmValue;
   @override
-  Future<List<int>> checklist({required String title, required List<String> items}) async => indices;
+  Future<List<int>> checklist(
+          {required String title, required List<String> items}) async =>
+      indices;
 }
 
 void main() {
@@ -67,7 +71,8 @@ tasks: {}
 ''');
       final monocfg = Directory('${tmp.path}/monocfg');
       await monocfg.create(recursive: true);
-      await File('${monocfg.path}/mono_projects.yaml').writeAsString('''packages:
+      await File('${monocfg.path}/mono_projects.yaml')
+          .writeAsString('''packages:
   - name: app
     path: packages/app
     kind: dart
@@ -106,7 +111,8 @@ tasks: {}
 ''');
       final monocfg = Directory('${tmp.path}/monocfg');
       await monocfg.create(recursive: true);
-      await File('${monocfg.path}/mono_projects.yaml').writeAsString('''packages:
+      await File('${monocfg.path}/mono_projects.yaml')
+          .writeAsString('''packages:
   - name: app
     path: packages/app
     kind: dart
@@ -163,12 +169,11 @@ tasks: {}
         prompter: _FakePrompter(confirmValue: true),
       );
       expect(code, 0);
-      expect(await File('${tmp.path}/monocfg/groups/ui.list').exists(), isFalse);
+      expect(
+          await File('${tmp.path}/monocfg/groups/ui.list').exists(), isFalse);
       Directory.current = prev;
     } finally {
       await tmp.delete(recursive: true);
     }
   });
 }
-
-

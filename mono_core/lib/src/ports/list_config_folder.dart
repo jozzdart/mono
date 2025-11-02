@@ -36,5 +36,3 @@ abstract class GroupStore {
 
   Future<bool> exists(String groupName);
 }
-
-

@@ -29,5 +29,3 @@ class TasksCommand {
     return 0;
   }
 }
-
-

@@ -88,5 +88,3 @@ class PackageVersionInfo implements VersionInfo {
     }
   }
 }
-
-

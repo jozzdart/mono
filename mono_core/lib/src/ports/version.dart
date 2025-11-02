@@ -6,5 +6,3 @@ abstract class VersionInfo {
   String get name;
   String get version;
 }
-
-

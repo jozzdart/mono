@@ -132,12 +132,16 @@ Future<Map<String, Map<String, Object?>>> readMonocfgTasks(
   return out;
 }
 
-Future<void> writeRootConfigGroups(String path, Map<String, List<String>> groups) async {
+Future<void> writeRootConfigGroups(
+    String path, Map<String, List<String>> groups) async {
   final loaded = await loadRootConfig(path: path);
   final cfg = loaded.config;
 
   String quote(String v) {
-    if (v.contains('#') || v.contains(':') || v.contains('*') || v.contains(' ')) {
+    if (v.contains('#') ||
+        v.contains(':') ||
+        v.contains('*') ||
+        v.contains(' ')) {
       return '"${v.replaceAll('"', '\\"')}"';
     }
     return v;

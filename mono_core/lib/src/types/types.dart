@@ -49,11 +49,13 @@ class MonoPackage {
     PackageKind? kind,
     Set<PackageName>? localDependencies,
     Set<String>? tags,
-  }) => MonoPackage(
+  }) =>
+      MonoPackage(
         name: name,
         path: path ?? this.path,
         kind: kind ?? this.kind,
-        localDependencies: Set.unmodifiable(localDependencies ?? this.localDependencies),
+        localDependencies:
+            Set.unmodifiable(localDependencies ?? this.localDependencies),
         tags: Set.unmodifiable(tags ?? this.tags),
       );
 
@@ -64,7 +66,8 @@ class MonoPackage {
     return name == other.name &&
         path == other.path &&
         kind == other.kind &&
-        const SetEquality().equals(localDependencies, other.localDependencies) &&
+        const SetEquality()
+            .equals(localDependencies, other.localDependencies) &&
         const SetEquality().equals(tags, other.tags);
   }
 
@@ -92,7 +95,8 @@ class MonoRepository {
           rootPath == other.rootPath &&
           const ListEquality().equals(packages, other.packages);
   @override
-  int get hashCode => Object.hash(rootPath, const ListEquality().hash(packages));
+  int get hashCode =>
+      Object.hash(rootPath, const ListEquality().hash(packages));
 }
 
 @immutable
@@ -154,6 +158,6 @@ class TaskSpec {
           plugin == other.plugin &&
           const SetEquality().equals(dependsOn, other.dependsOn);
   @override
-  int get hashCode => Object.hash(id, plugin, const SetEquality().hash(dependsOn));
+  int get hashCode =>
+      Object.hash(id, plugin, const SetEquality().hash(dependsOn));
 }
-

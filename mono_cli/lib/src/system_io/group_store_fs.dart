@@ -15,11 +15,10 @@ class FileGroupStore implements GroupStore {
   Future<List<String>> listGroups() => _folder.listNames();
 
   @override
-  Future<List<String>> readGroup(String groupName) => _folder.readList(groupName);
+  Future<List<String>> readGroup(String groupName) =>
+      _folder.readList(groupName);
 
   @override
   Future<void> writeGroup(String groupName, List<String> members) =>
       _folder.writeList(groupName, members);
 }
-
-

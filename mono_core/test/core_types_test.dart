@@ -21,11 +21,11 @@ void main() {
 
   group('MonoRepository', () {
     test('findPackageByName', () {
-      final p1 = MonoPackage(name: PackageName('p1'), path: 'p1', kind: PackageKind.dart);
+      final p1 = MonoPackage(
+          name: PackageName('p1'), path: 'p1', kind: PackageKind.dart);
       final repo = MonoRepository(rootPath: '.', packages: [p1]);
       expect(repo.findPackageByName(PackageName('p1')), p1);
       expect(repo.findPackageByName(PackageName('x')), isNull);
     });
   });
 }
-

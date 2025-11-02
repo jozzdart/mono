@@ -14,7 +14,8 @@ class ConsolePrompter implements Prompter {
       throw StateError('Interactive confirmation requires a TTY.');
     }
     stdout.write('$message [${defaultValue ? 'Y/n' : 'y/N'}] ');
-    final input = stdin.readLineSync(encoding: utf8)?.trim().toLowerCase() ?? '';
+    final input =
+        stdin.readLineSync(encoding: utf8)?.trim().toLowerCase() ?? '';
     if (input.isEmpty) return defaultValue;
     return input == 'y' || input == 'yes';
   }
@@ -47,7 +48,8 @@ class ConsolePrompter implements Prompter {
         stdout.writeln('$cursor [$mark] ${items[i]}');
       }
       // Help
-      stdout.writeln('(↑/↓) move  (space) toggle  (a) toggle all  (enter) done  (q) cancel');
+      stdout.writeln(
+          '(↑/↓) move  (space) toggle  (a) toggle all  (enter) done  (q) cancel');
     }
 
     // Prepare terminal
@@ -114,5 +116,3 @@ class ConsolePrompter implements Prompter {
     return out;
   }
 }
-
-

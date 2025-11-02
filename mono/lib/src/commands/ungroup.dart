@@ -23,14 +23,16 @@ class UngroupCommand {
     }
 
     final loaded = await loadRootConfig();
-    final store = (groupStoreFactory ?? (String monocfgPath) {
-      final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
-      final folder = FileListConfigFolder(
-        basePath: groupsPath,
-        namePolicy: const DefaultSlugNamePolicy(),
-      );
-      return FileGroupStore(folder);
-    })(loaded.monocfgPath);
+    final store = (groupStoreFactory ??
+        (String monocfgPath) {
+          final groupsPath =
+              const DefaultPathService().join([monocfgPath, 'groups']);
+          final folder = FileListConfigFolder(
+            basePath: groupsPath,
+            namePolicy: const DefaultSlugNamePolicy(),
+          );
+          return FileGroupStore(folder);
+        })(loaded.monocfgPath);
     if (!await store.exists(groupName)) {
       err.writeln('Group "$groupName" does not exist.');
       return 2;
@@ -50,5 +52,3 @@ class UngroupCommand {
     return 0;
   }
 }
-
-

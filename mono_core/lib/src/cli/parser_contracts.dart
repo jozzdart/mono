@@ -26,4 +26,3 @@ abstract class ArgsAdapter {
 // glob       := NAME ('*' | '?')+
 // list       := selector (',' selector)*
 // invocation := command (WS list)? (WS options)?
-

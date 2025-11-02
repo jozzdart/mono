@@ -65,8 +65,8 @@ Future<int> runCli(
     }
     final cmd = inv.commandPath.first;
     final prompter = wiring?.prompter ?? const ConsolePrompter();
-    final versionInfo =
-        wiring?.versionInfo ?? const StaticVersionInfo(name: 'mono', version: 'unknown');
+    final versionInfo = wiring?.versionInfo ??
+        const StaticVersionInfo(name: 'mono', version: 'unknown');
     if (cmd == 'version' || cmd == '--version' || cmd == '-v' || cmd == '--v') {
       return VersionCommand.run(
           inv: inv, out: out, err: err, version: versionInfo);

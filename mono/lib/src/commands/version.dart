@@ -13,5 +13,3 @@ class VersionCommand {
     return 0;
   }
 }
-
-

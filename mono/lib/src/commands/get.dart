@@ -39,14 +39,16 @@ class GetCommand {
     final graph = const DefaultGraphBuilder().build(packages);
 
     // Build groups from file-based store
-    final store = (groupStoreFactory ?? (String monocfgPath) {
-      final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
-      final folder = FileListConfigFolder(
-        basePath: groupsPath,
-        namePolicy: const DefaultSlugNamePolicy(),
-      );
-      return FileGroupStore(folder);
-    })(loaded.monocfgPath);
+    final store = (groupStoreFactory ??
+        (String monocfgPath) {
+          final groupsPath =
+              const DefaultPathService().join([monocfgPath, 'groups']);
+          final folder = FileListConfigFolder(
+            basePath: groupsPath,
+            namePolicy: const DefaultSlugNamePolicy(),
+          );
+          return FileGroupStore(folder);
+        })(loaded.monocfgPath);
     final groups = <String, Set<String>>{};
     final groupNames = await store.listGroups();
     for (final name in groupNames) {

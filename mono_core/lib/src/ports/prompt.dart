@@ -12,5 +12,3 @@ abstract class Prompter {
     required List<String> items,
   });
 }
-
-

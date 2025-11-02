@@ -27,5 +27,3 @@ class DefaultSlugNamePolicy implements NamePolicy {
     return out;
   }
 }
-
-

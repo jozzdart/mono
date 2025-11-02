@@ -10,4 +10,3 @@ void main() {
     expect(const TargetGlob('app_*').pattern, 'app_*');
   });
 }
-

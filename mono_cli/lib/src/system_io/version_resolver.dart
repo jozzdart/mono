@@ -46,5 +46,3 @@ Future<String> resolvePackageVersion(String packageName) async {
 
   return 'unknown';
 }
-
-
