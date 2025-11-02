@@ -17,14 +17,16 @@ void main() {
       final schema = YamlSchemaProvider().jsonSchema();
       final props = schema['properties'] as Map;
 
-      expect(props.keys, containsAll(<String>[
-        'include',
-        'exclude',
-        'packages',
-        'groups',
-        'tasks',
-        'settings',
-      ]));
+      expect(
+          props.keys,
+          containsAll(<String>[
+            'include',
+            'exclude',
+            'packages',
+            'groups',
+            'tasks',
+            'settings',
+          ]));
     });
 
     test('validates include/exclude arrays of strings', () {
@@ -43,7 +45,8 @@ void main() {
       final packages = props['packages'] as Map;
 
       expect(packages['type'], equals('object'));
-      expect((packages['additionalProperties'] as Map)['type'], equals('string'));
+      expect(
+          (packages['additionalProperties'] as Map)['type'], equals('string'));
     });
 
     test('validates groups map to array of strings', () {
@@ -64,14 +67,18 @@ void main() {
 
       expect(tasks['type'], equals('object'));
       expect(taskDef['type'], equals('object'));
-      expect(taskProps.keys, containsAll(<String>['plugin', 'dependsOn', 'env', 'run']));
+      expect(taskProps.keys,
+          containsAll(<String>['plugin', 'dependsOn', 'env', 'run']));
       expect((taskProps['plugin'] as Map)['type'], equals('string'));
       expect((taskProps['dependsOn'] as Map)['type'], equals('array'));
-      expect(((taskProps['dependsOn'] as Map)['items'] as Map)['type'], equals('string'));
+      expect(((taskProps['dependsOn'] as Map)['items'] as Map)['type'],
+          equals('string'));
       expect((taskProps['env'] as Map)['type'], equals('object'));
-      expect(((taskProps['env'] as Map)['additionalProperties'] as Map)['type'], equals('string'));
+      expect(((taskProps['env'] as Map)['additionalProperties'] as Map)['type'],
+          equals('string'));
       expect((taskProps['run'] as Map)['type'], equals('array'));
-      expect(((taskProps['run'] as Map)['items'] as Map)['type'], equals('string'));
+      expect(((taskProps['run'] as Map)['items'] as Map)['type'],
+          equals('string'));
     });
 
     test('validates settings properties and constraints', () {
@@ -82,7 +89,8 @@ void main() {
       expect(settings['type'], equals('object'));
 
       final concurrencyType = setProps['concurrency'] as Map;
-      expect(concurrencyType['type'], containsAll(<String>['string', 'integer']));
+      expect(
+          concurrencyType['type'], containsAll(<String>['string', 'integer']));
 
       final defaultOrder = setProps['defaultOrder'] as Map;
       expect(defaultOrder['enum'], containsAll(<String>['dependency', 'none']));
@@ -92,5 +100,3 @@ void main() {
     });
   });
 }
-
-

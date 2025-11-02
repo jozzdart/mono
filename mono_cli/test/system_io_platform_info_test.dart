@@ -12,7 +12,8 @@ void main() {
       expect(info.isLinux, Platform.isLinux);
       expect(info.isMacOS, Platform.isMacOS);
       // Exactly one is true
-      final truths = [info.isWindows, info.isLinux, info.isMacOS].where((e) => e).length;
+      final truths =
+          [info.isWindows, info.isLinux, info.isMacOS].where((e) => e).length;
       expect(truths, 1);
     });
 
@@ -25,5 +26,3 @@ void main() {
     });
   });
 }
-
-

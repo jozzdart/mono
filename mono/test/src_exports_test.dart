@@ -17,5 +17,3 @@ void main() {
     expect(contents, '');
   });
 }
-
-

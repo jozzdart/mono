@@ -14,12 +14,11 @@ void main() {
     });
 
     test('normalize cleans up .. and . segments', () {
-      final raw = 'a${Platform.pathSeparator}.${Platform.pathSeparator}b${Platform.pathSeparator}..${Platform.pathSeparator}c';
+      final raw =
+          'a${Platform.pathSeparator}.${Platform.pathSeparator}b${Platform.pathSeparator}..${Platform.pathSeparator}c';
       final normalized = svc.normalize(raw);
       // Using path to compute expected across platforms
       expect(normalized, p.normalize(raw));
     });
   });
 }
-
-

@@ -10,7 +10,8 @@ void main() {
   group('PackageKind', () {
     test('contains dart and flutter', () {
       expect(PackageKind.values.length, 2);
-      expect(PackageKind.values, containsAll([PackageKind.dart, PackageKind.flutter]));
+      expect(PackageKind.values,
+          containsAll([PackageKind.dart, PackageKind.flutter]));
     });
   });
 
@@ -169,7 +170,8 @@ void main() {
   group('MonoRepository', () {
     test('findPackageByName returns package or null', () {
       final a = MonoPackage(name: pkg('a'), path: '/a', kind: PackageKind.dart);
-      final b = MonoPackage(name: pkg('b'), path: '/b', kind: PackageKind.flutter);
+      final b =
+          MonoPackage(name: pkg('b'), path: '/b', kind: PackageKind.flutter);
       final repo = MonoRepository(rootPath: '/root', packages: [a, b]);
 
       expect(repo.findPackageByName(pkg('a')), same(a));
@@ -178,8 +180,10 @@ void main() {
     });
 
     test('equality uses rootPath and order-sensitive package list', () {
-      final a1 = MonoPackage(name: pkg('a'), path: '/a', kind: PackageKind.dart);
-      final b1 = MonoPackage(name: pkg('b'), path: '/b', kind: PackageKind.flutter);
+      final a1 =
+          MonoPackage(name: pkg('a'), path: '/a', kind: PackageKind.dart);
+      final b1 =
+          MonoPackage(name: pkg('b'), path: '/b', kind: PackageKind.flutter);
       final r1 = MonoRepository(rootPath: '/root', packages: [a1, b1]);
       final r2 = MonoRepository(rootPath: '/root', packages: [a1, b1]);
       final r3 = MonoRepository(rootPath: '/root', packages: [b1, a1]);
@@ -235,5 +239,3 @@ void main() {
     });
   });
 }
-
-

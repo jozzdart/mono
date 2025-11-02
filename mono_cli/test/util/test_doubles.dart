@@ -45,11 +45,14 @@ class StubProcessRunner implements ProcessRunner {
     void Function(String line)? onStdout,
     void Function(String line)? onStderr,
   }) async {
-    calls.add(RunCall(List<String>.from(command), cwd, env == null ? null : Map<String, String>.from(env)));
+    calls.add(RunCall(List<String>.from(command), cwd,
+        env == null ? null : Map<String, String>.from(env)));
 
     final index = calls.length - 1;
-    final out = index < stdoutPerCall.length ? stdoutPerCall[index] : const <String>[];
-    final err = index < stderrPerCall.length ? stderrPerCall[index] : const <String>[];
+    final out =
+        index < stdoutPerCall.length ? stdoutPerCall[index] : const <String>[];
+    final err =
+        index < stderrPerCall.length ? stderrPerCall[index] : const <String>[];
     for (final line in out) {
       onStdout?.call(line);
     }
@@ -58,12 +61,16 @@ class StubProcessRunner implements ProcessRunner {
     }
 
     if (_returnCodes.isEmpty) return 0;
-    return _returnCodes.length == 1 ? _returnCodes.first : _returnCodes.removeAt(0);
+    return _returnCodes.length == 1
+        ? _returnCodes.first
+        : _returnCodes.removeAt(0);
   }
 }
 
 class TestTaskPlugin extends TaskPlugin {
-  TestTaskPlugin(String id, {bool Function(CommandId id)? supports, Future<int> Function(TaskInvocation i)? onExecute})
+  TestTaskPlugin(String id,
+      {bool Function(CommandId id)? supports,
+      Future<int> Function(TaskInvocation i)? onExecute})
       : _supports = supports ?? ((_) => true),
         _onExecute = onExecute ?? ((_) async => 0),
         super(PluginId(id));
@@ -121,5 +128,3 @@ MonoPackage pkg(
       localDependencies: deps,
       tags: tags,
     );
-
-

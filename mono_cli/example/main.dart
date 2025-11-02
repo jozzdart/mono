@@ -25,5 +25,3 @@ tasks:
   logger.log('Config include: ${config.include}', scope: 'example');
   logger.log('Issues: ${issues.length}', scope: 'example');
 }
-
-

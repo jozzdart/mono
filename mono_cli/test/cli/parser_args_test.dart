@@ -13,7 +13,8 @@ void main() {
 
     test('splits by any whitespace and trims', () {
       expect(tokenizer.tokenize('a b   c'), ['a', 'b', 'c']);
-      expect(tokenizer.tokenize('  one\t two\nthree  '), ['one', 'two', 'three']);
+      expect(
+          tokenizer.tokenize('  one\t two\nthree  '), ['one', 'two', 'three']);
     });
 
     test('does not handle quotes/escaping (documented naive split)', () {
@@ -70,10 +71,14 @@ void main() {
       test('multi-option --targets/-t aggregates multiple occurrences', () {
         final inv = parse([
           'run',
-          '--targets', 'a',
-          '--targets', 'b',
-          '-t', 'c',
-          '-t', 'd',
+          '--targets',
+          'a',
+          '--targets',
+          'b',
+          '-t',
+          'c',
+          '-t',
+          'd',
         ]);
         expect(inv.options['targets'], ['a', 'b', 'c', 'd']);
       });
@@ -148,5 +153,3 @@ void main() {
     });
   });
 }
-
-

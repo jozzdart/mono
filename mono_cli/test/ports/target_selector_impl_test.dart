@@ -25,7 +25,8 @@ void main() {
         graph: graph,
         dependencyOrder: false,
       );
-      expect(noOrder.map((p) => p.name.value).toList(), ['app', 'lib1', 'lib2', 'util_test']);
+      expect(noOrder.map((p) => p.name.value).toList(),
+          ['app', 'lib1', 'lib2', 'util_test']);
 
       final topo = selector.resolve(
         expressions: const <TargetExpr>[],
@@ -94,5 +95,3 @@ void main() {
     });
   });
 }
-
-

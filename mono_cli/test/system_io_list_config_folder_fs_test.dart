@@ -64,7 +64,8 @@ void main() {
       );
     });
 
-    test('writeList creates directory and is atomic-ish (tmp removed)', () async {
+    test('writeList creates directory and is atomic-ish (tmp removed)',
+        () async {
       await store.writeList('g', ['a', '', 'b']);
       final path = p.join(base.path, 'g.list');
       expect(File(path).existsSync(), isTrue);
@@ -89,5 +90,3 @@ void main() {
     });
   });
 }
-
-

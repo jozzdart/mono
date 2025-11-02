@@ -30,7 +30,8 @@ void main() {
   group('Const canonicalization and identity semantics', () {
     test('Identical for equal consts', () {
       expect(identical(const TargetAll(), const TargetAll()), isTrue);
-      expect(identical(const TargetPackage('x'), const TargetPackage('x')), isTrue);
+      expect(identical(const TargetPackage('x'), const TargetPackage('x')),
+          isTrue);
       expect(identical(const TargetGroup('g'), const TargetGroup('g')), isTrue);
       expect(identical(const TargetGlob('p'), const TargetGlob('p')), isTrue);
     });
@@ -66,7 +67,8 @@ void main() {
       };
     }
 
-    test('Switch expression is exhaustive and returns expected descriptions', () {
+    test('Switch expression is exhaustive and returns expected descriptions',
+        () {
       expect(describe(const TargetAll()), 'all');
       expect(describe(const TargetPackage('core')), 'package:core');
       expect(describe(const TargetGroup('apps')), 'group:apps');

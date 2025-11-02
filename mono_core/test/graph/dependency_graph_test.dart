@@ -19,7 +19,8 @@ void main() {
 
       // dependenciesOf returns an unmodifiable set
       expect(() => g.dependenciesOf('a').add('x'), throwsUnsupportedError);
-      expect(() => g.dependenciesOf('missing').add('x'), throwsUnsupportedError);
+      expect(
+          () => g.dependenciesOf('missing').add('x'), throwsUnsupportedError);
     });
 
     test('defensive copies prevent external mutation from affecting graph', () {
@@ -267,14 +268,24 @@ void main() {
     });
 
     test('graphs differing in nodes or edges are not equal', () {
-      final base = DependencyGraph(nodes: {'a', 'b'}, edges: {'a': {'b'}});
-      final differentNodes = DependencyGraph(nodes: {'a', 'b', 'c'}, edges: {'a': {'b'}});
-      final differentEdges = DependencyGraph(nodes: {'a', 'b'}, edges: {'a': <String>{}});
+      final base = DependencyGraph(nodes: {
+        'a',
+        'b'
+      }, edges: {
+        'a': {'b'}
+      });
+      final differentNodes = DependencyGraph(nodes: {
+        'a',
+        'b',
+        'c'
+      }, edges: {
+        'a': {'b'}
+      });
+      final differentEdges =
+          DependencyGraph(nodes: {'a', 'b'}, edges: {'a': <String>{}});
 
       expect(base == differentNodes, isFalse);
       expect(base == differentEdges, isFalse);
     });
   });
 }
-
-

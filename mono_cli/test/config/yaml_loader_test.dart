@@ -43,11 +43,13 @@ packages:
 ''';
 
       final config = loader.load(yaml);
-      expect(config.packages, equals(<String, String>{
-        'app': 'apps/app',
-        '1': '2',
-        'other': '3',
-      }));
+      expect(
+          config.packages,
+          equals(<String, String>{
+            'app': 'apps/app',
+            '1': '2',
+            'other': '3',
+          }));
     });
 
     test('parses groups map to lists of strings; non-list -> empty list', () {
@@ -62,11 +64,13 @@ groups:
 ''';
 
       final config = loader.load(yaml);
-      expect(config.groups, equals(<String, List<String>>{
-        'core': ['app', 'lib/*'],
-        'odd': <String>[],
-        'nums': ['1', '2'],
-      }));
+      expect(
+          config.groups,
+          equals(<String, List<String>>{
+            'core': ['app', 'lib/*'],
+            'odd': <String>[],
+            'nums': ['1', '2'],
+          }));
     });
 
     test('parses tasks with plugin/dependsOn/env/run coercions', () {
@@ -130,5 +134,3 @@ settings:
     });
   });
 }
-
-

@@ -25,5 +25,3 @@ void main() {
     print('Cycle detected: ${e.cycle}');
   }
 }
-
-

@@ -11,5 +11,3 @@ void main() {
     expect(now.isBefore(after) || now.isAtSameMomentAs(after), isTrue);
   });
 }
-
-

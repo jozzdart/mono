@@ -14,7 +14,8 @@ void main() {
     test('adds nodes and edges for local dependencies only', () {
       final a = pkg('a');
       final b = pkg('b');
-      final c = pkg('c', deps: {PackageName('a'), PackageName('x')}); // x ignored
+      final c =
+          pkg('c', deps: {PackageName('a'), PackageName('x')}); // x ignored
       final d = pkg('d', deps: {PackageName('b'), PackageName('c')});
 
       final g = const DefaultGraphBuilder().build([a, b, c, d]);
@@ -25,5 +26,3 @@ void main() {
     });
   });
 }
-
-

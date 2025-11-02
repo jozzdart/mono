@@ -8,10 +8,12 @@ class TestProvider extends CompletionProvider {
   List<CompletionItem> suggest(CompletionContext context) {
     // Simple demo provider: suggest next token candidates based on last partial
     final prefix = context.line.substring(0, context.cursor);
-    final hasTrailingSpace = prefix.isNotEmpty && RegExp(r'\s').hasMatch(prefix[prefix.length - 1]);
+    final hasTrailingSpace =
+        prefix.isNotEmpty && RegExp(r'\s').hasMatch(prefix[prefix.length - 1]);
     final last = hasTrailingSpace
         ? ''
-        : (prefix.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).lastOrNull ?? '');
+        : (prefix.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).lastOrNull ??
+            '');
     final candidates = <String>['run', 'test', 'format', 'list'];
     return candidates
         .where((c) => c.startsWith(last))

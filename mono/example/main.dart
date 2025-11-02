@@ -6,5 +6,3 @@ Future<void> main() async {
   final code = await runCli(['help'], stdout, stderr);
   print('mono exited with code $code');
 }
-
-
