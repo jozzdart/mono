@@ -3,3 +3,18 @@ build:
   plugin: exec
   run:
     - dart run build_runner build --delete-conflicting-outputs
+
+publishdry:
+  plugin: exec
+  run:
+    - dart pub publish --dry-run
+
+publish:
+  plugin: exec
+  run:
+    - dart pub publish
+
+format:
+  plugin: exec
+  run:
+    - dart format .
