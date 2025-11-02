@@ -6,7 +6,14 @@ import 'package:mono/src/cli.dart';
 
 Future<void> main(List<String> argv) async {
   final ver = await resolvePackageVersion('mono');
+  final plugins = PluginRegistry({
+    'pub': PubPlugin(),
+    'exec': ExecPlugin(),
+    'format': FormatPlugin(),
+    'test': TestPlugin(),
+  });
   final wiring = CliWiring(
+    workspaceConfig: const FileWorkspaceConfig(),
     prompter: const ConsolePrompter(),
     parser: const ArgsCliParser(),
     configLoader: const YamlConfigLoader(),
@@ -20,6 +27,9 @@ Future<void> main(List<String> argv) async {
     pathService: const DefaultPathService(),
     platform: const DefaultPlatformInfo(),
     versionInfo: StaticVersionInfo(name: 'mono', version: ver),
+    envBuilder: const DefaultCommandEnvironmentBuilder(),
+    plugins: plugins,
+    taskExecutor: const DefaultTaskExecutor(),
     groupStoreFactory: (String monocfgPath) {
       final groupsPath =
           const DefaultPathService().join([monocfgPath, 'groups']);

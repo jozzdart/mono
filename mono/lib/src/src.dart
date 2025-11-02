@@ -1,7 +1,12 @@
 export 'cli.dart';
+export 'commands/format.dart';
 export 'commands/get.dart';
+export 'commands/group.dart';
 export 'commands/list.dart';
 export 'commands/scan.dart';
 export 'commands/setup.dart';
-export 'config_io.dart';
-export 'models.dart';
+export 'commands/task.dart';
+export 'commands/tasks.dart';
+export 'commands/test.dart';
+export 'commands/ungroup.dart';
+export 'commands/version.dart';

@@ -31,6 +31,10 @@ class CliWiring {
     required this.prompter,
     required this.versionInfo,
     required this.groupStoreFactory,
+    required this.envBuilder,
+    required this.plugins,
+    required this.workspaceConfig,
+    required this.taskExecutor,
   });
 
   final CliParser parser;
@@ -47,6 +51,10 @@ class CliWiring {
   final Prompter prompter;
   final VersionInfo versionInfo;
   final GroupStore Function(String monocfgPath) groupStoreFactory;
+  final CommandEnvironmentBuilder envBuilder;
+  final PluginResolver plugins;
+  final WorkspaceConfig workspaceConfig;
+  final TaskExecutor taskExecutor;
 }
 
 Future<int> runCli(
@@ -65,73 +73,132 @@ Future<int> runCli(
       out.writeln(_helpText);
       return 0;
     }
-    final cmd = inv.commandPath.first;
     final prompter = wiring?.prompter ?? const ConsolePrompter();
     final versionInfo = wiring?.versionInfo ??
         const StaticVersionInfo(name: 'mono', version: 'unknown');
-    if (cmd == 'version' || cmd == '--version' || cmd == '-v' || cmd == '--v') {
+    final workspaceConfig =
+        wiring?.workspaceConfig ?? const FileWorkspaceConfig();
+
+    // Router-based dispatch
+    final router = DefaultCommandRouter();
+    router.register('version', (
+        {required inv, required out, required err}) async {
       return VersionCommand.run(
           inv: inv, out: out, err: err, version: versionInfo);
-    }
-    if (cmd == 'setup') return SetupCommand.run(inv: inv, out: out, err: err);
-    if (cmd == 'scan') return ScanCommand.run(inv: inv, out: out, err: err);
-    if (cmd == 'get') {
+    }, aliases: const ['--version', '-v', '--v']);
+
+    router.register('setup', (
+        {required inv, required out, required err}) async {
+      return SetupCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        workspaceConfig: workspaceConfig,
+      );
+    });
+
+    router.register('scan', ({required inv, required out, required err}) async {
+      return ScanCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        workspaceConfig: workspaceConfig,
+      );
+    });
+
+    router.register('get', ({required inv, required out, required err}) async {
       return GetCommand.run(
         inv: inv,
         out: out,
         err: err,
         groupStoreFactory: wiring!.groupStoreFactory,
+        envBuilder: wiring.envBuilder,
+        plugins: wiring.plugins,
+        executor: wiring.taskExecutor,
       );
-    }
-    if (cmd == 'format') {
+    });
+
+    router.register('format', (
+        {required inv, required out, required err}) async {
       return FormatCommand.run(
         inv: inv,
         out: out,
         err: err,
         groupStoreFactory: wiring!.groupStoreFactory,
+        envBuilder: wiring.envBuilder,
+        plugins: wiring.plugins,
+        executor: wiring.taskExecutor,
       );
-    }
-    if (cmd == 'test') {
+    });
+
+    router.register('test', ({required inv, required out, required err}) async {
       return TestCommand.run(
         inv: inv,
         out: out,
         err: err,
         groupStoreFactory: wiring!.groupStoreFactory,
+        envBuilder: wiring.envBuilder,
+        plugins: wiring.plugins,
+        executor: wiring.taskExecutor,
       );
-    }
-    if (cmd == 'list') {
+    });
+
+    router.register('list', ({required inv, required out, required err}) async {
       return ListCommand.run(
         inv: inv,
         out: out,
         err: err,
+        workspaceConfig: workspaceConfig,
         groupStoreFactory: wiring!.groupStoreFactory,
       );
-    }
-    if (cmd == 'tasks') {
-      return TasksCommand.run(inv: inv, out: out, err: err);
-    }
-    if (cmd == 'group') {
+    });
+
+    router.register('tasks', (
+        {required inv, required out, required err}) async {
+      return TasksCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        workspaceConfig: workspaceConfig,
+      );
+    });
+
+    router.register('group', (
+        {required inv, required out, required err}) async {
       return GroupCommand.run(
-          inv: inv,
-          out: out,
-          err: err,
-          prompter: prompter,
-          groupStoreFactory: wiring!.groupStoreFactory);
-    }
-    if (cmd == 'ungroup') {
+        inv: inv,
+        out: out,
+        err: err,
+        prompter: prompter,
+        workspaceConfig: workspaceConfig,
+        groupStoreFactory: wiring!.groupStoreFactory,
+      );
+    });
+
+    router.register('ungroup', (
+        {required inv, required out, required err}) async {
       return UngroupCommand.run(
-          inv: inv,
-          out: out,
-          err: err,
-          prompter: prompter,
-          groupStoreFactory: wiring!.groupStoreFactory);
-    }
+        inv: inv,
+        out: out,
+        err: err,
+        prompter: prompter,
+        workspaceConfig: workspaceConfig,
+        groupStoreFactory: wiring!.groupStoreFactory,
+      );
+    });
+
+    final dispatched = await router.tryDispatch(inv: inv, out: out, err: err);
+    if (dispatched != null) return dispatched;
     // Attempt to resolve as a task name
     final maybe = await TaskCommand.tryRun(
       inv: inv,
       out: out,
       err: err,
       groupStoreFactory: wiring!.groupStoreFactory,
+      plugins: wiring.plugins,
+      workspaceConfig: workspaceConfig,
+      envBuilder: wiring.envBuilder,
+      executor: wiring.taskExecutor,
     );
     if (maybe != null) return maybe;
 

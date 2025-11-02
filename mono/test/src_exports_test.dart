@@ -1,10 +1,11 @@
 import 'dart:io';
 
-import 'package:mono/src/src.dart';
+import 'package:mono_cli/mono_cli.dart';
 import 'package:test/test.dart';
 
 void main() {
   test('src.dart re-exports key symbols', () async {
+    final workspaceConfig = const FileWorkspaceConfig();
     // Able to construct PackageRecord and call a config IO function
     const rec = PackageRecord(name: 'n', path: 'p', kind: 'dart');
     expect(rec.name, 'n');
@@ -13,7 +14,7 @@ void main() {
     addTearDown(() async => tmp.delete(recursive: true));
 
     final missing = '${tmp.path}/definitely_missing.txt';
-    final contents = await readFileIfExists(missing);
-    expect(contents, '');
+    final contents = await workspaceConfig.readMonocfgProjects(missing);
+    expect(contents, isEmpty);
   });
 }

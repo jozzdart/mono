@@ -8,6 +8,12 @@ import 'package:test/test.dart';
 import '../util/fs_fixtures.dart';
 
 void main() {
+  late WorkspaceConfig workspaceConfig;
+
+  setUp(() async {
+    workspaceConfig = const FileWorkspaceConfig();
+  });
+
   group('ScanCommand', () {
     test('writes empty projects file when no packages', () async {
       final ws = await createTempWorkspace('mono_scan_');
@@ -18,8 +24,11 @@ void main() {
         final outCap = CapturedIo();
         final errCap = CapturedIo();
         final inv = const CliInvocation(commandPath: ['scan']);
-        final code =
-            await ScanCommand.run(inv: inv, out: outCap.sink, err: errCap.sink);
+        final code = await ScanCommand.run(
+            inv: inv,
+            out: outCap.sink,
+            err: errCap.sink,
+            workspaceConfig: workspaceConfig);
         expect(code, 0);
 
         final proj = File(p.join('monocfg', 'mono_projects.yaml'));
@@ -48,8 +57,11 @@ void main() {
         final outCap = CapturedIo();
         final errCap = CapturedIo();
         final inv = const CliInvocation(commandPath: ['scan']);
-        final code =
-            await ScanCommand.run(inv: inv, out: outCap.sink, err: errCap.sink);
+        final code = await ScanCommand.run(
+            inv: inv,
+            out: outCap.sink,
+            err: errCap.sink,
+            workspaceConfig: workspaceConfig);
         expect(code, 0);
 
         final proj = File(p.join('monocfg', 'mono_projects.yaml'));

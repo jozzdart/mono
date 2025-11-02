@@ -8,6 +8,12 @@ import 'package:test/test.dart';
 import '../util/fs_fixtures.dart';
 
 void main() {
+  late WorkspaceConfig workspaceConfig;
+
+  setUp(() async {
+    workspaceConfig = const FileWorkspaceConfig();
+  });
+
   group('SetupCommand', () {
     test('creates mono.yaml and scaffolds monocfg', () async {
       final ws = await createTempWorkspace('mono_setup_');
@@ -19,7 +25,10 @@ void main() {
         final errCap = CapturedIo();
         final inv = const CliInvocation(commandPath: ['setup']);
         final code = await SetupCommand.run(
-            inv: inv, out: outCap.sink, err: errCap.sink);
+            inv: inv,
+            out: outCap.sink,
+            err: errCap.sink,
+            workspaceConfig: workspaceConfig);
         expect(code, 0);
 
         expect(File('mono.yaml').existsSync(), isTrue);
@@ -47,7 +56,10 @@ void main() {
         final errCap = CapturedIo();
         final inv = const CliInvocation(commandPath: ['setup']);
         final code = await SetupCommand.run(
-            inv: inv, out: outCap.sink, err: errCap.sink);
+            inv: inv,
+            out: outCap.sink,
+            err: errCap.sink,
+            workspaceConfig: workspaceConfig);
         expect(code, 0);
         expect(File('mono.yaml').existsSync(), isTrue);
         expect(Directory(p.join('monocfg', 'groups')).existsSync(), isTrue);

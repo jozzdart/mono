@@ -1,3 +1,7 @@
+## 0.0.4
+
+- Refactor: Commands now delegate execution to a centralized TaskExecutor. Behavior unchanged; see `mono_cli` and `mono_core` changelogs for internals.
+
 ## 0.0.3
 
 - New: Built-in commands `format` and `test`.

@@ -9,6 +9,12 @@ import '../util/fakes.dart';
 import '../util/fs_fixtures.dart';
 
 void main() {
+  late WorkspaceConfig workspaceConfig;
+
+  setUp(() async {
+    workspaceConfig = const FileWorkspaceConfig();
+  });
+
   group('GroupCommand', () {
     test('usage error when name missing', () async {
       final ws = await createTempWorkspace('mono_group_');
@@ -23,6 +29,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           prompter: FakePrompter(),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 2);
         expect(errCap.text, contains('Usage: mono group <group_name>'));
@@ -46,6 +53,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           prompter: FakePrompter(),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 2);
         expect(errCap.text, contains('Invalid group name: ":bad"'));
@@ -73,6 +81,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           prompter: FakePrompter(nextConfirm: false),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 1);
         expect(errCap.text, contains('Aborted.'));
@@ -101,6 +110,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           prompter: FakePrompter(checklistIndices: [0, 2]),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 0);
         expect(outCap.text, contains('Group "g1" saved with 2 member(s).'));
@@ -131,6 +141,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           prompter: FakePrompter(checklistIndices: [], nextConfirm: false),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 1);
         expect(errCap.text, contains('Aborted.'));
@@ -156,6 +167,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           prompter: FakePrompter(),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 2);
         expect(errCap.text,

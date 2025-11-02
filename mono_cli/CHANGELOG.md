@@ -1,3 +1,19 @@
+## 0.0.4
+
+- Implemented `DefaultCommandEnvironmentBuilder` that assembles the command environment from disk and invocation options.
+  - Loads `mono.yaml`, extracts `monocfgPath`.
+  - Scans packages, builds dependency graph, loads file-based groups.
+  - Computes effective order and concurrency; provides a `TargetSelector`.
+- Implemented `DefaultCommandRouter` (CLI wiring helper) and exported it via `src/src.dart`.
+- Runner now depends on the core `PluginResolver` abstraction rather than a concrete registry.
+- `PluginRegistry` implements `PluginResolver` (no behavior change).
+- New port: `WorkspaceConfig` for workspace configuration IO (read/write `mono.yaml`, `monocfg/*`).
+  - Added types: `LoadedRootConfig`, `PackageRecord`.
+- New: `DefaultTaskExecutor` implementation of core `TaskExecutor`.
+  - Centralizes env → target → plan → run and dry-run output.
+  - Emits "No packages found. Run `mono scan` first." when workspace is empty.
+  - Uses optional `dryRunLabel` so task dry-run uses user task names.
+
 ## 0.0.3
 
 - Plugins: added `FormatPlugin` (format, format:check) and `TestPlugin` (test).

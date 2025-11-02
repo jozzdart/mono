@@ -8,6 +8,12 @@ import 'package:test/test.dart';
 import '../util/fs_fixtures.dart';
 
 void main() {
+  late WorkspaceConfig workspaceConfig;
+
+  setUp(() async {
+    workspaceConfig = const FileWorkspaceConfig();
+  });
+
   group('ListCommand', () {
     test('packages from cache', () async {
       final ws = await createTempWorkspace('mono_list_');
@@ -31,8 +37,11 @@ void main() {
         final errCap = CapturedIo();
         final inv = const CliInvocation(
             commandPath: ['list'], positionals: ['packages']);
-        final code =
-            await ListCommand.run(inv: inv, out: outCap.sink, err: errCap.sink);
+        final code = await ListCommand.run(
+            inv: inv,
+            out: outCap.sink,
+            err: errCap.sink,
+            workspaceConfig: workspaceConfig);
         expect(code, 0);
         final out = outCap.text;
         expect(out, contains('- a → /tmp/a (dart)'));
@@ -58,8 +67,11 @@ void main() {
         final errCap = CapturedIo();
         final inv = const CliInvocation(
             commandPath: ['list'], positionals: ['packages']);
-        final code =
-            await ListCommand.run(inv: inv, out: outCap.sink, err: errCap.sink);
+        final code = await ListCommand.run(
+            inv: inv,
+            out: outCap.sink,
+            err: errCap.sink,
+            workspaceConfig: workspaceConfig);
         expect(code, 0);
         final out = outCap.text;
         expect(out, contains('a → '));
@@ -85,8 +97,11 @@ void main() {
         final errCap = CapturedIo();
         final inv =
             const CliInvocation(commandPath: ['list'], positionals: ['groups']);
-        final code =
-            await ListCommand.run(inv: inv, out: outCap.sink, err: errCap.sink);
+        final code = await ListCommand.run(
+            inv: inv,
+            out: outCap.sink,
+            err: errCap.sink,
+            workspaceConfig: workspaceConfig);
         expect(code, 0);
         final out = outCap.text;
         expect(out, contains('- dev → a, b'));
@@ -115,8 +130,11 @@ void main() {
         final errCap = CapturedIo();
         final inv =
             const CliInvocation(commandPath: ['list'], positionals: ['tasks']);
-        final code =
-            await ListCommand.run(inv: inv, out: outCap.sink, err: errCap.sink);
+        final code = await ListCommand.run(
+            inv: inv,
+            out: outCap.sink,
+            err: errCap.sink,
+            workspaceConfig: workspaceConfig);
         expect(code, 0);
         final out = outCap.text;
         expect(out, contains('- fmt (plugin: format)'));

@@ -2,19 +2,19 @@ import 'dart:io';
 
 import 'package:mono_cli/mono_cli.dart';
 
-import '../config_io.dart';
-
 class ListCommand {
   static Future<int> run(
       {required CliInvocation inv,
       required IOSink out,
       required IOSink err,
+      required WorkspaceConfig workspaceConfig,
       GroupStore Function(String monocfgPath)? groupStoreFactory}) async {
     final what =
         inv.positionals.isNotEmpty ? inv.positionals.first : 'packages';
-    final loaded = await loadRootConfig();
+    final loaded = await workspaceConfig.loadRootConfig();
     if (what == 'packages') {
-      final projects = await readMonocfgProjects(loaded.monocfgPath);
+      final projects =
+          await workspaceConfig.readMonocfgProjects(loaded.monocfgPath);
       if (projects.isEmpty) {
         // Fallback to a quick scan if no cache yet
         final scanner = const FileSystemPackageScanner();
@@ -62,7 +62,7 @@ class ListCommand {
           if (e.value.run.isNotEmpty) 'run': e.value.run,
         };
       }
-      final extra = await readMonocfgTasks(loaded.monocfgPath);
+      final extra = await workspaceConfig.readMonocfgTasks(loaded.monocfgPath);
       merged.addAll(extra);
       for (final e in merged.entries) {
         final plugin = (e.value['plugin'] ?? 'exec').toString();

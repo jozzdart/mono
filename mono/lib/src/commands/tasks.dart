@@ -2,15 +2,14 @@ import 'dart:io';
 
 import 'package:mono_cli/mono_cli.dart';
 
-import '../config_io.dart';
-
 class TasksCommand {
   static Future<int> run({
     required CliInvocation inv,
     required IOSink out,
     required IOSink err,
+    required WorkspaceConfig workspaceConfig,
   }) async {
-    final loaded = await loadRootConfig();
+    final loaded = await workspaceConfig.loadRootConfig();
     final merged = <String, Map<String, Object?>>{};
     for (final e in loaded.config.tasks.entries) {
       merged[e.key] = {
@@ -20,7 +19,7 @@ class TasksCommand {
         if (e.value.run.isNotEmpty) 'run': e.value.run,
       };
     }
-    final extra = await readMonocfgTasks(loaded.monocfgPath);
+    final extra = await workspaceConfig.readMonocfgTasks(loaded.monocfgPath);
     merged.addAll(extra);
     for (final e in merged.entries) {
       final plugin = (e.value['plugin'] ?? 'exec').toString();

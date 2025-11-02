@@ -1,3 +1,14 @@
+## 0.0.4
+
+- Added `CommandEnvironment` abstraction and `CommandEnvironmentBuilder` interface to `ports/`.
+- Added `CommandRouter` interface and `CommandHandler` typedef.
+- Added `PluginResolver` abstraction for resolving `TaskPlugin` by `PluginId`.
+- New port: `WorkspaceConfig` for workspace configuration IO (read/write `mono.yaml`, `monocfg/*`).
+  - Added types: `LoadedRootConfig`, `PackageRecord`.
+- New port: `TaskExecutor` to centralize env → target → plan → run flow.
+  - Added optional `dryRunLabel` parameter to match user-facing task names in dry-run output.
+- No behavior change; enables cleaner layering and reuse across CLI implementations.
+
 ## 0.0.3
 
 - Added comprehensive test coverage for all core functionality.

@@ -2,14 +2,13 @@ import 'dart:io';
 
 import 'package:mono_cli/mono_cli.dart';
 
-import '../config_io.dart';
-
 class GroupCommand {
   static Future<int> run({
     required CliInvocation inv,
     required IOSink out,
     required IOSink err,
     required Prompter prompter,
+    required WorkspaceConfig workspaceConfig,
     GroupStore Function(String monocfgPath)? groupStoreFactory,
   }) async {
     if (inv.positionals.isEmpty) {
@@ -22,7 +21,7 @@ class GroupCommand {
       return 2;
     }
 
-    final loaded = await loadRootConfig();
+    final loaded = await workspaceConfig.loadRootConfig();
     final store = (groupStoreFactory ??
         (String monocfgPath) {
           final groupsPath =
@@ -35,7 +34,8 @@ class GroupCommand {
         })(loaded.monocfgPath);
 
     // Load packages from cache or fallback scanner
-    final projects = await readMonocfgProjects(loaded.monocfgPath);
+    final projects =
+        await workspaceConfig.readMonocfgProjects(loaded.monocfgPath);
     List<String> packageNames;
     if (projects.isEmpty) {
       final scanner = const FileSystemPackageScanner();
