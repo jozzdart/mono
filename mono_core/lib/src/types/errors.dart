@@ -22,4 +22,3 @@ class GraphCycleError extends MonoError {
   final String message;
   final List<String>? cycle;
 }
-

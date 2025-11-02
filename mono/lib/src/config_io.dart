@@ -63,6 +63,10 @@ Future<void> ensureMonocfgScaffold(String monocfgPath) async {
   if (!await dir.exists()) {
     await dir.create(recursive: true);
   }
+  final groupsDir = Directory('$monocfgPath/groups');
+  if (!await groupsDir.exists()) {
+    await groupsDir.create(recursive: true);
+  }
   final projects = File('$monocfgPath/mono_projects.yaml');
   if (!await projects.exists()) {
     await projects.writeAsString('packages: []\n');
@@ -126,4 +130,83 @@ Future<Map<String, Map<String, Object?>>> readMonocfgTasks(
     }
   }
   return out;
+}
+
+Future<void> writeRootConfigGroups(
+    String path, Map<String, List<String>> groups) async {
+  final loaded = await loadRootConfig(path: path);
+  final cfg = loaded.config;
+
+  String quote(String v) {
+    if (v.contains('#') ||
+        v.contains(':') ||
+        v.contains('*') ||
+        v.contains(' ')) {
+      return '"${v.replaceAll('"', '\\"')}"';
+    }
+    return v;
+  }
+
+  final sb = StringBuffer();
+  sb.writeln('# mono configuration');
+  sb.writeln('settings:');
+  sb.writeln('  monocfgPath: ${loaded.monocfgPath}');
+  sb.writeln('  concurrency: ${cfg.settings.concurrency}');
+  sb.writeln('  defaultOrder: ${cfg.settings.defaultOrder}');
+  sb.writeln('include:');
+  for (final g in cfg.include) {
+    sb.writeln('  - ${quote(g)}');
+  }
+  sb.writeln('exclude:');
+  for (final g in cfg.exclude) {
+    sb.writeln('  - ${quote(g)}');
+  }
+  if (cfg.packages.isNotEmpty) {
+    sb.writeln('packages:');
+    for (final e in cfg.packages.entries) {
+      sb.writeln('  ${e.key}: ${quote(e.value)}');
+    }
+  }
+  sb.writeln('groups:');
+  if (groups.isEmpty) {
+    sb.writeln('  {}');
+  } else {
+    for (final e in groups.entries) {
+      sb.writeln('  ${e.key}:');
+      for (final item in e.value) {
+        sb.writeln('    - ${quote(item)}');
+      }
+    }
+  }
+  sb.writeln('tasks:');
+  if (cfg.tasks.isEmpty) {
+    sb.writeln('  {}');
+  } else {
+    for (final e in cfg.tasks.entries) {
+      sb.writeln('  ${e.key}:');
+      final def = e.value;
+      if (def.plugin != null) sb.writeln('    plugin: ${def.plugin}');
+      if (def.dependsOn.isNotEmpty) {
+        sb.writeln('    dependsOn:');
+        for (final d in def.dependsOn) {
+          sb.writeln('      - ${quote(d)}');
+        }
+      }
+      if (def.env.isNotEmpty) {
+        sb.writeln('    env:');
+        for (final ev in def.env.entries) {
+          sb.writeln('      ${ev.key}: ${quote(ev.value)}');
+        }
+      }
+      if (def.run.isNotEmpty) {
+        sb.writeln('    run:');
+        for (final r in def.run) {
+          sb.writeln('      - ${quote(r)}');
+        }
+      }
+    }
+  }
+
+  final f = File(path);
+  await f.writeAsString(sb.toString());
 }

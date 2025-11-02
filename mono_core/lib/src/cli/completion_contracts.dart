@@ -19,4 +19,3 @@ abstract class CompletionProvider {
   const CompletionProvider();
   List<CompletionItem> suggest(CompletionContext context);
 }
-

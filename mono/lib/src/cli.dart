@@ -6,6 +6,11 @@ import 'commands/setup.dart';
 import 'commands/scan.dart';
 import 'commands/get.dart';
 import 'commands/list.dart';
+import 'commands/group.dart';
+import 'commands/ungroup.dart';
+import 'commands/version.dart';
+import 'commands/tasks.dart';
+import 'commands/task.dart';
 
 @immutable
 class CliWiring {
@@ -21,6 +26,9 @@ class CliWiring {
     required this.logger,
     required this.pathService,
     required this.platform,
+    required this.prompter,
+    required this.versionInfo,
+    required this.groupStoreFactory,
   });
 
   final CliParser parser;
@@ -34,6 +42,9 @@ class CliWiring {
   final Logger logger;
   final PathService pathService;
   final PlatformInfo platform;
+  final Prompter prompter;
+  final VersionInfo versionInfo;
+  final GroupStore Function(String monocfgPath) groupStoreFactory;
 }
 
 Future<int> runCli(
@@ -53,10 +64,59 @@ Future<int> runCli(
       return 0;
     }
     final cmd = inv.commandPath.first;
+    final prompter = wiring?.prompter ?? const ConsolePrompter();
+    final versionInfo = wiring?.versionInfo ??
+        const StaticVersionInfo(name: 'mono', version: 'unknown');
+    if (cmd == 'version' || cmd == '--version' || cmd == '-v' || cmd == '--v') {
+      return VersionCommand.run(
+          inv: inv, out: out, err: err, version: versionInfo);
+    }
     if (cmd == 'setup') return SetupCommand.run(inv: inv, out: out, err: err);
     if (cmd == 'scan') return ScanCommand.run(inv: inv, out: out, err: err);
-    if (cmd == 'get') return GetCommand.run(inv: inv, out: out, err: err);
-    if (cmd == 'list') return ListCommand.run(inv: inv, out: out, err: err);
+    if (cmd == 'get') {
+      return GetCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        groupStoreFactory: wiring!.groupStoreFactory,
+      );
+    }
+    if (cmd == 'list') {
+      return ListCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        groupStoreFactory: wiring!.groupStoreFactory,
+      );
+    }
+    if (cmd == 'tasks') {
+      return TasksCommand.run(inv: inv, out: out, err: err);
+    }
+    if (cmd == 'group') {
+      return GroupCommand.run(
+          inv: inv,
+          out: out,
+          err: err,
+          prompter: prompter,
+          groupStoreFactory: wiring!.groupStoreFactory);
+    }
+    if (cmd == 'ungroup') {
+      return UngroupCommand.run(
+          inv: inv,
+          out: out,
+          err: err,
+          prompter: prompter,
+          groupStoreFactory: wiring!.groupStoreFactory);
+    }
+    // Attempt to resolve as a task name
+    final maybe = await TaskCommand.tryRun(
+      inv: inv,
+      out: out,
+      err: err,
+      groupStoreFactory: wiring!.groupStoreFactory,
+    );
+    if (maybe != null) return maybe;
+
     err.writeln('Unknown command: ${inv.commandPath.join(' ')}');
     err.writeln('Use `mono help`');
     return 1;
@@ -72,5 +132,13 @@ const String _helpText = 'mono - Manage Dart/Flutter monorepos\n\n'
     '  mono setup\n'
     '  mono scan\n'
     '  mono get [targets]\n'
+    '  mono [taskname] [targets]\n'
     '  mono list packages|groups|tasks\n'
-    '  mono help\n';
+    '  mono tasks\n'
+    '  mono group <group_name>\n'
+    '  mono ungroup <group_name>\n'
+    '  mono version | -v | --version\n'
+    '  mono help\n\n'
+    'Notes:\n'
+    '- Built-in commands like get run on all packages when no targets are given.\n'
+    '- External tasks require explicit targets; use "all" to run on all packages.';

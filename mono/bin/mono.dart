@@ -5,7 +5,9 @@ import 'package:mono_cli/mono_cli.dart';
 import 'package:mono/src/cli.dart';
 
 Future<void> main(List<String> argv) async {
+  final ver = await resolvePackageVersion('mono');
   final wiring = CliWiring(
+    prompter: const ConsolePrompter(),
     parser: const ArgsCliParser(),
     configLoader: const YamlConfigLoader(),
     configValidator: const YamlConfigValidator(),
@@ -17,6 +19,16 @@ Future<void> main(List<String> argv) async {
     logger: const StdLogger(),
     pathService: const DefaultPathService(),
     platform: const DefaultPlatformInfo(),
+    versionInfo: StaticVersionInfo(name: 'mono', version: ver),
+    groupStoreFactory: (String monocfgPath) {
+      final groupsPath =
+          const DefaultPathService().join([monocfgPath, 'groups']);
+      final folder = FileListConfigFolder(
+        basePath: groupsPath,
+        namePolicy: const DefaultSlugNamePolicy(),
+      );
+      return FileGroupStore(folder);
+    },
   );
   final exitCodeValue = await runCli(argv, stdout, stderr, wiring: wiring);
   // ignore: avoid_print

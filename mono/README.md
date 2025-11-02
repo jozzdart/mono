@@ -41,7 +41,7 @@ mono get all
 - scan
   - Scans workspace for `pubspec.yaml` and writes `monocfg/mono_projects.yaml`
 - list packages|groups|tasks
-  - Reads from `mono.yaml` and `monocfg/*`
+  - Packages from scan cache; groups from `monocfg/groups/*.list`; tasks from `mono.yaml` + `monocfg/tasks.yaml`
 - get [targets]
   - Runs `flutter pub get` for Flutter packages, `dart pub get` for Dart packages
   - Targets: `all`, `:group`, `glob*`, `packageName`
@@ -56,6 +56,7 @@ mono get all
 mono get :apps
 mono get core_*
 mono get app,ui,core
+mono build :apps
 ```
 
 - Uses dependency order by default; disable with `--order none`
@@ -120,16 +121,13 @@ Notes:
 
 ## Project groups
 
-Define named groups in `mono.yaml` to target multiple packages at once. Members can be package names, globs, or other groups (prefixed with `:`):
+Define named groups under `monocfg/groups/` with one package name per line.
 
-```yaml
-groups:
-  apps:
-    - app
-    - ui_*
-  mobile:
-    - :apps # include everything from the apps group
-    - flutter_* # and any packages matching this glob
+Example file `monocfg/groups/apps.list`:
+
+```text
+app
+ui
 ```
 
 Usage examples:
@@ -142,12 +140,12 @@ mono get :mobile --order none
 
 Notes:
 
-- Group expansion supports nesting (e.g. `:mobile` includes `:apps`).
-- Globs match against package names (not paths).
+- Group files are simple lists; blank lines and `#` comments are ignored.
+- Group names are derived from filenames: `<name>.list` using lowercase slugs `[a-z0-9][a-z0-9-_]*`.
 
 ## Custom tasks (custom commands)
 
-You can define reusable tasks under `tasks` in `mono.yaml` or `monocfg/tasks.yaml`. These are merged, with `monocfg/tasks.yaml` taking precedence. The built-in `exec` plugin lets you run shell commands in each target package.
+You can define reusable tasks under `tasks` in `mono.yaml` or `monocfg/tasks.yaml`. These are merged, with `monocfg/tasks.yaml` taking precedence. The built-in `exec` plugin lets you run shell commands in each target package. Tasks are runnable as top-level commands: `mono <task> [targets]`.
 
 Example (`monocfg/tasks.yaml`):
 
@@ -176,6 +174,6 @@ mono list tasks
 
 Notes:
 
-- `plugin: exec` runs each `run` entry as a command in the package directory.
+- `plugin: exec` runs the first `run` entry as a command in the package directory (additional entries can be added later).
 - You can set environment variables with `env:` and express dependencies between tasks with `dependsOn:` in `mono.yaml`.
 - Tasks in `monocfg/tasks.yaml` override/extend those in `mono.yaml`.

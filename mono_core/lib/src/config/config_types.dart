@@ -53,11 +53,11 @@ class Settings {
 
 @immutable
 class ConfigIssue {
-  const ConfigIssue(this.message, {this.severity = IssueSeverity.error, this.path});
+  const ConfigIssue(this.message,
+      {this.severity = IssueSeverity.error, this.path});
   final String message;
   final IssueSeverity severity;
   final String? path; // JSON pointer-like path
 }
 
 enum IssueSeverity { info, warning, error }
-

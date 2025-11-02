@@ -17,7 +17,8 @@ class GetCommand {
   static Future<int> run(
       {required CliInvocation inv,
       required IOSink out,
-      required IOSink err}) async {
+      required IOSink err,
+      GroupStore Function(String monocfgPath)? groupStoreFactory}) async {
     final loaded = await loadRootConfig();
     final root = Directory.current.path;
 
@@ -37,9 +38,23 @@ class GetCommand {
     // Build graph and resolve targets
     final graph = const DefaultGraphBuilder().build(packages);
 
-    final groups = <String, Set<String>>{
-      for (final e in loaded.config.groups.entries) e.key: e.value.toSet(),
-    };
+    // Build groups from file-based store
+    final store = (groupStoreFactory ??
+        (String monocfgPath) {
+          final groupsPath =
+              const DefaultPathService().join([monocfgPath, 'groups']);
+          final folder = FileListConfigFolder(
+            basePath: groupsPath,
+            namePolicy: const DefaultSlugNamePolicy(),
+          );
+          return FileGroupStore(folder);
+        })(loaded.monocfgPath);
+    final groups = <String, Set<String>>{};
+    final groupNames = await store.listGroups();
+    for (final name in groupNames) {
+      final members = await store.readGroup(name);
+      groups[name] = members.toSet();
+    }
 
     final selector = const DefaultTargetSelector();
 
