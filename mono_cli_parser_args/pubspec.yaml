@@ -1,0 +1,18 @@
+name: mono_cli_parser_args
+description: Args-based CLI tokenizer and parser for mono CLI.
+resolution: workspace
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  args:
+  meta:
+  mono_cli_shared_contracts:
+  mono_selector_contracts:
+
+dev_dependencies:
+  lints:
+  test:

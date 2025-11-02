@@ -1,0 +1,18 @@
+name: mono_plugin_pub
+description: Built-in plugin for Dart/Flutter pub commands (get, clean).
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  meta:
+  mono_core_types:
+  mono_ports:
+  mono_runner:
+
+dev_dependencies:
+  lints:
+  test:

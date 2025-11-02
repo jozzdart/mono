@@ -1,0 +1,19 @@
+name: mono_ports
+description: "Ports/interfaces for Mono: scanners, selectors, planners, and system facades"
+resolution: workspace
+version: 0.0.1
+homepage:
+publish_to: "none"
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  meta:
+  mono_core_types:
+  mono_graph_contracts:
+  mono_selector_contracts:
+
+dev_dependencies:
+  test:
+  lints:

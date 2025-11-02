@@ -1,0 +1,17 @@
+name: mono_system_io
+description: IO adapters for mono ports (Clock, Logger, PathService, PlatformInfo, ProcessRunner).
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  path:
+  meta:
+  mono_ports:
+
+dev_dependencies:
+  lints:
+  test:

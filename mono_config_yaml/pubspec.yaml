@@ -1,0 +1,17 @@
+name: mono_config_yaml
+description: YAML-backed config loader/validator for mono CLI.
+version: 0.1.0
+resolution: workspace
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  meta:
+  yaml:
+  mono_config_contracts:
+
+dev_dependencies:
+  lints:
+  test:

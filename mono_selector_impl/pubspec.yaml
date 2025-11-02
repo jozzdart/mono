@@ -1,0 +1,19 @@
+name: mono_selector_impl
+description: TargetSelector implementation for mono CLI.
+version: 0.1.0
+resolution: workspace
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  meta:
+  mono_ports:
+  mono_core_types:
+  mono_selector_contracts:
+  mono_graph_contracts:
+
+dev_dependencies:
+  lints:
+  test:
