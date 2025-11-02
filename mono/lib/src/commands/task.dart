@@ -12,6 +12,7 @@ class TaskCommand {
     required IOSink out,
     required IOSink err,
     required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required PluginResolver plugins,
   }) async {
     final taskName = inv.commandPath.first;
     // Load config and merged tasks
@@ -104,12 +105,7 @@ class TaskCommand {
     final task = TaskSpec(id: commandId, plugin: pluginId);
     final plan = planner.plan(task: task, targets: targets);
 
-    final plugins = PluginRegistry({
-      'pub': PubPlugin(),
-      'exec': ExecPlugin(),
-      'format': FormatPlugin(),
-      'test': TestPlugin(),
-    });
+    final pluginsRegistry = plugins;
 
     final runner = Runner(
       processRunner: const DefaultProcessRunner(),
@@ -126,7 +122,7 @@ class TaskCommand {
       return 0;
     }
 
-    return runner.execute(plan as SimpleExecutionPlan, plugins);
+    return runner.execute(plan as SimpleExecutionPlan, pluginsRegistry);
   }
 
   static String _effectiveOrder(CliInvocation inv, MonoConfig cfg) {

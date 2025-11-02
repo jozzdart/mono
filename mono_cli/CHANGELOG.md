@@ -5,6 +5,8 @@
   - Scans packages, builds dependency graph, loads file-based groups.
   - Computes effective order and concurrency; provides a `TargetSelector`.
 - Implemented `DefaultCommandRouter` (CLI wiring helper) and exported it via `src/src.dart`.
+- Runner now depends on the core `PluginResolver` abstraction rather than a concrete registry.
+- `PluginRegistry` implements `PluginResolver` (no behavior change).
 
 ## 0.0.3
 

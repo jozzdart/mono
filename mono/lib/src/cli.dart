@@ -32,6 +32,7 @@ class CliWiring {
     required this.versionInfo,
     required this.groupStoreFactory,
     required this.envBuilder,
+    required this.plugins,
   });
 
   final CliParser parser;
@@ -49,6 +50,7 @@ class CliWiring {
   final VersionInfo versionInfo;
   final GroupStore Function(String monocfgPath) groupStoreFactory;
   final CommandEnvironmentBuilder envBuilder;
+  final PluginResolver plugins;
 }
 
 Future<int> runCli(
@@ -95,6 +97,7 @@ Future<int> runCli(
         err: err,
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
+        plugins: wiring.plugins,
       );
     });
 
@@ -106,6 +109,7 @@ Future<int> runCli(
         err: err,
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
+        plugins: wiring.plugins,
       );
     });
 
@@ -116,6 +120,7 @@ Future<int> runCli(
         err: err,
         groupStoreFactory: wiring!.groupStoreFactory,
         envBuilder: wiring.envBuilder,
+        plugins: wiring.plugins,
       );
     });
 
@@ -163,6 +168,7 @@ Future<int> runCli(
       out: out,
       err: err,
       groupStoreFactory: wiring!.groupStoreFactory,
+      plugins: wiring.plugins,
     );
     if (maybe != null) return maybe;
 

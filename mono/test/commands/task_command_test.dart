@@ -32,6 +32,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
+          plugins: PluginRegistry({}),
         );
         expect(code, isNull);
       } finally {
@@ -59,6 +60,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
+          plugins: PluginRegistry({}),
         );
         expect(code, 2);
         expect(
@@ -94,6 +96,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
+          plugins: PluginRegistry({}),
         );
         expect(code, 0);
         expect(outCap.text,
@@ -127,6 +130,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
+          plugins: PluginRegistry({}),
         );
         expect(codeGet, 0);
         expect(outCap.text, contains('Would run get for 1 packages'));
@@ -144,6 +148,7 @@ void main() {
           out: outCap2.sink,
           err: errCap2.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
+          plugins: PluginRegistry({}),
         );
         expect(codeClean, 0);
         expect(outCap2.text, contains('Would run clean for 1 packages'));
@@ -174,6 +179,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
+          plugins: PluginRegistry({}),
         );
         expect(code, 1);
         expect(errCap.text, contains('Unsupported pub task: upgrade'));
@@ -205,6 +211,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
+          plugins: PluginRegistry({}),
         );
         expect(code, 0);
         expect(outCap.text, contains('Would run fmt for 1 packages'));
@@ -235,6 +242,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
+          plugins: PluginRegistry({}),
         );
         expect(code, 1);
       } finally {
@@ -265,6 +273,7 @@ void main() {
           out: outCap.sink,
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
+          plugins: PluginRegistry({}),
         );
         expect(code, 1);
       } finally {

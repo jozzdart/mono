@@ -34,6 +34,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: groupStoreFactory,
           envBuilder: envBuilder,
+          plugins: PluginRegistry({}),
         );
         expect(code, 1);
         expect(
@@ -75,6 +76,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: groupStoreFactory,
           envBuilder: envBuilder,
+          plugins: PluginRegistry({}),
         );
         expect(code, 0);
         expect(outCap.text,
@@ -118,6 +120,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: groupStoreFactory,
           envBuilder: envBuilder,
+          plugins: PluginRegistry({}),
         );
         expect(code, 0);
         expect(
@@ -163,6 +166,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: groupStoreFactory,
           envBuilder: envBuilder,
+          plugins: PluginRegistry({}),
         );
         expect(code, 0);
         expect(outCap.text, contains('in input order.'));

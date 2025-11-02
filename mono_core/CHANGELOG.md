@@ -1,8 +1,8 @@
 ## 0.0.4
 
 - Added `CommandEnvironment` abstraction and `CommandEnvironmentBuilder` interface to `ports/`.
-- Added `cli/command_router.dart` with `CommandRouter` interface and `CommandHandler` typedef.
-- Exported new interfaces from `src/src.dart` for consumers.
+- Added `CommandRouter` interface and `CommandHandler` typedef.
+- Added `PluginResolver` abstraction for resolving `TaskPlugin` by `PluginId`.
 - No behavior change; enables cleaner layering and reuse across CLI implementations.
 
 ## 0.0.3

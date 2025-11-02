@@ -1,18 +1,38 @@
-import 'package:test/test.dart';
 import 'package:mono_cli/mono_cli.dart';
+import 'package:test/test.dart';
 
-import '../util/test_doubles.dart';
+class _FakePlugin extends TaskPlugin {
+  _FakePlugin(String id) : super(PluginId(id));
+  @override
+  bool supports(CommandId id) => true;
+  @override
+  Future<int> execute({
+    required CommandId commandId,
+    required MonoPackage package,
+    required ProcessRunner processRunner,
+    required Logger logger,
+    Map<String, String> env = const {},
+  }) async =>
+      0;
+}
 
 void main() {
   group('PluginRegistry', () {
-    test('resolves plugin by id value and returns null for null id', () {
-      final p1 = TestTaskPlugin('x');
-      final p2 = TestTaskPlugin('y');
-      final reg = PluginRegistry({'x': p1, 'y': p2});
-      expect(reg.resolve(const PluginId('x')), same(p1));
-      expect(reg.resolve(const PluginId('y')), same(p2));
-      expect(reg.resolve(const PluginId('z')), isNull);
-      expect(reg.resolve(null), isNull);
+    final pub = _FakePlugin('pub');
+    final testPlugin = _FakePlugin('test');
+    final registry = PluginRegistry({'pub': pub, 'test': testPlugin});
+
+    test('returns null for null id', () {
+      expect(registry.resolve(null), isNull);
+    });
+
+    test('resolves known plugin', () {
+      expect(registry.resolve(const PluginId('pub')), same(pub));
+      expect(registry.resolve(const PluginId('test')), same(testPlugin));
+    });
+
+    test('returns null for unknown plugin', () {
+      expect(registry.resolve(const PluginId('format')), isNull);
     });
   });
 }

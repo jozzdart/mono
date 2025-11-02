@@ -10,6 +10,7 @@ class FormatCommand {
     required IOSink err,
     required GroupStore Function(String monocfgPath) groupStoreFactory,
     required CommandEnvironmentBuilder envBuilder,
+    required PluginResolver plugins,
   }) async {
     final env =
         await envBuilder.build(inv, groupStoreFactory: groupStoreFactory);
@@ -40,12 +41,6 @@ class FormatCommand {
     final plan = planner.plan(task: task, targets: targets);
 
     // Plugins and runner
-    final plugins = PluginRegistry({
-      'pub': PubPlugin(),
-      'exec': ExecPlugin(),
-      'format': FormatPlugin(),
-      'test': TestPlugin(),
-    });
 
     final runner = Runner(
       processRunner: const DefaultProcessRunner(),

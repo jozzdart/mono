@@ -8,7 +8,8 @@ class GetCommand {
       required IOSink out,
       required IOSink err,
       required GroupStore Function(String monocfgPath) groupStoreFactory,
-      required CommandEnvironmentBuilder envBuilder}) async {
+      required CommandEnvironmentBuilder envBuilder,
+      required PluginResolver plugins}) async {
     final env =
         await envBuilder.build(inv, groupStoreFactory: groupStoreFactory);
     if (env.packages.isEmpty) {
@@ -33,11 +34,6 @@ class GetCommand {
     final task =
         TaskSpec(id: const CommandId('get'), plugin: const PluginId('pub'));
     final plan = planner.plan(task: task, targets: targets);
-
-    final plugins = PluginRegistry({
-      'pub': PubPlugin(),
-      'exec': ExecPlugin(),
-    });
 
     final runner = Runner(
       processRunner: const DefaultProcessRunner(),

@@ -18,7 +18,7 @@ class Runner {
   final Logger logger;
   final RunnerOptions options;
 
-  Future<int> execute(SimpleExecutionPlan plan, PluginRegistry plugins) async {
+  Future<int> execute(SimpleExecutionPlan plan, PluginResolver plugins) async {
     final pool = Pool(options.concurrency <= 0 ? 1 : options.concurrency);
     final results = <Future<int>>[];
     for (final step in plan.steps) {

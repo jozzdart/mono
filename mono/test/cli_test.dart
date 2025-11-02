@@ -41,6 +41,7 @@ CliWiring _makeWiring() {
       FileListConfigFolder(basePath: '$monocfgPath/groups'),
     ),
     envBuilder: const DefaultCommandEnvironmentBuilder(),
+    plugins: PluginRegistry({}),
   );
 }
 
