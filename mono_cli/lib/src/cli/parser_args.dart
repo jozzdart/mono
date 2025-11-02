@@ -43,6 +43,7 @@ class ArgsCliParser implements CliParser {
       } else {
         list.add('$v');
       }
+      if (list.isEmpty) return;
       options[k] = list;
     }
 
