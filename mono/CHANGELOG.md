@@ -1,3 +1,9 @@
+## 0.0.3
+
+- New: Built-in commands `format` and `test`.
+  - `mono format [targets] [--check]` uses `dart format` (write by default; `--check` verifies formatting).
+  - `mono test [targets]` runs `flutter test` for Flutter packages and `dart test` for Dart packages.
+
 ## 0.0.2
 
 - New: File-based groups under `monocfg/groups/*.list` (one package per line).

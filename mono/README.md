@@ -46,6 +46,12 @@ mono get all
   - Runs `flutter pub get` for Flutter packages, `dart pub get` for Dart packages
   - Targets: `all`, `:group`, `glob*`, `packageName`
   - Options: `-j, --concurrency <n>`, `--order dependency|none`, `--dry-run`
+    -. format [targets] [--check]
+  - Runs `dart format .` (write by default); with `--check` runs `dart format --output=none --set-exit-if-changed .`
+  - Targets and options behave like `get` (order, concurrency, dry-run)
+    -. test [targets]
+  - Runs `flutter test` for Flutter packages, `dart test` for Dart packages
+  - Targets and options behave like `get` (order, concurrency, dry-run)
 
 ## Target selection
 

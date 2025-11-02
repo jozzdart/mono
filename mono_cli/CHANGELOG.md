@@ -1,3 +1,7 @@
+## 0.0.3
+
+- Plugins: added `FormatPlugin` (format, format:check) and `TestPlugin` (test).
+
 ## 0.0.2
 
 - Add filesystem-backed configuration utilities:

@@ -90,6 +90,11 @@ class TaskCommand {
         err.writeln('Unsupported pub task: $name');
         return 1;
       }
+    } else if (pluginId.value == 'format') {
+      final check = inv.options['check']?.isNotEmpty == true;
+      commandId = CommandId(check ? 'format:check' : 'format');
+    } else if (pluginId.value == 'test') {
+      commandId = const CommandId('test');
     } else {
       err.writeln('Unknown plugin for task "$taskName": ${pluginId.value}');
       return 1;
@@ -102,6 +107,8 @@ class TaskCommand {
     final plugins = PluginRegistry({
       'pub': PubPlugin(),
       'exec': ExecPlugin(),
+      'format': FormatPlugin(),
+      'test': TestPlugin(),
     });
 
     final runner = Runner(
