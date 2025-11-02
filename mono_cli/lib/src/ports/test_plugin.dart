@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:mono_cli/mono_cli.dart';
+import 'package:path/path.dart' as p;
 
 @immutable
 class TestPlugin extends TaskPlugin {
@@ -20,9 +22,12 @@ class TestPlugin extends TaskPlugin {
     final isFlutter = package.kind == PackageKind.flutter;
     final exe = isFlutter ? 'flutter' : 'dart';
     final args = <String>['test'];
+    final absCwd = p.isAbsolute(package.path)
+        ? package.path
+        : p.normalize(p.join(Directory.current.path, package.path));
     return processRunner.run(
       [exe, ...args],
-      cwd: package.path,
+      cwd: absCwd,
       env: env,
       onStdout: (l) => logger.log(l, scope: package.name.value),
       onStderr: (l) => logger.log(l, scope: package.name.value, level: 'error'),
