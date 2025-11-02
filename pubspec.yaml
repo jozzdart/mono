@@ -6,6 +6,7 @@ environment:
   sdk: ">=3.5.0 <4.0.0"
 
 workspace:
+  - mono
   - mono_core
   - mono_core_types
   - mono_graph_contracts
@@ -13,7 +14,6 @@ workspace:
   - mono_ports
   - mono_config_contracts
   - mono_cli_shared_contracts
-  - mono_cli
   - mono_cli_parser_args
   - mono_config_yaml
   - mono_scanner_fs
@@ -23,7 +23,6 @@ workspace:
   - mono_system_io
   - mono_plugin_pub
   - mono_plugin_exec
-  - mono
 
 dependencies:
   args: ^2.5.0

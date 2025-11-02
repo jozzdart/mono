@@ -4,3 +4,6 @@ linter:
   rules:
     prefer_single_quotes: true
     always_declare_return_types: true
+    always_require_non_null_named_parameters: true
+
+

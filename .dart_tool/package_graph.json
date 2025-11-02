@@ -1,7 +1,6 @@
 {
   "roots": [
     "mono",
-    "mono_cli",
     "mono_cli_parser_args",
     "mono_cli_shared_contracts",
     "mono_config_contracts",
@@ -30,6 +29,32 @@
         "glob",
         "meta",
         "path",
+        "yaml"
+      ],
+      "devDependencies": [
+        "lints",
+        "test"
+      ]
+    },
+    {
+      "name": "mono",
+      "version": "0.1.0",
+      "dependencies": [
+        "meta",
+        "mono_cli_parser_args",
+        "mono_cli_shared_contracts",
+        "mono_config_contracts",
+        "mono_config_yaml",
+        "mono_core",
+        "mono_core_types",
+        "mono_graph_builder_impl",
+        "mono_plugin_exec",
+        "mono_plugin_pub",
+        "mono_ports",
+        "mono_runner",
+        "mono_scanner_fs",
+        "mono_selector_impl",
+        "mono_system_io",
         "yaml"
       ],
       "devDependencies": [
@@ -121,32 +146,6 @@
         "meta",
         "mono_core_types",
         "mono_selector_contracts"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_cli",
-      "version": "0.1.0",
-      "dependencies": [
-        "meta",
-        "mono_cli_parser_args",
-        "mono_cli_shared_contracts",
-        "mono_config_contracts",
-        "mono_config_yaml",
-        "mono_core",
-        "mono_core_types",
-        "mono_graph_builder_impl",
-        "mono_plugin_exec",
-        "mono_plugin_pub",
-        "mono_ports",
-        "mono_runner",
-        "mono_scanner_fs",
-        "mono_selector_impl",
-        "mono_system_io",
-        "yaml"
       ],
       "devDependencies": [
         "lints",
@@ -274,35 +273,6 @@
         "meta",
         "mono_core_types",
         "mono_ports"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono",
-      "version": "0.1.0",
-      "dependencies": [
-        "meta",
-        "mono_cli",
-        "mono_cli_parser_args",
-        "mono_cli_shared_contracts",
-        "mono_config_contracts",
-        "mono_config_yaml",
-        "mono_core",
-        "mono_core_types",
-        "mono_graph_builder_impl",
-        "mono_graph_contracts",
-        "mono_plugin_exec",
-        "mono_plugin_pub",
-        "mono_ports",
-        "mono_runner",
-        "mono_scanner_fs",
-        "mono_selector_contracts",
-        "mono_selector_impl",
-        "mono_system_io",
-        "yaml"
       ],
       "devDependencies": [
         "lints",

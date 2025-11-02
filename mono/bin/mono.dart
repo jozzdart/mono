@@ -8,7 +8,7 @@ import 'package:mono_selector_impl/mono_selector_impl.dart';
 import 'package:mono_runner/mono_runner.dart';
 import 'package:mono_system_io/mono_system_io.dart';
 
-import 'package:mono_cli/src/cli.dart';
+import 'package:mono/src/cli.dart';
 
 Future<void> main(List<String> argv) async {
   final wiring = CliWiring(

@@ -302,6 +302,12 @@
       "languageVersion": "3.5"
     },
     {
+      "name": "mono",
+      "rootUri": "../mono",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
       "name": "mono_core",
       "rootUri": "../mono_core",
       "packageUri": "lib/",
@@ -340,12 +346,6 @@
     {
       "name": "mono_cli_shared_contracts",
       "rootUri": "../mono_cli_shared_contracts",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_cli",
-      "rootUri": "../mono_cli",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
@@ -400,12 +400,6 @@
     {
       "name": "mono_plugin_exec",
       "rootUri": "../mono_plugin_exec",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono",
-      "rootUri": "../mono",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     }
