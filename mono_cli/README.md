@@ -1,55 +1,46 @@
 # mono_cli
 
-CLI for managing Dart/Flutter monorepos.
+Internal implementations powering the Mono CLI.
 
-## Install (from workspace)
+This package contains the parser, config loader/validator, target selector, planner, runner, and built-in plugins used by the `mono` command.
 
-Run from the workspace root (Dart >= 3.5 with workspaces):
+If you are an end user of the CLI, see the `mono` package README instead.
 
-```bash
-dart pub get
-dart pub global activate --source path mono
-```
+## Who is this for?
 
-Or run directly from source during development:
+- End users: use the `mono` CLI; see the `mono` package docs.
+- Library/CLI developers: import `mono_cli` to embed or extend Mono’s behavior.
+
+## Install / Develop
+
+- In a Dart workspace, add `mono_cli` as a dependency for library usage.
+- Developing in this repo: run the CLI through the `mono` package during development.
 
 ```bash
 dart run mono:mono <args>
 ```
 
-## Quick start
+For CLI installation and full user docs, see the `mono` package README.
 
-```bash
-# 1) Create config and scaffolding
-mono setup
+## Commands (overview)
 
-# 2) Detect packages by pubspec and cache list
-mono scan
-
-# 3) See what was detected
-mono list packages
-
-# 4) Run pub get across all packages (dependency order by default)
-mono get all
-```
-
-## Commands
-
-- setup
-  - Creates `mono.yaml` (if missing)
-  - Creates `monocfg/` with `mono_projects.yaml` and `tasks.yaml` (if missing)
-- scan
-  - Scans workspace for `pubspec.yaml` and writes `monocfg/mono_projects.yaml`
-- list packages|groups|tasks
-  - Reads from `mono.yaml` and `monocfg/*`
-- get [targets]
-  - Runs `flutter pub get` for Flutter packages, `dart pub get` for Dart packages
-  - Targets: `all`, `:group`, `glob*`, `packageName`
-  - Options: `-j, --concurrency <n>`, `--order dependency|none`, `--dry-run`
+- setup: Create `mono.yaml` if missing and scaffold `monocfg/`.
+- scan: Detect packages and write `monocfg/mono_projects.yaml`.
+- list packages|groups|tasks: List detected packages, file-based groups, or merged tasks.
+- get [targets]: Run `flutter pub get` (Flutter) or `dart pub get` (Dart).
+  - Options: `-j, --concurrency <n>`, `--order dependency|none`, `--dry-run`.
+- format [targets]: Format code across targets; add `--check` to verify only.
+  - Options: `--check`, plus common options above.
+- test [targets]: Run tests across targets (common options supported).
+- group <name>: Interactive creation of a file-based group under `monocfg/groups/`.
+- ungroup <name>: Remove a file-based group.
+- tasks: List merged tasks (root `mono.yaml` + `monocfg/tasks.yaml`).
+- task <name> [targets]: Run a defined task as a top-level command.
+- version: Print CLI name and version.
 
 ## Target selection
 
-Examples:
+You can select targets using names, groups, and globs:
 
 ```bash
 mono get all
@@ -58,34 +49,39 @@ mono get core_*
 mono get app,ui,core
 ```
 
-- Uses dependency order by default; disable with `--order none`
+- Default ordering is dependency-based. Disable with `--order none`.
 
-## Configuration
+## Configuration (mono.yaml)
 
-Root file `mono.yaml` (created by `mono setup`):
+`mono setup` creates a starter `mono.yaml`. Key fields:
 
 ```yaml
 settings:
   monocfgPath: monocfg
   concurrency: auto
   defaultOrder: dependency
+  shellWindows: powershell
+  shellPosix: bash
 include:
   - "**"
 exclude:
   - "monocfg/**"
   - ".dart_tool/**"
-groups: {}
+packages: {} # optional name -> relative path overrides
 tasks: {}
 ```
 
-- settings.monocfgPath: path to the config folder
-- include/exclude: globs for scanning `pubspec.yaml`
-- groups: map of groupName -> list of members (names, globs, or nested ":group")
-- tasks: task definitions (merged with `monocfg/tasks.yaml`)
+- settings.monocfgPath: path to the config folder (`monocfg` by default).
+- settings.concurrency: number or `auto`.
+- settings.defaultOrder: `dependency` or `none`.
+- settings.shellWindows/shellPosix: default shells used by the `exec` plugin.
+- include/exclude: globs for scanning `pubspec.yaml`.
+- packages: map of name → relative path overrides (optional).
+- tasks: task definitions (merged with `monocfg/tasks.yaml`).
 
 ## monocfg folder
 
-- monocfg/mono_projects.yaml
+- `monocfg/mono_projects.yaml`: cache of detected packages (written by `scan`).
 
 ```yaml
 packages:
@@ -94,7 +90,7 @@ packages:
     kind: flutter
 ```
 
-- monocfg/tasks.yaml (optional)
+- `monocfg/tasks.yaml` (optional): user-defined tasks that override/extend root tasks.
 
 ```yaml
 build:
@@ -105,67 +101,44 @@ build:
 
 Notes:
 
-- Tasks are merged on top of `mono.yaml` tasks.
-- `plugin: exec` lets you define arbitrary shell commands per package.
+- Tasks defined in `monocfg/tasks.yaml` override/extend those in `mono.yaml`.
+- `plugin: exec` runs shell commands per package directory.
 
-## Concurrency
+## Groups management (file-based)
 
-- `-j, --concurrency <n>` CLI flag overrides `settings.concurrency`
-- `auto` picks a heuristic based on available CPUs
-
-## Dependency order
-
-- `dependency` (default): topological order using local path/name deps
-- `none`: keep input/selection order
-
-## Project groups
-
-Define named groups in `mono.yaml` to target multiple packages at once. Members can be package names, globs, or other groups (prefixed with `:`):
-
-```yaml
-groups:
-  apps:
-    - app
-    - ui_*
-  mobile:
-    - :apps # include everything from the apps group
-    - flutter_* # and any packages matching this glob
-```
-
-Usage examples:
+Groups are stored as files under `monocfg/groups/` and are managed via commands:
 
 ```bash
-mono list groups
-mono get :apps
-mono get :mobile --order none
+mono group <name>     # interactive selection and save to monocfg/groups
+mono ungroup <name>   # remove file-backed group
+mono list groups      # inspect groups and members
 ```
 
-Notes:
-
-- Group expansion supports nesting (e.g. `:mobile` includes `:apps`).
+- Group expansion supports nesting (use `:groupName`).
 - Globs match against package names (not paths).
 
-## Custom tasks (custom commands)
+## Tasks and plugins
 
-You can define reusable tasks under `tasks` in `mono.yaml` or `monocfg/tasks.yaml`. These are merged, with `monocfg/tasks.yaml` taking precedence. The built-in `exec` plugin lets you run shell commands in each target package.
+Built-in plugins:
 
-Example (`monocfg/tasks.yaml`):
+- pub: supports `get` (and `clean` when invoked via tasks).
+- exec: runs shell commands (`run:` lines) in each package.
+- format: runs formatter; supports `--check`.
+- test: runs test suites.
+
+Tasks can be defined in `mono.yaml` or `monocfg/tasks.yaml` and merged (with `monocfg` taking precedence). You can use `env:` and `dependsOn:`. Top-level task execution maps task names to plugins and commands:
 
 ```yaml
-build:
-  plugin: exec
-  run:
-    - dart run build_runner build --delete-conflicting-outputs
-
 format:
-  plugin: exec
-  run:
-    - dart format .
+  plugin: format
 
-test:
+get:
+  plugin: pub
+
+lint:
   plugin: exec
   run:
-    - dart test
+    - dart fix --apply
 ```
 
 Discover tasks:
@@ -174,8 +147,65 @@ Discover tasks:
 mono list tasks
 ```
 
-Notes:
+Run a task directly as a command (requires explicit targets for external tasks):
 
-- `plugin: exec` runs each `run` entry as a command in the package directory.
-- You can set environment variables with `env:` and express dependencies between tasks with `dependsOn:` in `mono.yaml`.
-- Tasks in `monocfg/tasks.yaml` override/extend those in `mono.yaml`.
+```bash
+mono lint all
+```
+
+## Library usage examples
+
+Tokenizer and parser:
+
+```dart
+final tokenizer = ArgsTokenizer();
+final tokens = tokenizer.tokenize('list all --check -t app');
+final parser = ArgsCliParser();
+final invocation = parser.parse(['list', '--check', 'all', '-t', 'app']);
+```
+
+YAML loader and validator:
+
+```dart
+const yamlText = '''
+include:
+  - packages/*
+tasks:
+  build:
+    run: [dart, compile]
+''';
+const loader = YamlConfigLoader();
+final config = loader.load(yamlText);
+
+const validator = YamlConfigValidator();
+final issues = validator.validate(config);
+```
+
+Planning and running (conceptual):
+
+```dart
+final planner = DefaultCommandPlanner();
+final task = TaskSpec(id: const CommandId('get'), plugin: const PluginId('pub'));
+final plan = planner.plan(task: task, targets: targets);
+
+final plugins = PluginRegistry({
+  'pub': PubPlugin(),
+  'exec': ExecPlugin(),
+  'format': FormatPlugin(),
+  'test': TestPlugin(),
+});
+
+final runner = Runner(
+  processRunner: const DefaultProcessRunner(),
+  logger: const StdLogger(),
+  options: const RunnerOptions(concurrency: 4),
+);
+await runner.execute(plan as SimpleExecutionPlan, plugins);
+```
+
+## Links
+
+- Mono CLI user guide: mono/README.md
+- Changelog: mono_cli/CHANGELOG.md
+- Repository: github.com/jozzdart/mono
+- Issues: github.com/jozzdart/mono/issues
