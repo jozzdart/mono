@@ -17,6 +17,12 @@ GroupStore _defaultGroupStoreFactory(String monocfgPath) {
 }
 
 void main() {
+  late WorkspaceConfig workspaceConfig;
+
+  setUp(() async {
+    workspaceConfig = const FileWorkspaceConfig();
+  });
+
   group('TaskCommand.tryRun', () {
     test('returns null when task is undefined', () async {
       final ws = await createTempWorkspace('mono_task_');
@@ -33,6 +39,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, isNull);
       } finally {
@@ -61,6 +68,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 2);
         expect(
@@ -97,6 +105,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 0);
         expect(outCap.text,
@@ -131,6 +140,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
+          workspaceConfig: workspaceConfig,
         );
         expect(codeGet, 0);
         expect(outCap.text, contains('Would run get for 1 packages'));
@@ -149,6 +159,7 @@ void main() {
           err: errCap2.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
+          workspaceConfig: workspaceConfig,
         );
         expect(codeClean, 0);
         expect(outCap2.text, contains('Would run clean for 1 packages'));
@@ -180,6 +191,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 1);
         expect(errCap.text, contains('Unsupported pub task: upgrade'));
@@ -212,6 +224,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 0);
         expect(outCap.text, contains('Would run fmt for 1 packages'));
@@ -243,6 +256,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 1);
       } finally {
@@ -274,6 +288,7 @@ void main() {
           err: errCap.sink,
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
+          workspaceConfig: workspaceConfig,
         );
         expect(code, 1);
       } finally {

@@ -10,5 +10,3 @@ export 'commands/tasks.dart';
 export 'commands/test.dart';
 export 'commands/ungroup.dart';
 export 'commands/version.dart';
-export 'config_io.dart';
-export 'models.dart';

@@ -42,6 +42,7 @@ CliWiring _makeWiring() {
     ),
     envBuilder: const DefaultCommandEnvironmentBuilder(),
     plugins: PluginRegistry({}),
+    workspaceConfig: const FileWorkspaceConfig(),
   );
 }
 
@@ -50,7 +51,8 @@ void main() {
     test('prints help and returns 0 when no args', () async {
       final outB = StringBuffer();
       final errB = StringBuffer();
-      final code = await runCli([], _makeSink(outB), _makeSink(errB));
+      final code = await runCli([], _makeSink(outB), _makeSink(errB),
+          wiring: _makeWiring());
       expect(code, 0);
       final s = outB.toString();
       expect(s, contains('mono - Manage Dart/Flutter monorepos'));

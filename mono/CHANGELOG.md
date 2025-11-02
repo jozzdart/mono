@@ -1,6 +1,6 @@
 ## 0.0.4
 
-- Commands now use centralized systems. Behavior is unchanged; this improves reliability and future extensibility.
+- Commands now use centralized systems. Behavior is unchanged; this improves reliability and future extensibility. For more details, see the `mono_cli` and `mono_core` changelogs.
 
 ## 0.0.3
 

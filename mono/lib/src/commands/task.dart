@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:mono_cli/mono_cli.dart';
 
-import '../config_io.dart';
-
 class TaskCommand {
   /// Attempts to run an arbitrary task by name as a top-level command.
   /// Returns null if task is not defined.
@@ -13,11 +11,12 @@ class TaskCommand {
     required IOSink err,
     required GroupStore Function(String monocfgPath) groupStoreFactory,
     required PluginResolver plugins,
+    required WorkspaceConfig workspaceConfig,
   }) async {
     final taskName = inv.commandPath.first;
     // Load config and merged tasks
-    final loaded = await loadRootConfig();
-    final extra = await readMonocfgTasks(loaded.monocfgPath);
+    final loaded = await workspaceConfig.loadRootConfig();
+    final extra = await workspaceConfig.readMonocfgTasks(loaded.monocfgPath);
     final mergedTasks = <String, TaskDefinition>{
       ...loaded.config.tasks,
       ..._taskDefsFromExtra(extra),

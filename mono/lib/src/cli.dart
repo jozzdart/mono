@@ -33,6 +33,7 @@ class CliWiring {
     required this.groupStoreFactory,
     required this.envBuilder,
     required this.plugins,
+    required this.workspaceConfig,
   });
 
   final CliParser parser;
@@ -51,6 +52,7 @@ class CliWiring {
   final GroupStore Function(String monocfgPath) groupStoreFactory;
   final CommandEnvironmentBuilder envBuilder;
   final PluginResolver plugins;
+  final WorkspaceConfig workspaceConfig;
 }
 
 Future<int> runCli(
@@ -72,6 +74,8 @@ Future<int> runCli(
     final prompter = wiring?.prompter ?? const ConsolePrompter();
     final versionInfo = wiring?.versionInfo ??
         const StaticVersionInfo(name: 'mono', version: 'unknown');
+    final workspaceConfig =
+        wiring?.workspaceConfig ?? const FileWorkspaceConfig();
 
     // Router-based dispatch
     final router = DefaultCommandRouter();
@@ -83,11 +87,21 @@ Future<int> runCli(
 
     router.register('setup', (
         {required inv, required out, required err}) async {
-      return SetupCommand.run(inv: inv, out: out, err: err);
+      return SetupCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        workspaceConfig: workspaceConfig,
+      );
     });
 
     router.register('scan', ({required inv, required out, required err}) async {
-      return ScanCommand.run(inv: inv, out: out, err: err);
+      return ScanCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        workspaceConfig: workspaceConfig,
+      );
     });
 
     router.register('get', ({required inv, required out, required err}) async {
@@ -129,13 +143,19 @@ Future<int> runCli(
         inv: inv,
         out: out,
         err: err,
+        workspaceConfig: workspaceConfig,
         groupStoreFactory: wiring!.groupStoreFactory,
       );
     });
 
     router.register('tasks', (
         {required inv, required out, required err}) async {
-      return TasksCommand.run(inv: inv, out: out, err: err);
+      return TasksCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        workspaceConfig: workspaceConfig,
+      );
     });
 
     router.register('group', (
@@ -145,6 +165,7 @@ Future<int> runCli(
         out: out,
         err: err,
         prompter: prompter,
+        workspaceConfig: workspaceConfig,
         groupStoreFactory: wiring!.groupStoreFactory,
       );
     });
@@ -156,6 +177,7 @@ Future<int> runCli(
         out: out,
         err: err,
         prompter: prompter,
+        workspaceConfig: workspaceConfig,
         groupStoreFactory: wiring!.groupStoreFactory,
       );
     });
@@ -169,6 +191,7 @@ Future<int> runCli(
       err: err,
       groupStoreFactory: wiring!.groupStoreFactory,
       plugins: wiring.plugins,
+      workspaceConfig: workspaceConfig,
     );
     if (maybe != null) return maybe;
 

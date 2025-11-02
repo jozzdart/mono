@@ -7,6 +7,8 @@
 - Implemented `DefaultCommandRouter` (CLI wiring helper) and exported it via `src/src.dart`.
 - Runner now depends on the core `PluginResolver` abstraction rather than a concrete registry.
 - `PluginRegistry` implements `PluginResolver` (no behavior change).
+- New port: `WorkspaceConfig` for workspace configuration IO (read/write `mono.yaml`, `monocfg/*`).
+  - Added types: `LoadedRootConfig`, `PackageRecord`.
 
 ## 0.0.3
 

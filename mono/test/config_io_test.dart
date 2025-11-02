@@ -1,13 +1,12 @@
 import 'dart:io';
 
-import 'package:mono/src/config_io.dart';
-import 'package:mono/src/models.dart';
 import 'package:mono_cli/mono_cli.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('config_io filesystem helpers', () {
+  group('workspace config filesystem helpers', () {
     late Directory tmp;
+    const ws = FileWorkspaceConfig();
 
     setUp(() async {
       tmp = await Directory.systemTemp.createTemp('mono_config_io_test_');
@@ -17,13 +16,12 @@ void main() {
       if (await tmp.exists()) await tmp.delete(recursive: true);
     });
 
-    test('readFileIfExists returns empty for missing and contents for existing',
+    test(
+        'loadRootConfig returns default monocfgPath and empty raw for missing file',
         () async {
-      final missing = File('${tmp.path}/missing.txt');
-      expect(await readFileIfExists(missing.path), '');
-
-      await missing.writeAsString('hello');
-      expect(await readFileIfExists(missing.path), 'hello');
+      final loaded = await ws.loadRootConfig(path: '${tmp.path}/nope.yaml');
+      expect(loaded.monocfgPath, 'monocfg');
+      expect(loaded.rawYaml, '');
     });
 
     test('loadRootConfig detects custom monocfgPath and defaults to monocfg',
@@ -38,22 +36,19 @@ groups: {}
 tasks: {}
 ''');
 
-      final loaded = await loadRootConfig(path: cfgPath.path);
+      final loaded = await ws.loadRootConfig(path: cfgPath.path);
       expect(loaded.monocfgPath, 'mycfg');
-
-      final loadedDefault = await loadRootConfig(path: '${tmp.path}/nope.yaml');
-      expect(loadedDefault.monocfgPath, 'monocfg');
     });
 
     test('writeRootConfigIfMissing creates once and is idempotent', () async {
       final path = '${tmp.path}/mono.yaml';
-      await writeRootConfigIfMissing(path: path);
+      await ws.writeRootConfigIfMissing(path: path);
       final first = await File(path).readAsString();
       expect(first, contains('monocfgPath: monocfg'));
 
       // second call should not overwrite
       await File(path).writeAsString('# modified\n$first');
-      await writeRootConfigIfMissing(path: path);
+      await ws.writeRootConfigIfMissing(path: path);
       final second = await File(path).readAsString();
       expect(second, startsWith('# modified'));
     });
@@ -61,7 +56,7 @@ tasks: {}
     test('ensureMonocfgScaffold creates dir structure and is idempotent',
         () async {
       final cfgDir = '${tmp.path}/monocfg';
-      await ensureMonocfgScaffold(cfgDir);
+      await ws.ensureMonocfgScaffold(cfgDir);
 
       expect(Directory(cfgDir).existsSync(), isTrue);
       expect(Directory('$cfgDir/groups').existsSync(), isTrue);
@@ -70,7 +65,7 @@ tasks: {}
 
       // modify files then re-run; content should be preserved
       await File('$cfgDir/tasks.yaml').writeAsString('foo: bar\n');
-      await ensureMonocfgScaffold(cfgDir);
+      await ws.ensureMonocfgScaffold(cfgDir);
       expect(await File('$cfgDir/tasks.yaml').readAsString(), 'foo: bar\n');
     });
 
@@ -80,15 +75,15 @@ tasks: {}
       await Directory(cfgDir).create(recursive: true);
 
       // missing file
-      expect(await readMonocfgProjects(cfgDir), isEmpty);
+      expect(await ws.readMonocfgProjects(cfgDir), isEmpty);
 
       // invalid YAML
       await File('$cfgDir/mono_projects.yaml').writeAsString('[]');
-      expect(await readMonocfgProjects(cfgDir), isEmpty);
+      expect(await ws.readMonocfgProjects(cfgDir), isEmpty);
 
       // wrong shape
       await File('$cfgDir/mono_projects.yaml').writeAsString('packages: 42');
-      expect(await readMonocfgProjects(cfgDir), isEmpty);
+      expect(await ws.readMonocfgProjects(cfgDir), isEmpty);
 
       // valid entries, with one incomplete
       await File('$cfgDir/mono_projects.yaml').writeAsString('''
@@ -102,7 +97,7 @@ packages:
   - name: incomplete
     path: ''
 ''');
-      final list = await readMonocfgProjects(cfgDir);
+      final list = await ws.readMonocfgProjects(cfgDir);
       expect(list.length, 2);
       expect(list[0].name, 'a');
       expect(list[0].path, 'pkgs/a');
@@ -119,8 +114,8 @@ packages:
         const PackageRecord(name: 'x', path: 'packages/x', kind: 'dart'),
         const PackageRecord(name: 'y', path: 'packages/y', kind: 'flutter'),
       ];
-      await writeMonocfgProjects(cfgDir, pkgs);
-      final read = await readMonocfgProjects(cfgDir);
+      await ws.writeMonocfgProjects(cfgDir, pkgs);
+      final read = await ws.readMonocfgProjects(cfgDir);
       expect(read.length, 2);
       expect(read.map((p) => p.name), containsAll(['x', 'y']));
       expect(read.firstWhere((p) => p.name == 'y').kind, 'flutter');
@@ -138,7 +133,7 @@ build:
   run:
     - echo hi
 ''');
-      final tasks = await readMonocfgTasks(cfgDir);
+      final tasks = await ws.readMonocfgTasks(cfgDir);
       expect(tasks.keys, contains('build'));
       final b = tasks['build']!;
       expect(b['plugin'], 'exec');
@@ -173,7 +168,7 @@ tasks:
 groups: {}
 ''');
 
-      await writeRootConfigGroups(cfgPath.path, {
+      await ws.writeRootConfigGroups(cfgPath.path, {
         'team': ['pkg one', 'foo:bar', 'x*y', 'hash#tag', 'quote"me'],
         'empty': <String>[],
       });

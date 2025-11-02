@@ -6,6 +6,12 @@ import 'package:test/test.dart';
 import '../util/fs_fixtures.dart';
 
 void main() {
+  late WorkspaceConfig workspaceConfig;
+
+  setUp(() async {
+    workspaceConfig = const FileWorkspaceConfig();
+  });
+
   group('TasksCommand', () {
     test('prints merged tasks', () async {
       final ws = await createTempWorkspace('mono_tasks_');
@@ -25,7 +31,10 @@ void main() {
         final errCap = CapturedIo();
         final inv = const CliInvocation(commandPath: ['tasks']);
         final code = await TasksCommand.run(
-            inv: inv, out: outCap.sink, err: errCap.sink);
+            inv: inv,
+            out: outCap.sink,
+            err: errCap.sink,
+            workspaceConfig: workspaceConfig);
         expect(code, 0);
         final out = outCap.text;
         expect(out, contains('- fmt (plugin: format)'));

@@ -3,6 +3,8 @@
 - Added `CommandEnvironment` abstraction and `CommandEnvironmentBuilder` interface to `ports/`.
 - Added `CommandRouter` interface and `CommandHandler` typedef.
 - Added `PluginResolver` abstraction for resolving `TaskPlugin` by `PluginId`.
+- New port: `WorkspaceConfig` for workspace configuration IO (read/write `mono.yaml`, `monocfg/*`).
+  - Added types: `LoadedRootConfig`, `PackageRecord`.
 - No behavior change; enables cleaner layering and reuse across CLI implementations.
 
 ## 0.0.3

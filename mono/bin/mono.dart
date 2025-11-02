@@ -13,6 +13,7 @@ Future<void> main(List<String> argv) async {
     'test': TestPlugin(),
   });
   final wiring = CliWiring(
+    workspaceConfig: const FileWorkspaceConfig(),
     prompter: const ConsolePrompter(),
     parser: const ArgsCliParser(),
     configLoader: const YamlConfigLoader(),

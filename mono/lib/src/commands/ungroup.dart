@@ -2,14 +2,13 @@ import 'dart:io';
 
 import 'package:mono_cli/mono_cli.dart';
 
-import '../config_io.dart';
-
 class UngroupCommand {
   static Future<int> run({
     required CliInvocation inv,
     required IOSink out,
     required IOSink err,
     required Prompter prompter,
+    required WorkspaceConfig workspaceConfig,
     GroupStore Function(String monocfgPath)? groupStoreFactory,
   }) async {
     if (inv.positionals.isEmpty) {
@@ -22,7 +21,7 @@ class UngroupCommand {
       return 2;
     }
 
-    final loaded = await loadRootConfig();
+    final loaded = await workspaceConfig.loadRootConfig();
     final store = (groupStoreFactory ??
         (String monocfgPath) {
           final groupsPath =
