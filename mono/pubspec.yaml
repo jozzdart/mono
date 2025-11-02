@@ -1,7 +1,7 @@
 name: mono
 description: CLI for managing Dart/Flutter monorepos (scan, select, plan, run).
 resolution: workspace
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/jozzdart/mono
 repository: https://github.com/jozzdart/mono/tree/main/mono
 issue_tracker: https://github.com/jozzdart/mono/issues

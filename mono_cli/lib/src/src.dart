@@ -22,3 +22,5 @@ export 'system_io/path_service.dart';
 export 'system_io/platform_info.dart';
 export 'system_io/process_runner.dart';
 export 'system_io/prompt.dart';
+export 'system_io/version_info.dart';
+export 'system_io/version_resolver.dart';

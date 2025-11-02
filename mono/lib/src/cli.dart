@@ -8,6 +8,7 @@ import 'commands/get.dart';
 import 'commands/list.dart';
 import 'commands/group.dart';
 import 'commands/ungroup.dart';
+import 'commands/version.dart';
 
 @immutable
 class CliWiring {
@@ -24,6 +25,7 @@ class CliWiring {
     required this.pathService,
     required this.platform,
     required this.prompter,
+    required this.versionInfo,
   });
 
   final CliParser parser;
@@ -38,6 +40,7 @@ class CliWiring {
   final PathService pathService;
   final PlatformInfo platform;
   final Prompter prompter;
+  final VersionInfo versionInfo;
 }
 
 Future<int> runCli(
@@ -58,6 +61,12 @@ Future<int> runCli(
     }
     final cmd = inv.commandPath.first;
     final prompter = wiring?.prompter ?? const ConsolePrompter();
+    final versionInfo =
+        wiring?.versionInfo ?? const StaticVersionInfo(name: 'mono', version: 'unknown');
+    if (cmd == 'version' || cmd == '--version' || cmd == '-v' || cmd == '--v') {
+      return VersionCommand.run(
+          inv: inv, out: out, err: err, version: versionInfo);
+    }
     if (cmd == 'setup') return SetupCommand.run(inv: inv, out: out, err: err);
     if (cmd == 'scan') return ScanCommand.run(inv: inv, out: out, err: err);
     if (cmd == 'get') return GetCommand.run(inv: inv, out: out, err: err);
@@ -86,4 +95,5 @@ const String _helpText = 'mono - Manage Dart/Flutter monorepos\n\n'
     '  mono list packages|groups|tasks\n'
     '  mono group <group_name>\n'
     '  mono ungroup <group_name>\n'
+    '  mono version | -v | --version\n'
     '  mono help\n';
