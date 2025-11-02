@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import 'package:mono_cli_shared_contracts/mono_cli_shared_contracts.dart';
-import 'package:mono_scanner_fs/mono_scanner_fs.dart';
+import 'package:mono_cli/mono_cli.dart';
 
 import '../config_io.dart';
 import '../models.dart';

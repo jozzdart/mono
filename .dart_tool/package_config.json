@@ -308,98 +308,14 @@
       "languageVersion": "3.5"
     },
     {
+      "name": "mono_cli",
+      "rootUri": "../mono_cli",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
       "name": "mono_core",
       "rootUri": "../mono_core",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_core_types",
-      "rootUri": "../mono_core_types",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_graph_contracts",
-      "rootUri": "../mono_graph_contracts",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_selector_contracts",
-      "rootUri": "../mono_selector_contracts",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_ports",
-      "rootUri": "../mono_ports",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_config_contracts",
-      "rootUri": "../mono_config_contracts",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_cli_shared_contracts",
-      "rootUri": "../mono_cli_shared_contracts",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_cli_parser_args",
-      "rootUri": "../mono_cli_parser_args",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_config_yaml",
-      "rootUri": "../mono_config_yaml",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_scanner_fs",
-      "rootUri": "../mono_scanner_fs",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_graph_builder_impl",
-      "rootUri": "../mono_graph_builder_impl",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_selector_impl",
-      "rootUri": "../mono_selector_impl",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_runner",
-      "rootUri": "../mono_runner",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_system_io",
-      "rootUri": "../mono_system_io",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_plugin_pub",
-      "rootUri": "../mono_plugin_pub",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "mono_plugin_exec",
-      "rootUri": "../mono_plugin_exec",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     }

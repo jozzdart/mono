@@ -9,9 +9,8 @@ environment:
   sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
-  mono_core_types:
-  mono_graph_contracts:
-  mono_selector_contracts:
+  meta:
+  collection:
 
 dev_dependencies:
   test:

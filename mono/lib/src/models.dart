@@ -1,4 +1,4 @@
-import 'package:mono_core_types/mono_core_types.dart';
+import 'package:mono_cli/mono_cli.dart';
 
 class PackageRecord {
   const PackageRecord(

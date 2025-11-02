@@ -1,10 +1,6 @@
 import 'dart:io';
 
-import 'package:meta/meta.dart';
-import 'package:mono_cli_shared_contracts/mono_cli_shared_contracts.dart';
-import 'package:mono_config_contracts/mono_config_contracts.dart';
-import 'package:mono_ports/mono_ports.dart';
-import 'package:mono_cli_parser_args/mono_cli_parser_args.dart';
+import 'package:mono_cli/mono_cli.dart';
 
 import 'commands/setup.dart';
 import 'commands/scan.dart';
@@ -49,7 +45,10 @@ Future<int> runCli(
   try {
     final parser = wiring?.parser ?? const ArgsCliParser();
     final inv = parser.parse(argv);
-    if (inv.commandPath.isEmpty || inv.commandPath.first == 'help' || inv.commandPath.first == '--help' || inv.commandPath.first == '-h') {
+    if (inv.commandPath.isEmpty ||
+        inv.commandPath.first == 'help' ||
+        inv.commandPath.first == '--help' ||
+        inv.commandPath.first == '-h') {
       out.writeln(_helpText);
       return 0;
     }
@@ -68,13 +67,10 @@ Future<int> runCli(
   }
 }
 
-const String _helpText =
-    'mono - Manage Dart/Flutter monorepos\n\n'
+const String _helpText = 'mono - Manage Dart/Flutter monorepos\n\n'
     'Usage:\n'
     '  mono setup\n'
     '  mono scan\n'
     '  mono get [targets]\n'
     '  mono list packages|groups|tasks\n'
     '  mono help\n';
-
-

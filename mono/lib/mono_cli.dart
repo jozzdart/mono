@@ -1,5 +1,1 @@
-library;
-
-export 'src/cli.dart' show runCli;
-
-
+export 'src/src.dart';

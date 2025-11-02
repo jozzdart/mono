@@ -7,22 +7,8 @@ environment:
 
 workspace:
   - mono
+  - mono_cli
   - mono_core
-  - mono_core_types
-  - mono_graph_contracts
-  - mono_selector_contracts
-  - mono_ports
-  - mono_config_contracts
-  - mono_cli_shared_contracts
-  - mono_cli_parser_args
-  - mono_config_yaml
-  - mono_scanner_fs
-  - mono_graph_builder_impl
-  - mono_selector_impl
-  - mono_runner
-  - mono_system_io
-  - mono_plugin_pub
-  - mono_plugin_exec
 
 dependencies:
   args: ^2.5.0
@@ -31,6 +17,7 @@ dependencies:
   yaml: ^3.1.2
   glob: ^2.1.2
   path: ^1.9.0
+  pool: ^1.5.2
 
 dev_dependencies:
   test: ^1.26.1

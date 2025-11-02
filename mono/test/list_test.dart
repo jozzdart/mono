@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:mono/mono_cli.dart';
+import 'package:mono/mono.dart';
 import 'package:test/test.dart';
 
 void main() {

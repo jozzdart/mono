@@ -1,22 +1,8 @@
 {
   "roots": [
     "mono",
-    "mono_cli_parser_args",
-    "mono_cli_shared_contracts",
-    "mono_config_contracts",
-    "mono_config_yaml",
+    "mono_cli",
     "mono_core",
-    "mono_core_types",
-    "mono_graph_builder_impl",
-    "mono_graph_contracts",
-    "mono_plugin_exec",
-    "mono_plugin_pub",
-    "mono_ports",
-    "mono_runner",
-    "mono_scanner_fs",
-    "mono_selector_contracts",
-    "mono_selector_impl",
-    "mono_system_io",
     "mono_workspace"
   ],
   "packages": [
@@ -29,6 +15,7 @@
         "glob",
         "meta",
         "path",
+        "pool",
         "yaml"
       ],
       "devDependencies": [
@@ -40,21 +27,22 @@
       "name": "mono",
       "version": "0.1.0",
       "dependencies": [
-        "meta",
-        "mono_cli_parser_args",
-        "mono_cli_shared_contracts",
-        "mono_config_contracts",
-        "mono_config_yaml",
+        "mono_cli"
+      ],
+      "devDependencies": [
+        "lints",
+        "test"
+      ]
+    },
+    {
+      "name": "mono_cli",
+      "version": "0.1.0",
+      "dependencies": [
+        "args",
+        "glob",
         "mono_core",
-        "mono_core_types",
-        "mono_graph_builder_impl",
-        "mono_plugin_exec",
-        "mono_plugin_pub",
-        "mono_ports",
-        "mono_runner",
-        "mono_scanner_fs",
-        "mono_selector_impl",
-        "mono_system_io",
+        "path",
+        "pool",
         "yaml"
       ],
       "devDependencies": [
@@ -66,213 +54,8 @@
       "name": "mono_core",
       "version": "0.0.1",
       "dependencies": [
-        "mono_core_types",
-        "mono_graph_contracts",
-        "mono_selector_contracts"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_core_types",
-      "version": "0.0.1",
-      "dependencies": [
         "collection",
         "meta"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_graph_contracts",
-      "version": "0.0.1",
-      "dependencies": [
-        "collection",
-        "meta",
-        "mono_core_types"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_selector_contracts",
-      "version": "0.0.1",
-      "dependencies": [
-        "meta",
-        "mono_core_types"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_ports",
-      "version": "0.0.1",
-      "dependencies": [
-        "meta",
-        "mono_core_types",
-        "mono_graph_contracts",
-        "mono_selector_contracts"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_config_contracts",
-      "version": "0.0.1",
-      "dependencies": [
-        "meta",
-        "mono_core_types",
-        "mono_selector_contracts"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_cli_shared_contracts",
-      "version": "0.0.1",
-      "dependencies": [
-        "meta",
-        "mono_core_types",
-        "mono_selector_contracts"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_cli_parser_args",
-      "version": "0.1.0",
-      "dependencies": [
-        "args",
-        "meta",
-        "mono_cli_shared_contracts",
-        "mono_selector_contracts"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_config_yaml",
-      "version": "0.1.0",
-      "dependencies": [
-        "meta",
-        "mono_config_contracts",
-        "yaml"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_scanner_fs",
-      "version": "0.1.0",
-      "dependencies": [
-        "glob",
-        "meta",
-        "mono_core_types",
-        "mono_ports",
-        "path",
-        "yaml"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_graph_builder_impl",
-      "version": "0.1.0",
-      "dependencies": [
-        "meta",
-        "mono_core_types",
-        "mono_graph_contracts",
-        "mono_ports"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_selector_impl",
-      "version": "0.1.0",
-      "dependencies": [
-        "meta",
-        "mono_core_types",
-        "mono_graph_contracts",
-        "mono_ports",
-        "mono_selector_contracts"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_runner",
-      "version": "0.1.0",
-      "dependencies": [
-        "async",
-        "meta",
-        "mono_core_types",
-        "mono_ports",
-        "pool"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_system_io",
-      "version": "0.1.0",
-      "dependencies": [
-        "meta",
-        "mono_ports",
-        "path"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_plugin_pub",
-      "version": "0.1.0",
-      "dependencies": [
-        "meta",
-        "mono_core_types",
-        "mono_ports",
-        "mono_runner"
-      ],
-      "devDependencies": [
-        "lints",
-        "test"
-      ]
-    },
-    {
-      "name": "mono_plugin_exec",
-      "version": "0.1.0",
-      "dependencies": [
-        "meta",
-        "mono_core_types",
-        "mono_ports"
       ],
       "devDependencies": [
         "lints",
@@ -317,6 +100,14 @@
       ]
     },
     {
+      "name": "pool",
+      "version": "1.5.2",
+      "dependencies": [
+        "async",
+        "stack_trace"
+      ]
+    },
+    {
       "name": "path",
       "version": "1.9.1",
       "dependencies": []
@@ -355,22 +146,6 @@
       "name": "args",
       "version": "2.7.0",
       "dependencies": []
-    },
-    {
-      "name": "pool",
-      "version": "1.5.2",
-      "dependencies": [
-        "async",
-        "stack_trace"
-      ]
-    },
-    {
-      "name": "async",
-      "version": "2.13.0",
-      "dependencies": [
-        "collection",
-        "meta"
-      ]
     },
     {
       "name": "webkit_inspection_protocol",
@@ -570,6 +345,14 @@
       "dependencies": [
         "source_span",
         "string_scanner"
+      ]
+    },
+    {
+      "name": "async",
+      "version": "2.13.0",
+      "dependencies": [
+        "collection",
+        "meta"
       ]
     },
     {

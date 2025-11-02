@@ -1,13 +1,16 @@
 import 'dart:io';
 
-import 'package:mono_cli_shared_contracts/mono_cli_shared_contracts.dart';
-import 'package:mono_scanner_fs/mono_scanner_fs.dart';
+import 'package:mono_cli/mono_cli.dart';
 
 import '../config_io.dart';
 
 class ListCommand {
-  static Future<int> run({required CliInvocation inv, required IOSink out, required IOSink err}) async {
-    final what = inv.positionals.isNotEmpty ? inv.positionals.first : 'packages';
+  static Future<int> run(
+      {required CliInvocation inv,
+      required IOSink out,
+      required IOSink err}) async {
+    final what =
+        inv.positionals.isNotEmpty ? inv.positionals.first : 'packages';
     final loaded = await loadRootConfig();
     if (what == 'packages') {
       final projects = await readMonocfgProjects(loaded.monocfgPath);
@@ -58,5 +61,3 @@ class ListCommand {
     return 1;
   }
 }
-
-

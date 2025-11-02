@@ -1,18 +1,7 @@
 import 'dart:io';
 
-import 'package:meta/meta.dart';
-import 'package:mono_cli_shared_contracts/mono_cli_shared_contracts.dart';
-import 'package:mono_core_types/mono_core_types.dart';
+import 'package:mono_cli/mono_cli.dart';
 
-import 'package:mono_runner/mono_runner.dart';
-import 'package:mono_scanner_fs/mono_scanner_fs.dart';
-import 'package:mono_graph_builder_impl/mono_graph_builder_impl.dart';
-import 'package:mono_selector_impl/mono_selector_impl.dart';
-import 'package:mono_plugin_pub/mono_plugin_pub.dart';
-import 'package:mono_plugin_exec/mono_plugin_exec.dart';
-import 'package:mono_system_io/mono_system_io.dart';
-
-import 'package:mono_config_contracts/mono_config_contracts.dart';
 import '../config_io.dart';
 
 @immutable

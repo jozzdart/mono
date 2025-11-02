@@ -1,15 +1,12 @@
 import 'dart:io';
 
-import 'package:meta/meta.dart';
-import 'package:mono_config_contracts/mono_config_contracts.dart';
-import 'package:mono_config_yaml/mono_config_yaml.dart';
-import 'package:yaml/yaml.dart';
-
+import 'package:mono_cli/mono_cli.dart';
 import 'models.dart';
 
 @immutable
 class LoadedRootConfig {
-  const LoadedRootConfig({required this.config, required this.monocfgPath, required this.rawYaml});
+  const LoadedRootConfig(
+      {required this.config, required this.monocfgPath, required this.rawYaml});
   final MonoConfig config;
   final String monocfgPath;
   final String rawYaml;
@@ -38,7 +35,8 @@ Future<LoadedRootConfig> loadRootConfig({String path = 'mono.yaml'}) async {
   final loader = const YamlConfigLoader();
   final config = loader.load(raw);
   final monocfgPath = _extractMonocfgPath(raw);
-  return LoadedRootConfig(config: config, monocfgPath: monocfgPath, rawYaml: raw);
+  return LoadedRootConfig(
+      config: config, monocfgPath: monocfgPath, rawYaml: raw);
 }
 
 Future<void> writeRootConfigIfMissing({String path = 'mono.yaml'}) async {
@@ -96,7 +94,8 @@ Future<List<PackageRecord>> readMonocfgProjects(String monocfgPath) async {
   return out;
 }
 
-Future<void> writeMonocfgProjects(String monocfgPath, List<PackageRecord> packages) async {
+Future<void> writeMonocfgProjects(
+    String monocfgPath, List<PackageRecord> packages) async {
   final sb = StringBuffer();
   sb.writeln('packages:');
   for (final p in packages) {
@@ -108,7 +107,8 @@ Future<void> writeMonocfgProjects(String monocfgPath, List<PackageRecord> packag
   await f.writeAsString(sb.toString());
 }
 
-Future<Map<String, Map<String, Object?>>> readMonocfgTasks(String monocfgPath) async {
+Future<Map<String, Map<String, Object?>>> readMonocfgTasks(
+    String monocfgPath) async {
   final f = File('$monocfgPath/tasks.yaml');
   if (!await f.exists()) return const {};
   final raw = await f.readAsString();
@@ -120,11 +120,10 @@ Future<Map<String, Map<String, Object?>>> readMonocfgTasks(String monocfgPath) a
     final val = e.value;
     if (val is YamlMap) {
       out[key] = {
-        for (final ve in val.nodes.entries) ve.key.value.toString(): ve.value.value,
+        for (final ve in val.nodes.entries)
+          ve.key.value.toString(): ve.value.value,
       };
     }
   }
   return out;
 }
-
-

@@ -1,0 +1,24 @@
+name: mono_cli
+description: CLI for managing Dart/Flutter monorepos (scan, select, plan, run).
+resolution: workspace
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  mono_core:
+
+  yaml:
+  pool:
+  args:
+  glob:
+  path:
+
+dev_dependencies:
+  lints:
+  test:
+
+executables:
+  mono: mono
