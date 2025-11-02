@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:mono_core/mono_core.dart';
 import 'package:test/test.dart';
 
@@ -21,14 +19,19 @@ class _FakeCommandRouter implements CommandRouter {
   @override
   Future<int?> tryDispatch({
     required CliInvocation inv,
-    required IOSink out,
-    required IOSink err,
+    required Logger logger,
   }) async {
     if (inv.commandPath.isEmpty) return null;
     final h = _handlers[inv.commandPath.first];
     if (h == null) return null;
-    return h(inv: inv, out: out, err: err);
+    return h(inv: inv, logger: logger);
   }
+}
+
+class _NoopLogger implements Logger {
+  const _NoopLogger();
+  @override
+  void log(String message, {String? scope, String level = 'info'}) {}
 }
 
 void main() {
@@ -36,46 +39,42 @@ void main() {
     test('CommandHandler typedef is callable with named parameters', () async {
       handler({
         required CliInvocation inv,
-        required IOSink out,
-        required IOSink err,
+        required Logger logger,
       }) async {
         return 42;
       }
 
       final inv = const CliInvocation(commandPath: ['x']);
-      final code = await handler(inv: inv, out: stdout, err: stderr);
+      final code = await handler(inv: inv, logger: const _NoopLogger());
       expect(code, 42);
     });
 
     test('register and dispatch by name', () async {
       final router = _FakeCommandRouter();
       CliInvocation? seenInv;
-      router.register('hello', (
-          {required inv, required out, required err}) async {
+      router.register('hello', ({required inv, required logger}) async {
         seenInv = inv;
         return 0;
       });
       final inv = const CliInvocation(commandPath: ['hello']);
-      final code = await router.tryDispatch(inv: inv, out: stdout, err: stderr);
+      final code =
+          await router.tryDispatch(inv: inv, logger: const _NoopLogger());
       expect(code, 0);
       expect(seenInv, same(inv));
     });
 
     test('register with aliases and dispatch via alias', () async {
       final router = _FakeCommandRouter();
-      router.register('version', (
-          {required inv, required out, required err}) async {
+      router.register('version', ({required inv, required logger}) async {
         return 7;
       }, aliases: const ['--version', '-v']);
 
       final code1 = await router.tryDispatch(
           inv: const CliInvocation(commandPath: ['--version']),
-          out: stdout,
-          err: stderr);
+          logger: const _NoopLogger());
       final code2 = await router.tryDispatch(
           inv: const CliInvocation(commandPath: ['-v']),
-          out: stdout,
-          err: stderr);
+          logger: const _NoopLogger());
       expect(code1, 7);
       expect(code2, 7);
     });
@@ -85,44 +84,36 @@ void main() {
       expect(
         await router.tryDispatch(
             inv: const CliInvocation(commandPath: ['nope']),
-            out: stdout,
-            err: stderr),
+            logger: const _NoopLogger()),
         isNull,
       );
       expect(
         await router.tryDispatch(
             inv: const CliInvocation(commandPath: []),
-            out: stdout,
-            err: stderr),
+            logger: const _NoopLogger()),
         isNull,
       );
     });
 
     test('re-registering a name overrides previous handler', () async {
       final router = _FakeCommandRouter();
-      router.register(
-          'cmd', ({required inv, required out, required err}) async => 1);
-      router.register(
-          'cmd', ({required inv, required out, required err}) async => 2);
+      router.register('cmd', ({required inv, required logger}) async => 1);
+      router.register('cmd', ({required inv, required logger}) async => 2);
       final code = await router.tryDispatch(
           inv: const CliInvocation(commandPath: ['cmd']),
-          out: stdout,
-          err: stderr);
+          logger: const _NoopLogger());
       expect(code, 2);
     });
 
     test('aliases can be re-bound by later registrations', () async {
       final router = _FakeCommandRouter();
-      router.register(
-          'a', ({required inv, required out, required err}) async => 10,
+      router.register('a', ({required inv, required logger}) async => 10,
           aliases: const ['x']);
-      router.register(
-          'b', ({required inv, required out, required err}) async => 20,
+      router.register('b', ({required inv, required logger}) async => 20,
           aliases: const ['x']);
       final code = await router.tryDispatch(
           inv: const CliInvocation(commandPath: ['x']),
-          out: stdout,
-          err: stderr);
+          logger: const _NoopLogger());
       expect(code, 20);
     });
   });

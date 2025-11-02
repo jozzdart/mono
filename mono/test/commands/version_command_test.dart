@@ -2,23 +2,22 @@ import 'package:mono/src/commands/version.dart';
 import 'package:mono_cli/mono_cli.dart';
 import 'package:test/test.dart';
 
-import '../util/fs_fixtures.dart';
+import '../util/fakes.dart';
 
 void main() {
   group('VersionCommand', () {
     test('prints name and version', () async {
-      final outCap = CapturedIo();
-      final errCap = CapturedIo();
+      final outB = StringBuffer();
+      final errB = StringBuffer();
       final inv = const CliInvocation(commandPath: ['version']);
       final code = await VersionCommand.run(
         inv: inv,
-        out: outCap.sink,
-        err: errCap.sink,
+        logger: BufferingLogger(outB, errB),
         version: const StaticVersionInfo(name: 'mono', version: '1.2.3'),
       );
       expect(code, 0);
-      expect(outCap.text.trim(), 'mono 1.2.3');
-      expect(errCap.text.trim(), isEmpty);
+      expect(outB.toString().trim(), 'mono 1.2.3');
+      expect(errB.toString().trim(), isEmpty);
     });
   });
 }

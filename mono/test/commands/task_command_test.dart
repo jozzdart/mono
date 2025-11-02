@@ -6,6 +6,7 @@ import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../util/fs_fixtures.dart';
+import '../util/fakes.dart';
 
 GroupStore _defaultGroupStoreFactory(String monocfgPath) {
   final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
@@ -30,13 +31,12 @@ void main() {
       try {
         await writeMonoYaml();
         await ensureMonocfg('monocfg');
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['build']);
         final code = await TaskCommand.tryRun(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
@@ -61,13 +61,12 @@ void main() {
           },
         });
         await ensureMonocfg('monocfg');
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['build']);
         final code = await TaskCommand.tryRun(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
@@ -75,8 +74,8 @@ void main() {
           executor: const DefaultTaskExecutor(),
         );
         expect(code, 2);
-        expect(
-            errCap.text, contains('External tasks require explicit targets'));
+        expect(errB.toString(),
+            contains('External tasks require explicit targets'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -94,8 +93,8 @@ void main() {
           },
         });
         writePubspec(p.join(Directory.current.path, 'a'), 'a');
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = CliInvocation(
           commandPath: const ['build'],
           options: const {
@@ -105,8 +104,7 @@ void main() {
         );
         final code = await TaskCommand.tryRun(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
@@ -114,9 +112,9 @@ void main() {
           executor: const DefaultTaskExecutor(),
         );
         expect(code, 0);
-        expect(outCap.text,
+        expect(outB.toString(),
             contains('Would run build for 1 packages in dependency order.'));
-        expect(errCap.text.trim(), isEmpty);
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();
@@ -132,8 +130,8 @@ void main() {
           'clean': {'plugin': 'pub'},
         });
         writePubspec(p.join(Directory.current.path, 'a'), 'a');
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final invGet = const CliInvocation(
           commandPath: ['get'],
           options: {
@@ -142,8 +140,7 @@ void main() {
         );
         final codeGet = await TaskCommand.tryRun(
           inv: invGet,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
@@ -151,10 +148,10 @@ void main() {
           executor: const DefaultTaskExecutor(),
         );
         expect(codeGet, 0);
-        expect(outCap.text, contains('Would run get for 1 packages'));
+        expect(outB.toString(), contains('Would run get for 1 packages'));
 
-        final outCap2 = CapturedIo();
-        final errCap2 = CapturedIo();
+        final outB2 = StringBuffer();
+        final errB2 = StringBuffer();
         final invClean = const CliInvocation(
           commandPath: ['clean'],
           options: {
@@ -163,8 +160,7 @@ void main() {
         );
         final codeClean = await TaskCommand.tryRun(
           inv: invClean,
-          out: outCap2.sink,
-          err: errCap2.sink,
+          logger: BufferingLogger(outB2, errB2),
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
@@ -172,7 +168,7 @@ void main() {
           executor: const DefaultTaskExecutor(),
         );
         expect(codeClean, 0);
-        expect(outCap2.text, contains('Would run clean for 1 packages'));
+        expect(outB2.toString(), contains('Would run clean for 1 packages'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -187,8 +183,8 @@ void main() {
           'upgrade': {'plugin': 'pub'},
         });
         writePubspec(p.join(Directory.current.path, 'a'), 'a');
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(
           commandPath: ['upgrade'],
           options: {
@@ -197,8 +193,7 @@ void main() {
         );
         final code = await TaskCommand.tryRun(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
@@ -206,7 +201,7 @@ void main() {
           executor: const DefaultTaskExecutor(),
         );
         expect(code, 1);
-        expect(errCap.text, contains('Unsupported pub task: upgrade'));
+        expect(errB.toString(), contains('Unsupported pub task: upgrade'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -221,8 +216,8 @@ void main() {
           'fmt': {'plugin': 'format'},
         });
         writePubspec(p.join(Directory.current.path, 'a'), 'a');
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(
           commandPath: ['fmt'],
           options: {
@@ -232,8 +227,7 @@ void main() {
         );
         final code = await TaskCommand.tryRun(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
@@ -241,7 +235,7 @@ void main() {
           executor: const DefaultTaskExecutor(),
         );
         expect(code, 0);
-        expect(outCap.text, contains('Would run fmt for 1 packages'));
+        expect(outB.toString(), contains('Would run fmt for 1 packages'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -256,8 +250,8 @@ void main() {
           'foo': {'plugin': 'unknown'},
         });
         writePubspec(Directory.current.path, 'a');
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(
           commandPath: ['foo'],
           options: {
@@ -266,8 +260,7 @@ void main() {
         );
         final code = await TaskCommand.tryRun(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
@@ -289,8 +282,8 @@ void main() {
           'noop': {'plugin': 'exec', 'run': []},
         });
         writePubspec(Directory.current.path, 'a');
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(
           commandPath: ['noop'],
           options: {
@@ -300,8 +293,7 @@ void main() {
         );
         final code = await TaskCommand.tryRun(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           groupStoreFactory: _defaultGroupStoreFactory,
           plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,

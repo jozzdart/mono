@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import '../util/fs_fixtures.dart';
+import '../util/fakes.dart';
 
 void main() {
   late WorkspaceConfig workspaceConfig;
@@ -33,20 +34,19 @@ void main() {
           '    kind: flutter\n',
         );
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(
             commandPath: ['list'], positionals: ['packages']);
         final code = await ListCommand.run(
             inv: inv,
-            out: outCap.sink,
-            err: errCap.sink,
+            logger: BufferingLogger(outB, errB),
             workspaceConfig: workspaceConfig);
         expect(code, 0);
-        final out = outCap.text;
+        final out = outB.toString();
         expect(out, contains('- a → /tmp/a (dart)'));
         expect(out, contains('- b → /tmp/b (flutter)'));
-        expect(errCap.text.trim(), isEmpty);
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();
@@ -63,20 +63,19 @@ void main() {
         writePubspec(aDir, 'a');
         writePubspec(bDir, 'b', flutter: true);
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(
             commandPath: ['list'], positionals: ['packages']);
         final code = await ListCommand.run(
             inv: inv,
-            out: outCap.sink,
-            err: errCap.sink,
+            logger: BufferingLogger(outB, errB),
             workspaceConfig: workspaceConfig);
         expect(code, 0);
-        final out = outCap.text;
+        final out = outB.toString();
         expect(out, contains('a → '));
         expect(out, contains('b → '));
-        expect(errCap.text.trim(), isEmpty);
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();
@@ -93,20 +92,19 @@ void main() {
         await writeFile(p.join(groupsDir, 'dev.list'), 'a\nb\n');
         await writeFile(p.join(groupsDir, 'prod.list'), 'c\n');
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['list'], positionals: ['groups']);
         final code = await ListCommand.run(
             inv: inv,
-            out: outCap.sink,
-            err: errCap.sink,
+            logger: BufferingLogger(outB, errB),
             workspaceConfig: workspaceConfig);
         expect(code, 0);
-        final out = outCap.text;
+        final out = outB.toString();
         expect(out, contains('- dev → a, b'));
         expect(out, contains('- prod → c'));
-        expect(errCap.text.trim(), isEmpty);
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();
@@ -126,20 +124,19 @@ void main() {
           'build:\n  plugin: exec\n  run: ["dart compile exe bin/main.dart"]\n',
         );
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['list'], positionals: ['tasks']);
         final code = await ListCommand.run(
             inv: inv,
-            out: outCap.sink,
-            err: errCap.sink,
+            logger: BufferingLogger(outB, errB),
             workspaceConfig: workspaceConfig);
         expect(code, 0);
-        final out = outCap.text;
+        final out = outB.toString();
         expect(out, contains('- fmt (plugin: format)'));
         expect(out, contains('- build (plugin: exec)'));
-        expect(errCap.text.trim(), isEmpty);
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();

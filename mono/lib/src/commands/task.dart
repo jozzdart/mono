@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:mono_cli/mono_cli.dart';
 
 class TaskCommand {
@@ -7,8 +5,7 @@ class TaskCommand {
   /// Returns null if task is not defined.
   static Future<int?> tryRun({
     required CliInvocation inv,
-    required IOSink out,
-    required IOSink err,
+    required Logger logger,
     required GroupStore Function(String monocfgPath) groupStoreFactory,
     required PluginResolver plugins,
     required WorkspaceConfig workspaceConfig,
@@ -29,8 +26,9 @@ class TaskCommand {
     // Determine plugin and validate target requirement for external tasks
     final pluginId = PluginId(def.plugin ?? 'exec');
     if (pluginId.value == 'exec' && inv.targets.isEmpty) {
-      err.writeln(
-          'External tasks require explicit targets. Use "all" to run on all packages.');
+      logger.log(
+          'External tasks require explicit targets. Use "all" to run on all packages.',
+          level: 'error');
       return 2;
     }
 
@@ -38,7 +36,7 @@ class TaskCommand {
     final CommandId commandId;
     if (pluginId.value == 'exec') {
       if (def.run.isEmpty || def.run.first.trim().isEmpty) {
-        err.writeln('Task "$taskName" has no run command.');
+        logger.log('Task "$taskName" has no run command.', level: 'error');
         return 1;
       }
       // Execute only the first run entry for now
@@ -50,7 +48,7 @@ class TaskCommand {
       } else if (name == 'clean') {
         commandId = const CommandId('clean');
       } else {
-        err.writeln('Unsupported pub task: $name');
+        logger.log('Unsupported pub task: $name', level: 'error');
         return 1;
       }
     } else if (pluginId.value == 'format') {
@@ -59,13 +57,15 @@ class TaskCommand {
     } else if (pluginId.value == 'test') {
       commandId = const CommandId('test');
     } else {
-      err.writeln('Unknown plugin for task "$taskName": ${pluginId.value}');
+      logger.log('Unknown plugin for task "$taskName": ${pluginId.value}',
+          level: 'error');
       return 1;
     }
     // Additional policy: external tasks require explicit targets
     if (pluginId.value == 'exec' && inv.targets.isEmpty) {
-      err.writeln(
-          'External tasks require explicit targets. Use "all" to run on all packages.');
+      logger.log(
+          'External tasks require explicit targets. Use "all" to run on all packages.',
+          level: 'error');
       return 2;
     }
 
@@ -73,8 +73,7 @@ class TaskCommand {
     return executor.execute(
       task: task,
       inv: inv,
-      out: out,
-      err: err,
+      logger: logger,
       groupStoreFactory: groupStoreFactory,
       envBuilder: envBuilder,
       plugins: plugins,

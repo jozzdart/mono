@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:mono_cli/mono_cli.dart';
 
 class DefaultTaskExecutor implements TaskExecutor {
@@ -9,8 +7,7 @@ class DefaultTaskExecutor implements TaskExecutor {
   Future<int> execute({
     required TaskSpec task,
     required CliInvocation inv,
-    required IOSink out,
-    required IOSink err,
+    required Logger logger,
     required GroupStore Function(String) groupStoreFactory,
     required CommandEnvironmentBuilder envBuilder,
     required PluginResolver plugins,
@@ -21,7 +18,7 @@ class DefaultTaskExecutor implements TaskExecutor {
         await envBuilder.build(inv, groupStoreFactory: groupStoreFactory);
 
     if (envCtx.packages.isEmpty) {
-      err.writeln('No packages found. Run `mono scan` first.');
+      logger.log('No packages found. Run `mono scan` first.', level: 'error');
       return 1;
     }
 
@@ -34,7 +31,7 @@ class DefaultTaskExecutor implements TaskExecutor {
     );
 
     if (targets.isEmpty) {
-      err.writeln('No target packages matched.');
+      logger.log('No target packages matched.', level: 'error');
       return 1;
     }
 
@@ -44,7 +41,7 @@ class DefaultTaskExecutor implements TaskExecutor {
     if (inv.options['dry-run']?.isNotEmpty == true) {
       final label =
           dryRunLabel?.trim().isNotEmpty == true ? dryRunLabel! : task.id.value;
-      out.writeln(
+      logger.log(
           'Would run $label for ${targets.length} packages in ${envCtx.effectiveOrder ? 'dependency' : 'input'} order.');
       return 0;
     }

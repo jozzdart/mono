@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import '../util/fs_fixtures.dart';
+import '../util/fakes.dart';
 
 void main() {
   late WorkspaceConfig workspaceConfig;
@@ -21,13 +22,12 @@ void main() {
       try {
         expect(File('mono.yaml').existsSync(), isFalse);
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['setup']);
         final code = await SetupCommand.run(
             inv: inv,
-            out: outCap.sink,
-            err: errCap.sink,
+            logger: BufferingLogger(outB, errB),
             workspaceConfig: workspaceConfig);
         expect(code, 0);
 
@@ -37,8 +37,8 @@ void main() {
         expect(
             File(p.join('monocfg', 'mono_projects.yaml')).existsSync(), isTrue);
         expect(File(p.join('monocfg', 'tasks.yaml')).existsSync(), isTrue);
-        expect(outCap.text, contains('Created/verified mono.yaml'));
-        expect(errCap.text.trim(), isEmpty);
+        expect(outB.toString(), contains('Created/verified mono.yaml'));
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();
@@ -52,13 +52,12 @@ void main() {
         await writeMonoYaml();
         await ensureMonocfg('monocfg');
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['setup']);
         final code = await SetupCommand.run(
             inv: inv,
-            out: outCap.sink,
-            err: errCap.sink,
+            logger: BufferingLogger(outB, errB),
             workspaceConfig: workspaceConfig);
         expect(code, 0);
         expect(File('mono.yaml').existsSync(), isTrue);
@@ -66,7 +65,7 @@ void main() {
         expect(
             File(p.join('monocfg', 'mono_projects.yaml')).existsSync(), isTrue);
         expect(File(p.join('monocfg', 'tasks.yaml')).existsSync(), isTrue);
-        expect(errCap.text.trim(), isEmpty);
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();

@@ -21,18 +21,17 @@ void main() {
       ws.enter();
       try {
         await writeMonoYaml();
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['group']);
         final code = await GroupCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
           workspaceConfig: workspaceConfig,
         );
         expect(code, 2);
-        expect(errCap.text, contains('Usage: mono group <group_name>'));
+        expect(errB.toString(), contains('Usage: mono group <group_name>'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -44,19 +43,18 @@ void main() {
       ws.enter();
       try {
         await writeMonoYaml();
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['group'], positionals: [':bad']);
         final code = await GroupCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
           workspaceConfig: workspaceConfig,
         );
         expect(code, 2);
-        expect(errCap.text, contains('Invalid group name: ":bad"'));
+        expect(errB.toString(), contains('Invalid group name: ":bad"'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -72,19 +70,18 @@ void main() {
         final groupsDir = p.join('monocfg', 'groups');
         await writeFile(p.join(groupsDir, 'dev.list'), 'a\n');
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['group'], positionals: ['dev']);
         final code = await GroupCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(nextConfirm: false),
           workspaceConfig: workspaceConfig,
         );
         expect(code, 1);
-        expect(errCap.text, contains('Aborted.'));
+        expect(errB.toString(), contains('Aborted.'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -101,24 +98,23 @@ void main() {
         writePubspec(p.join(Directory.current.path, 'b'), 'b');
         writePubspec(p.join(Directory.current.path, 'c'), 'c');
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['group'], positionals: ['g1']);
         final code = await GroupCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(checklistIndices: [0, 2]),
           workspaceConfig: workspaceConfig,
         );
         expect(code, 0);
-        expect(outCap.text, contains('Group "g1" saved with 2 member(s).'));
+        expect(outB.toString(), contains('Group "g1" saved with 2 member(s).'));
         final f = File(p.join('monocfg', 'groups', 'g1.list'));
         expect(f.existsSync(), isTrue);
         final lines = await f.readAsLines();
         expect(lines, containsAll(<String>['a', 'c']));
-        expect(errCap.text.trim(), isEmpty);
+        expect(errB.toString().trim(), isEmpty);
       } finally {
         ws.exit();
         ws.dispose();
@@ -132,19 +128,18 @@ void main() {
         await writeMonoYaml();
         writePubspec(p.join(Directory.current.path, 'a'), 'a');
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['group'], positionals: ['g2']);
         final code = await GroupCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(checklistIndices: [], nextConfirm: false),
           workspaceConfig: workspaceConfig,
         );
         expect(code, 1);
-        expect(errCap.text, contains('Aborted.'));
+        expect(errB.toString(), contains('Aborted.'));
       } finally {
         ws.exit();
         ws.dispose();
@@ -158,19 +153,18 @@ void main() {
         await writeMonoYaml();
         writePubspec(p.join(Directory.current.path, 'foo'), 'foo');
 
-        final outCap = CapturedIo();
-        final errCap = CapturedIo();
+        final outB = StringBuffer();
+        final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['group'], positionals: ['foo']);
         final code = await GroupCommand.run(
           inv: inv,
-          out: outCap.sink,
-          err: errCap.sink,
+          logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
           workspaceConfig: workspaceConfig,
         );
         expect(code, 2);
-        expect(errCap.text,
+        expect(errB.toString(),
             contains('Cannot create group with same name as a package'));
       } finally {
         ws.exit();

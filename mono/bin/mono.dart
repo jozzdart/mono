@@ -40,7 +40,7 @@ Future<void> main(List<String> argv) async {
       return FileGroupStore(folder);
     },
   );
-  final exitCodeValue = await runCli(argv, stdout, stderr, wiring: wiring);
+  final exitCodeValue = await runCli(argv, wiring: wiring);
   // ignore: avoid_print
   exit(exitCodeValue);
 }
