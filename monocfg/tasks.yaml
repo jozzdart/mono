@@ -9,10 +9,10 @@ publishdry:
   run:
     - dart pub publish --dry-run
 
-publish:
+publishyes:
   plugin: exec
   run:
-    - dart pub publish
+    - dart pub publish --force
 
 format:
   plugin: exec
