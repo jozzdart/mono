@@ -9,6 +9,8 @@ import 'commands/list.dart';
 import 'commands/group.dart';
 import 'commands/ungroup.dart';
 import 'commands/version.dart';
+import 'commands/tasks.dart';
+import 'commands/task.dart';
 
 @immutable
 class CliWiring {
@@ -87,6 +89,9 @@ Future<int> runCli(
         groupStoreFactory: wiring!.groupStoreFactory,
       );
     }
+    if (cmd == 'tasks') {
+      return TasksCommand.run(inv: inv, out: out, err: err);
+    }
     if (cmd == 'group') {
       return GroupCommand.run(
           inv: inv,
@@ -103,6 +108,15 @@ Future<int> runCli(
           prompter: prompter,
           groupStoreFactory: wiring!.groupStoreFactory);
     }
+    // Attempt to resolve as a task name
+    final maybe = await TaskCommand.tryRun(
+      inv: inv,
+      out: out,
+      err: err,
+      groupStoreFactory: wiring!.groupStoreFactory,
+    );
+    if (maybe != null) return maybe;
+
     err.writeln('Unknown command: ${inv.commandPath.join(' ')}');
     err.writeln('Use `mono help`');
     return 1;
@@ -118,8 +132,13 @@ const String _helpText = 'mono - Manage Dart/Flutter monorepos\n\n'
     '  mono setup\n'
     '  mono scan\n'
     '  mono get [targets]\n'
+    '  mono [taskname] [targets]\n'
     '  mono list packages|groups|tasks\n'
+    '  mono tasks\n'
     '  mono group <group_name>\n'
     '  mono ungroup <group_name>\n'
     '  mono version | -v | --version\n'
-    '  mono help\n';
+    '  mono help\n\n'
+    'Notes:\n'
+    '- Built-in commands like get run on all packages when no targets are given.\n'
+    '- External tasks require explicit targets; use "all" to run on all packages.';

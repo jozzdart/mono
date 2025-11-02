@@ -56,6 +56,7 @@ mono get all
 mono get :apps
 mono get core_*
 mono get app,ui,core
+mono build :apps
 ```
 
 - Uses dependency order by default; disable with `--order none`
@@ -144,7 +145,7 @@ Notes:
 
 ## Custom tasks (custom commands)
 
-You can define reusable tasks under `tasks` in `mono.yaml` or `monocfg/tasks.yaml`. These are merged, with `monocfg/tasks.yaml` taking precedence. The built-in `exec` plugin lets you run shell commands in each target package.
+You can define reusable tasks under `tasks` in `mono.yaml` or `monocfg/tasks.yaml`. These are merged, with `monocfg/tasks.yaml` taking precedence. The built-in `exec` plugin lets you run shell commands in each target package. Tasks are runnable as top-level commands: `mono <task> [targets]`.
 
 Example (`monocfg/tasks.yaml`):
 
@@ -173,6 +174,6 @@ mono list tasks
 
 Notes:
 
-- `plugin: exec` runs each `run` entry as a command in the package directory.
+- `plugin: exec` runs the first `run` entry as a command in the package directory (additional entries can be added later).
 - You can set environment variables with `env:` and express dependencies between tasks with `dependsOn:` in `mono.yaml`.
 - Tasks in `monocfg/tasks.yaml` override/extend those in `mono.yaml`.
