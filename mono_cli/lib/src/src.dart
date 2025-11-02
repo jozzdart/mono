@@ -24,3 +24,6 @@ export 'system_io/process_runner.dart';
 export 'system_io/prompt.dart';
 export 'system_io/version_info.dart';
 export 'system_io/version_resolver.dart';
+export 'system_io/name_policy.dart';
+export 'system_io/list_config_folder_fs.dart';
+export 'system_io/group_store_fs.dart';

@@ -63,6 +63,10 @@ Future<void> ensureMonocfgScaffold(String monocfgPath) async {
   if (!await dir.exists()) {
     await dir.create(recursive: true);
   }
+  final groupsDir = Directory('$monocfgPath/groups');
+  if (!await groupsDir.exists()) {
+    await groupsDir.create(recursive: true);
+  }
   final projects = File('$monocfgPath/mono_projects.yaml');
   if (!await projects.exists()) {
     await projects.writeAsString('packages: []\n');

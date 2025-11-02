@@ -60,13 +60,13 @@ class ConsolePrompter implements Prompter {
       render(fresh: true);
       while (true) {
         final byte = stdin.readByteSync();
-        if (byte == 13) {
-          // Enter
+        if (byte == 13 || byte == 10) {
+          // Enter (CR or LF)
           break;
         }
         if (byte == 113) {
           // 'q'
-          throw StateError('Checklist cancelled by user');
+          throw SelectionError('Checklist cancelled by user');
         }
         if (byte == 97) {
           // 'a'

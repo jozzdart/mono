@@ -6,7 +6,6 @@ import 'package:test/test.dart';
 
 import 'package:mono/src/commands/group.dart';
 import 'package:mono/src/commands/ungroup.dart';
-import 'package:mono/src/config_io.dart';
 
 class _BufferSink implements IOSink {
   _BufferSink(this._buffer);
@@ -125,9 +124,10 @@ tasks: {}
         prompter: _FakePrompter(indices: [0]), // select 'app'
       );
       expect(code, 0);
-      final loaded = await loadRootConfig(path: '${tmp.path}/mono.yaml');
-      expect(loaded.config.groups['ui'], isNotNull);
-      expect(loaded.config.groups['ui'], contains('app'));
+      final groupFile = File('${tmp.path}/monocfg/groups/ui.list');
+      expect(await groupFile.exists(), isTrue);
+      final contents = await groupFile.readAsString();
+      expect(contents, contains('app'));
       Directory.current = prev;
     } finally {
       await tmp.delete(recursive: true);
@@ -147,11 +147,12 @@ include:
 exclude:
   - "monocfg/**"
   - ".dart_tool/**"
-groups:
-  ui:
-    - app
+groups: {}
 tasks: {}
 ''');
+      final groupsDir = Directory('${tmp.path}/monocfg/groups');
+      await groupsDir.create(recursive: true);
+      await File('${groupsDir.path}/ui.list').writeAsString('app\n');
       final prev = Directory.current;
       Directory.current = tmp.path;
       final out = StringBuffer();
@@ -162,8 +163,7 @@ tasks: {}
         prompter: _FakePrompter(confirmValue: true),
       );
       expect(code, 0);
-      final loaded = await loadRootConfig(path: '${tmp.path}/mono.yaml');
-      expect(loaded.config.groups.containsKey('ui'), isFalse);
+      expect(await File('${tmp.path}/monocfg/groups/ui.list').exists(), isFalse);
       Directory.current = prev;
     } finally {
       await tmp.delete(recursive: true);

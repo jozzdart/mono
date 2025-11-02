@@ -26,6 +26,7 @@ class CliWiring {
     required this.platform,
     required this.prompter,
     required this.versionInfo,
+    required this.groupStoreFactory,
   });
 
   final CliParser parser;
@@ -41,6 +42,7 @@ class CliWiring {
   final PlatformInfo platform;
   final Prompter prompter;
   final VersionInfo versionInfo;
+  final GroupStore Function(String monocfgPath) groupStoreFactory;
 }
 
 Future<int> runCli(
@@ -69,13 +71,37 @@ Future<int> runCli(
     }
     if (cmd == 'setup') return SetupCommand.run(inv: inv, out: out, err: err);
     if (cmd == 'scan') return ScanCommand.run(inv: inv, out: out, err: err);
-    if (cmd == 'get') return GetCommand.run(inv: inv, out: out, err: err);
-    if (cmd == 'list') return ListCommand.run(inv: inv, out: out, err: err);
+    if (cmd == 'get') {
+      return GetCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        groupStoreFactory: wiring!.groupStoreFactory,
+      );
+    }
+    if (cmd == 'list') {
+      return ListCommand.run(
+        inv: inv,
+        out: out,
+        err: err,
+        groupStoreFactory: wiring!.groupStoreFactory,
+      );
+    }
     if (cmd == 'group') {
-      return GroupCommand.run(inv: inv, out: out, err: err, prompter: prompter);
+      return GroupCommand.run(
+          inv: inv,
+          out: out,
+          err: err,
+          prompter: prompter,
+          groupStoreFactory: wiring!.groupStoreFactory);
     }
     if (cmd == 'ungroup') {
-      return UngroupCommand.run(inv: inv, out: out, err: err, prompter: prompter);
+      return UngroupCommand.run(
+          inv: inv,
+          out: out,
+          err: err,
+          prompter: prompter,
+          groupStoreFactory: wiring!.groupStoreFactory);
     }
     err.writeln('Unknown command: ${inv.commandPath.join(' ')}');
     err.writeln('Use `mono help`');

@@ -10,6 +10,7 @@ class UngroupCommand {
     required IOSink out,
     required IOSink err,
     required Prompter prompter,
+    GroupStore Function(String monocfgPath)? groupStoreFactory,
   }) async {
     if (inv.positionals.isEmpty) {
       err.writeln('Usage: mono ungroup <group_name>');
@@ -22,7 +23,15 @@ class UngroupCommand {
     }
 
     final loaded = await loadRootConfig();
-    if (!loaded.config.groups.containsKey(groupName)) {
+    final store = (groupStoreFactory ?? (String monocfgPath) {
+      final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
+      final folder = FileListConfigFolder(
+        basePath: groupsPath,
+        namePolicy: const DefaultSlugNamePolicy(),
+      );
+      return FileGroupStore(folder);
+    })(loaded.monocfgPath);
+    if (!await store.exists(groupName)) {
       err.writeln('Group "$groupName" does not exist.');
       return 2;
     }
@@ -36,11 +45,7 @@ class UngroupCommand {
       return 1;
     }
 
-    final updated = <String, List<String>>{
-      for (final e in loaded.config.groups.entries)
-        if (e.key != groupName) e.key: List<String>.from(e.value),
-    };
-    await writeRootConfigGroups('mono.yaml', updated);
+    await store.deleteGroup(groupName);
     out.writeln('Group "$groupName" removed.');
     return 0;
   }

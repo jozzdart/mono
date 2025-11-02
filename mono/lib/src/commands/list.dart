@@ -8,7 +8,8 @@ class ListCommand {
   static Future<int> run(
       {required CliInvocation inv,
       required IOSink out,
-      required IOSink err}) async {
+      required IOSink err,
+      GroupStore Function(String monocfgPath)? groupStoreFactory}) async {
     final what =
         inv.positionals.isNotEmpty ? inv.positionals.first : 'packages';
     final loaded = await loadRootConfig();
@@ -34,8 +35,18 @@ class ListCommand {
       return 0;
     }
     if (what == 'groups') {
-      for (final e in loaded.config.groups.entries) {
-        out.writeln('- ${e.key} → ${e.value.join(', ')}');
+      final store = (groupStoreFactory ?? (String monocfgPath) {
+        final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
+        final folder = FileListConfigFolder(
+          basePath: groupsPath,
+          namePolicy: const DefaultSlugNamePolicy(),
+        );
+        return FileGroupStore(folder);
+      })(loaded.monocfgPath);
+      final names = await store.listGroups();
+      for (final name in names) {
+        final members = await store.readGroup(name);
+        out.writeln('- $name → ${members.join(', ')}');
       }
       return 0;
     }

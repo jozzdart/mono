@@ -10,6 +10,7 @@ class GroupCommand {
     required IOSink out,
     required IOSink err,
     required Prompter prompter,
+    GroupStore Function(String monocfgPath)? groupStoreFactory,
   }) async {
     if (inv.positionals.isEmpty) {
       err.writeln('Usage: mono group <group_name>');
@@ -22,6 +23,14 @@ class GroupCommand {
     }
 
     final loaded = await loadRootConfig();
+    final store = (groupStoreFactory ?? (String monocfgPath) {
+      final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
+      final folder = FileListConfigFolder(
+        basePath: groupsPath,
+        namePolicy: const DefaultSlugNamePolicy(),
+      );
+      return FileGroupStore(folder);
+    })(loaded.monocfgPath);
 
     // Load packages from cache or fallback scanner
     final projects = await readMonocfgProjects(loaded.monocfgPath);
@@ -39,10 +48,15 @@ class GroupCommand {
     }
     packageNames.sort();
 
-    // Conflict checks
-    if (loaded.config.groups.containsKey(groupName)) {
-      err.writeln('Group "$groupName" already exists.');
-      return 2;
+    // Conflict checks (file-based)
+    if (await store.exists(groupName)) {
+      final ok = await prompter.confirm(
+          'Group "$groupName" already exists. Overwrite?',
+          defaultValue: false);
+      if (!ok) {
+        err.writeln('Aborted.');
+        return 1;
+      }
     }
     if (packageNames.contains(groupName)) {
       err.writeln('Cannot create group with same name as a package: "$groupName"');
@@ -50,10 +64,16 @@ class GroupCommand {
     }
 
     // Interactive checklist
-    final indices = await prompter.checklist(
-      title: 'Select packages for group "$groupName"',
-      items: packageNames,
-    );
+    List<int> indices;
+    try {
+      indices = await prompter.checklist(
+        title: 'Select packages for group "$groupName"',
+        items: packageNames,
+      );
+    } on SelectionError {
+      err.writeln('Aborted.');
+      return 1;
+    }
     if (indices.isEmpty) {
       final ok = await prompter.confirm(
           'No packages selected. Create empty group "$groupName"?',
@@ -64,14 +84,8 @@ class GroupCommand {
       }
     }
     final members = [for (final i in indices) packageNames[i]];
-
-    final updated = <String, List<String>>{
-      for (final e in loaded.config.groups.entries) e.key: List<String>.from(e.value),
-    };
-    updated[groupName] = members;
-
-    await writeRootConfigGroups('mono.yaml', updated);
-    out.writeln('Group "$groupName" created with ${members.length} member(s).');
+    await store.writeGroup(groupName, members);
+    out.writeln('Group "$groupName" saved with ${members.length} member(s).');
     return 0;
   }
 }

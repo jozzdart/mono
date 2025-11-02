@@ -20,6 +20,15 @@ Future<void> main(List<String> argv) async {
     pathService: const DefaultPathService(),
     platform: const DefaultPlatformInfo(),
     versionInfo: StaticVersionInfo(name: 'mono', version: ver),
+    groupStoreFactory: (String monocfgPath) {
+      final groupsPath =
+          const DefaultPathService().join([monocfgPath, 'groups']);
+      final folder = FileListConfigFolder(
+        basePath: groupsPath,
+        namePolicy: const DefaultSlugNamePolicy(),
+      );
+      return FileGroupStore(folder);
+    },
   );
   final exitCodeValue = await runCli(argv, stdout, stderr, wiring: wiring);
   // ignore: avoid_print
