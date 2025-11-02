@@ -2,61 +2,28 @@ import 'dart:io';
 
 import 'package:mono_cli/mono_cli.dart';
 
-import '../config_io.dart';
-
 @immutable
 class TestCommand {
   static Future<int> run({
     required CliInvocation inv,
     required IOSink out,
     required IOSink err,
-    GroupStore Function(String monocfgPath)? groupStoreFactory,
+    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required CommandEnvironmentBuilder envBuilder,
   }) async {
-    final loaded = await loadRootConfig();
-    final root = Directory.current.path;
-
-    // Scan packages
-    final scanner = const FileSystemPackageScanner();
-    final packages = await scanner.scan(
-      rootPath: root,
-      includeGlobs: loaded.config.include,
-      excludeGlobs: loaded.config.exclude,
-    );
-    if (packages.isEmpty) {
+    final env =
+        await envBuilder.build(inv, groupStoreFactory: groupStoreFactory);
+    if (env.packages.isEmpty) {
       err.writeln('No packages found. Run `mono scan` first.');
       return 1;
     }
 
-    // Build graph
-    final graph = const DefaultGraphBuilder().build(packages);
-
-    // Groups
-    final store = (groupStoreFactory ??
-        (String monocfgPath) {
-          final groupsPath =
-              const DefaultPathService().join([monocfgPath, 'groups']);
-          final folder = FileListConfigFolder(
-            basePath: groupsPath,
-            namePolicy: const DefaultSlugNamePolicy(),
-          );
-          return FileGroupStore(folder);
-        })(loaded.monocfgPath);
-    final groups = <String, Set<String>>{};
-    final groupNames = await store.listGroups();
-    for (final name in groupNames) {
-      final members = await store.readGroup(name);
-      groups[name] = members.toSet();
-    }
-
-    // Targets
-    final selector = const DefaultTargetSelector();
-    final dependencyOrder = _effectiveOrder(inv, loaded.config) == 'dependency';
-    final targets = selector.resolve(
+    final targets = env.selector.resolve(
       expressions: inv.targets,
-      packages: packages,
-      groups: groups,
-      graph: graph,
-      dependencyOrder: dependencyOrder,
+      packages: env.packages,
+      groups: env.groups,
+      graph: env.graph,
+      dependencyOrder: env.effectiveOrder,
     );
     if (targets.isEmpty) {
       err.writeln('No target packages matched.');
@@ -83,37 +50,18 @@ class TestCommand {
       processRunner: const DefaultProcessRunner(),
       logger: const StdLogger(),
       options: RunnerOptions(
-        concurrency: _effectiveConcurrency(inv, loaded.config),
+        concurrency: env.effectiveConcurrency,
       ),
     );
 
     if (_isDryRun(inv)) {
       out.writeln(
-        'Would run test for ${targets.length} packages in ${dependencyOrder ? 'dependency' : 'input'} order.',
+        'Would run test for ${targets.length} packages in ${env.effectiveOrder ? 'dependency' : 'input'} order.',
       );
       return 0;
     }
 
     return runner.execute(plan as SimpleExecutionPlan, plugins);
-  }
-
-  static String _effectiveOrder(CliInvocation inv, MonoConfig cfg) {
-    final list = inv.options['order'];
-    final fromCli = (list != null && list.isNotEmpty) ? list.first : null;
-    return fromCli ?? cfg.settings.defaultOrder;
-  }
-
-  static int _effectiveConcurrency(CliInvocation inv, MonoConfig cfg) {
-    final list = inv.options['concurrency'];
-    final fromCli = (list != null && list.isNotEmpty) ? list.first : null;
-    final str = fromCli ?? cfg.settings.concurrency;
-    final n = int.tryParse(str);
-    if (n != null && n > 0) return n;
-    try {
-      return Platform.numberOfProcessors.clamp(1, 8);
-    } catch (_) {
-      return 4;
-    }
   }
 
   static bool _isDryRun(CliInvocation inv) =>

@@ -40,6 +40,7 @@ CliWiring _makeWiring() {
     groupStoreFactory: (monocfgPath) => FileGroupStore(
       FileListConfigFolder(basePath: '$monocfgPath/groups'),
     ),
+    envBuilder: const DefaultCommandEnvironmentBuilder(),
   );
 }
 

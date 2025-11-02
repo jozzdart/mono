@@ -7,6 +7,7 @@ export 'config/config_types.dart';
 export 'external_exports/meta.dart';
 export 'graph/dependency_graph.dart';
 export 'ports/command_planner.dart';
+export 'ports/command_environment.dart';
 export 'ports/graph_builder.dart';
 export 'ports/package_scanner.dart';
 export 'ports/system.dart';

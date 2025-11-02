@@ -20,6 +20,7 @@ Future<void> main(List<String> argv) async {
     pathService: const DefaultPathService(),
     platform: const DefaultPlatformInfo(),
     versionInfo: StaticVersionInfo(name: 'mono', version: ver),
+    envBuilder: const DefaultCommandEnvironmentBuilder(),
     groupStoreFactory: (String monocfgPath) {
       final groupsPath =
           const DefaultPathService().join([monocfgPath, 'groups']);

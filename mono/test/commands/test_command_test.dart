@@ -17,8 +17,24 @@ void main() {
         final outCap = CapturedIo();
         final errCap = CapturedIo();
         final inv = const CliInvocation(commandPath: ['test']);
+        final envBuilder = const DefaultCommandEnvironmentBuilder();
+        groupStoreFactory(String monocfgPath) {
+          final groupsPath =
+              const DefaultPathService().join([monocfgPath, 'groups']);
+          final folder = FileListConfigFolder(
+            basePath: groupsPath,
+            namePolicy: const DefaultSlugNamePolicy(),
+          );
+          return FileGroupStore(folder);
+        }
+
         final code = await cmd.TestCommand.run(
-            inv: inv, out: outCap.sink, err: errCap.sink);
+          inv: inv,
+          out: outCap.sink,
+          err: errCap.sink,
+          groupStoreFactory: groupStoreFactory,
+          envBuilder: envBuilder,
+        );
         expect(code, 1);
         expect(
             errCap.text, contains('No packages found. Run `mono scan` first.'));
@@ -42,8 +58,24 @@ void main() {
             'dry-run': ['1']
           },
         );
+        final envBuilder = const DefaultCommandEnvironmentBuilder();
+        groupStoreFactory(String monocfgPath) {
+          final groupsPath =
+              const DefaultPathService().join([monocfgPath, 'groups']);
+          final folder = FileListConfigFolder(
+            basePath: groupsPath,
+            namePolicy: const DefaultSlugNamePolicy(),
+          );
+          return FileGroupStore(folder);
+        }
+
         final code = await cmd.TestCommand.run(
-            inv: inv, out: outCap.sink, err: errCap.sink);
+          inv: inv,
+          out: outCap.sink,
+          err: errCap.sink,
+          groupStoreFactory: groupStoreFactory,
+          envBuilder: envBuilder,
+        );
         expect(code, 0);
         expect(outCap.text,
             contains('Would run test for 1 packages in dependency order.'));

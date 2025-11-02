@@ -17,6 +17,7 @@ export 'ports/format_plugin.dart';
 export 'ports/test_plugin.dart';
 export 'ports/runner.dart';
 export 'ports/scanner_fs.dart';
+export 'ports/command_environment_impl.dart';
 export 'ports/target_selector_impl.dart';
 export 'system_io/clock.dart';
 export 'system_io/logger.dart';
