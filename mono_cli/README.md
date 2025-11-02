@@ -1,4 +1,4 @@
-# mono
+# mono_cli
 
 CLI for managing Dart/Flutter monorepos.
 
@@ -128,8 +128,8 @@ groups:
     - app
     - ui_*
   mobile:
-    - :apps       # include everything from the apps group
-    - flutter_*   # and any packages matching this glob
+    - :apps # include everything from the apps group
+    - flutter_* # and any packages matching this glob
 ```
 
 Usage examples:
