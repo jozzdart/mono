@@ -1,5 +1,5 @@
 name: mono_core
-description: "Core library for managing the mono CLI"
+description: "Core library for managing the mono CLI and its tasks, plugins, and configuration."
 resolution: workspace
 version: 0.0.2
 homepage: https://github.com/jozzdart/mono
