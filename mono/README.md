@@ -117,3 +117,65 @@ Notes:
 
 - `dependency` (default): topological order using local path/name deps
 - `none`: keep input/selection order
+
+## Project groups
+
+Define named groups in `mono.yaml` to target multiple packages at once. Members can be package names, globs, or other groups (prefixed with `:`):
+
+```yaml
+groups:
+  apps:
+    - app
+    - ui_*
+  mobile:
+    - :apps # include everything from the apps group
+    - flutter_* # and any packages matching this glob
+```
+
+Usage examples:
+
+```bash
+mono list groups
+mono get :apps
+mono get :mobile --order none
+```
+
+Notes:
+
+- Group expansion supports nesting (e.g. `:mobile` includes `:apps`).
+- Globs match against package names (not paths).
+
+## Custom tasks (custom commands)
+
+You can define reusable tasks under `tasks` in `mono.yaml` or `monocfg/tasks.yaml`. These are merged, with `monocfg/tasks.yaml` taking precedence. The built-in `exec` plugin lets you run shell commands in each target package.
+
+Example (`monocfg/tasks.yaml`):
+
+```yaml
+build:
+  plugin: exec
+  run:
+    - dart run build_runner build --delete-conflicting-outputs
+
+format:
+  plugin: exec
+  run:
+    - dart format .
+
+test:
+  plugin: exec
+  run:
+    - dart test
+```
+
+Discover tasks:
+
+```bash
+mono list tasks
+```
+
+Notes:
+
+- `plugin: exec` runs each `run` entry as a command in the package directory.
+- You can set environment variables with `env:` and express dependencies between tasks with `dependsOn:` in `mono.yaml`.
+- Tasks in `monocfg/tasks.yaml` override/extend those in `mono.yaml`.
