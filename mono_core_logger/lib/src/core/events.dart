@@ -1,5 +1,6 @@
 import 'package:mono_core_logger/mono_core_logger.dart';
 
+/// Base class for typed logger-related events.
 abstract class LoggerEvent {
   const LoggerEvent();
 }

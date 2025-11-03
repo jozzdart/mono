@@ -1,3 +1,5 @@
+/// Renderable primitives for complex CLI output (lists, tables, sections).
+
 abstract class Renderable {
   const Renderable();
 }
