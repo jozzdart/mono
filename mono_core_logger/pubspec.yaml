@@ -1,0 +1,22 @@
+name: mono_core_logger
+description: Pure abstractions for robust CLI logging (levels, progress, prompts, filters, sinks) with no concrete IO.
+resolution: workspace
+version: 0.0.1
+homepage: https://github.com/jozzdart/mono
+repository: https://github.com/jozzdart/mono/tree/main/mono_core_logger
+issue_tracker: https://github.com/jozzdart/mono/issues
+topics:
+  - mono
+  - monorepo
+  - cli
+  - logging
+  - logger
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+
+dev_dependencies:
+  lints:
+  test:
