@@ -2,28 +2,28 @@ import 'package:mono_core/mono_core.dart';
 
 @immutable
 class DefaultCommandRouter implements CommandRouter {
-  DefaultCommandRouter();
+  final Command helpCommand;
+  final List<Command> commands;
+  final Command fallbackCommand;
 
-  final Map<String, CommandHandler> _handlers = <String, CommandHandler>{};
+  const DefaultCommandRouter({
+    required this.commands,
+    required this.fallbackCommand,
+    required this.helpCommand,
+  });
 
   @override
-  void register(String name, CommandHandler handler,
-      {List<String> aliases = const []}) {
-    _handlers[name] = handler;
-    for (final alias in aliases) {
-      _handlers[alias] = handler;
-    }
+  Command getCommand(CliInvocation inv) {
+    if (inv.commandPath.isEmpty) return helpCommand;
+    final commandName = inv.commandPath.first;
+    final command = commands.where((c) => c.name == commandName).firstOrNull;
+    if (command == null) return fallbackCommand;
+    return command;
   }
 
   @override
-  Future<int?> tryDispatch({
-    required CliInvocation inv,
-    required Logger logger,
-  }) async {
-    if (inv.commandPath.isEmpty) return null;
-    final key = inv.commandPath.first;
-    final handler = _handlers[key];
-    if (handler == null) return null;
-    return handler(inv: inv, logger: logger);
-  }
+  List<Command> getAllCommands() => commands;
+
+  @override
+  String getUnknownCommandHelpHint() => helpCommand.name;
 }

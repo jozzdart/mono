@@ -1,7 +1,7 @@
 import 'package:mono_core/mono_core.dart';
 
 class PluginRegistry implements PluginResolver {
-  PluginRegistry(this._plugins);
+  const PluginRegistry(this._plugins);
   final Map<String, TaskPlugin> _plugins; // id.value -> plugin
 
   @override

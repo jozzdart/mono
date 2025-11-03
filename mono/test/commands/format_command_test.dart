@@ -9,6 +9,10 @@ import 'package:path/path.dart' as p;
 import '../util/fs_fixtures.dart';
 import '../util/fakes.dart';
 
+GroupStore groupStore = FileGroupStore(
+  FileListConfigFolder(basePath: 'monocfg/groups'),
+);
+
 void main() {
   group('FormatCommand', () {
     test('errors when no packages found', () async {
@@ -20,20 +24,10 @@ void main() {
         final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['format']);
         final envBuilder = const DefaultCommandEnvironmentBuilder();
-        groupStoreFactory(String monocfgPath) {
-          final groupsPath =
-              const DefaultPathService().join([monocfgPath, 'groups']);
-          final folder = FileListConfigFolder(
-            basePath: groupsPath,
-            namePolicy: const DefaultSlugNamePolicy(),
-          );
-          return FileGroupStore(folder);
-        }
-
-        final code = await FormatCommand.run(
-          inv: inv,
+        final code = await FormatCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          groupStoreFactory: groupStoreFactory,
+          groupStore: groupStore,
           envBuilder: envBuilder,
           plugins: PluginRegistry({}),
           executor: const DefaultTaskExecutor(),
@@ -62,24 +56,14 @@ void main() {
           },
         );
         final envBuilder = const DefaultCommandEnvironmentBuilder();
-        groupStoreFactory(String monocfgPath) {
-          final groupsPath =
-              const DefaultPathService().join([monocfgPath, 'groups']);
-          final folder = FileListConfigFolder(
-            basePath: groupsPath,
-            namePolicy: const DefaultSlugNamePolicy(),
-          );
-          return FileGroupStore(folder);
-        }
 
-        final code = await FormatCommand.run(
-          inv: inv,
-          logger: BufferingLogger(outB, errB),
-          groupStoreFactory: groupStoreFactory,
-          envBuilder: envBuilder,
-          plugins: PluginRegistry({}),
-          executor: const DefaultTaskExecutor(),
-        );
+        final code = await FormatCommand.runCommand(
+            invocation: inv,
+            logger: BufferingLogger(outB, errB),
+            groupStore: groupStore,
+            envBuilder: envBuilder,
+            plugins: PluginRegistry({}),
+            executor: const DefaultTaskExecutor());
         expect(code, 0);
         expect(outB.toString(),
             contains('Would run format for 1 packages in dependency order.'));
@@ -106,24 +90,14 @@ void main() {
           },
         );
         final envBuilder = const DefaultCommandEnvironmentBuilder();
-        groupStoreFactory(String monocfgPath) {
-          final groupsPath =
-              const DefaultPathService().join([monocfgPath, 'groups']);
-          final folder = FileListConfigFolder(
-            basePath: groupsPath,
-            namePolicy: const DefaultSlugNamePolicy(),
-          );
-          return FileGroupStore(folder);
-        }
 
-        final code = await FormatCommand.run(
-          inv: inv,
-          logger: BufferingLogger(outB, errB),
-          groupStoreFactory: groupStoreFactory,
-          envBuilder: envBuilder,
-          plugins: PluginRegistry({}),
-          executor: const DefaultTaskExecutor(),
-        );
+        final code = await FormatCommand.runCommand(
+            invocation: inv,
+            logger: BufferingLogger(outB, errB),
+            groupStore: groupStore,
+            envBuilder: envBuilder,
+            plugins: PluginRegistry({}),
+            executor: const DefaultTaskExecutor());
         expect(code, 0);
         expect(
             outB.toString(),
@@ -152,24 +126,14 @@ void main() {
           },
         );
         final envBuilder = const DefaultCommandEnvironmentBuilder();
-        groupStoreFactory(String monocfgPath) {
-          final groupsPath =
-              const DefaultPathService().join([monocfgPath, 'groups']);
-          final folder = FileListConfigFolder(
-            basePath: groupsPath,
-            namePolicy: const DefaultSlugNamePolicy(),
-          );
-          return FileGroupStore(folder);
-        }
 
-        final code = await FormatCommand.run(
-          inv: inv,
-          logger: BufferingLogger(outB, errB),
-          groupStoreFactory: groupStoreFactory,
-          envBuilder: envBuilder,
-          plugins: PluginRegistry({}),
-          executor: const DefaultTaskExecutor(),
-        );
+        final code = await FormatCommand.runCommand(
+            invocation: inv,
+            logger: BufferingLogger(outB, errB),
+            groupStore: groupStore,
+            envBuilder: envBuilder,
+            plugins: PluginRegistry({}),
+            executor: const DefaultTaskExecutor());
         expect(code, 0);
         expect(outB.toString(), contains('in input order.'));
         expect(errB.toString().trim(), isEmpty);

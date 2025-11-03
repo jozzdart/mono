@@ -2,42 +2,49 @@ import 'package:mono_cli/mono_cli.dart';
 import 'package:mono_core/mono_core.dart';
 import 'package:test/test.dart';
 
-import '../util/test_doubles.dart';
+// A simple test command for testing
+class _TestCommand extends Command {
+  const _TestCommand({
+    required this.name,
+  });
+
+  @override
+  final String name;
+
+  @override
+  List<String> get aliases => const [];
+
+  @override
+  String get description => 'Test command';
+
+  @override
+  Future<int> run(CliContext context) async {
+    return 0;
+  }
+}
 
 void main() {
-  group('DefaultCommandRouter with Logger', () {
-    test('forwards logger to handler', () async {
-      final router = DefaultCommandRouter();
-      final logger = RecordingLogger();
-
-      router.register('log', ({required inv, required logger}) async {
-        logger.log('hello', level: 'info');
-        return 0;
-      });
-
-      final code = await router.tryDispatch(
-        inv: const CliInvocation(commandPath: ['log']),
-        logger: logger,
+  group('DefaultCommandRouter', () {
+    test('getCommand returns correct command for routing', () {
+      final cmd1 = const _TestCommand(name: 'cmd1');
+      final cmd2 = const _TestCommand(name: 'cmd2');
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = DefaultCommandRouter(
+        commands: [cmd1, cmd2],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
       );
-      expect(code, 0);
-      expect(logger.entries.map((e) => e.message), contains('hello'));
-    });
 
-    test('alias dispatch also forwards logger', () async {
-      final router = DefaultCommandRouter();
-      final logger = RecordingLogger();
-
-      router.register('hello', ({required inv, required logger}) async {
-        logger.log('alias-hit');
-        return 0;
-      }, aliases: const ['hi']);
-
-      final code = await router.tryDispatch(
-        inv: const CliInvocation(commandPath: ['hi']),
-        logger: logger,
-      );
-      expect(code, 0);
-      expect(logger.entries.map((e) => e.message), contains('alias-hit'));
+      // Test that commands are correctly retrieved
+      expect(router.getCommand(const CliInvocation(commandPath: ['cmd1'])),
+          same(cmd1));
+      expect(router.getCommand(const CliInvocation(commandPath: ['cmd2'])),
+          same(cmd2));
+      expect(router.getCommand(const CliInvocation(commandPath: [])),
+          same(helpCommand));
+      expect(router.getCommand(const CliInvocation(commandPath: ['unknown'])),
+          same(fallbackCommand));
     });
   });
 }

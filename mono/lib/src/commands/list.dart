@@ -1,15 +1,37 @@
 import 'dart:io';
 
+import 'package:mono_cli/mono_cli.dart';
 import 'package:mono_core/mono_core.dart';
 
-class ListCommand {
-  static Future<int> run(
-      {required CliInvocation inv,
-      required Logger logger,
-      required WorkspaceConfig workspaceConfig,
-      required PackageScanner packageScanner,
-      required GroupStore Function(String monocfgPath)
-          groupStoreFactory}) async {
+class ListCommand extends Command {
+  const ListCommand();
+
+  @override
+  String get name => 'list';
+
+  @override
+  String get description => 'List packages | groups | tasks';
+
+  @override
+  Future<int> run(
+    CliContext context,
+  ) async =>
+      await runCommand(
+        invocation: context.invocation,
+        logger: context.logger,
+        workspaceConfig: context.workspaceConfig,
+        packageScanner: context.packageScanner,
+        groupStore: await FileGroupStore.createFromContext(context),
+      );
+
+  static Future<int> runCommand({
+    required CliInvocation invocation,
+    required Logger logger,
+    required WorkspaceConfig workspaceConfig,
+    required PackageScanner packageScanner,
+    required GroupStore groupStore,
+  }) async {
+    final inv = invocation;
     final what =
         inv.positionals.isNotEmpty ? inv.positionals.first : 'packages';
     final loaded = await workspaceConfig.loadRootConfig();
@@ -35,7 +57,7 @@ class ListCommand {
       return 0;
     }
     if (what == 'groups') {
-      final store = groupStoreFactory(loaded.monocfgPath);
+      final store = groupStore;
       final names = await store.listGroups();
       for (final name in names) {
         final members = await store.readGroup(name);

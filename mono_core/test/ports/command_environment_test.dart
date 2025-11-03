@@ -31,7 +31,7 @@ void main() {
       final builder = _FakeBuilder();
       final env = await builder.build(
         const CliInvocation(commandPath: ['any']),
-        groupStoreFactory: (_) => _NoopGroupStore(),
+        groupStore: _NoopGroupStore(),
       );
 
       expect(env.monocfgPath, 'monocfg');
@@ -66,7 +66,7 @@ class _FakeBuilder extends CommandEnvironmentBuilder {
   @override
   Future<CommandEnvironment> build(
     CliInvocation inv, {
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required GroupStore groupStore,
   }) async {
     return CommandEnvironment(
       config: MonoConfig(include: const ['**'], exclude: const []),

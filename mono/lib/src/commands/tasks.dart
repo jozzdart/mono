@@ -1,8 +1,25 @@
 import 'package:mono_core/mono_core.dart';
 
-class TasksCommand {
-  static Future<int> run({
-    required CliInvocation inv,
+class TasksCommand extends Command {
+  const TasksCommand();
+
+  @override
+  String get name => 'tasks';
+
+  @override
+  String get description =>
+      'List merged tasks (mono.yaml + monocfg/tasks.yaml)';
+
+  @override
+  Future<int> run(
+    CliContext context,
+  ) =>
+      runCommand(
+        logger: context.logger,
+        workspaceConfig: context.workspaceConfig,
+      );
+
+  static Future<int> runCommand({
     required Logger logger,
     required WorkspaceConfig workspaceConfig,
   }) async {

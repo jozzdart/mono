@@ -2,7 +2,7 @@ import 'package:mono_core/mono_core.dart';
 
 @immutable
 class FormatPlugin extends TaskPlugin {
-  FormatPlugin() : super(const PluginId('format'));
+  const FormatPlugin() : super(const PluginId('format'));
 
   static const CommandId formatCmd = CommandId('format');
   static const CommandId formatCheckCmd = CommandId('format:check');

@@ -9,7 +9,17 @@ import 'package:path/path.dart' as p;
 import '../util/fs_fixtures.dart';
 import '../util/fakes.dart';
 
+GroupStore groupStore = FileGroupStore(
+  FileListConfigFolder(basePath: 'monocfg/groups'),
+);
+
 void main() {
+  late WorkspaceConfig workspaceConfig;
+
+  setUp(() async {
+    workspaceConfig = const FileWorkspaceConfig();
+  });
+
   group('TestCommand', () {
     test('errors when no packages found', () async {
       final ws = await createTempWorkspace('mono_testcmd_');
@@ -20,20 +30,12 @@ void main() {
         final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['test']);
         final envBuilder = const DefaultCommandEnvironmentBuilder();
-        groupStoreFactory(String monocfgPath) {
-          final groupsPath =
-              const DefaultPathService().join([monocfgPath, 'groups']);
-          final folder = FileListConfigFolder(
-            basePath: groupsPath,
-            namePolicy: const DefaultSlugNamePolicy(),
-          );
-          return FileGroupStore(folder);
-        }
 
-        final code = await cmd.TestCommand.run(
-          inv: inv,
+        final code = await cmd.TestCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          groupStoreFactory: groupStoreFactory,
+          workspaceConfig: workspaceConfig,
+          groupStore: groupStore,
           envBuilder: envBuilder,
           plugins: PluginRegistry({}),
           executor: const DefaultTaskExecutor(),
@@ -62,20 +64,12 @@ void main() {
           },
         );
         final envBuilder = const DefaultCommandEnvironmentBuilder();
-        groupStoreFactory(String monocfgPath) {
-          final groupsPath =
-              const DefaultPathService().join([monocfgPath, 'groups']);
-          final folder = FileListConfigFolder(
-            basePath: groupsPath,
-            namePolicy: const DefaultSlugNamePolicy(),
-          );
-          return FileGroupStore(folder);
-        }
 
-        final code = await cmd.TestCommand.run(
-          inv: inv,
+        final code = await cmd.TestCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          groupStoreFactory: groupStoreFactory,
+          workspaceConfig: workspaceConfig,
+          groupStore: groupStore,
           envBuilder: envBuilder,
           plugins: PluginRegistry({}),
           executor: const DefaultTaskExecutor(),

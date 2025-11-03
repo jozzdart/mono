@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 void main() {
   test('resolvePackageVersion returns version for mono_cli', () async {
     final expected = _readPackageVersion('mono_cli');
-    final v = await resolvePackageVersion('mono_cli');
+    final v = await VersionResolver().resolvePackageVersion('mono_cli');
     expect(v, expected);
   });
 }

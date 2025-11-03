@@ -2,7 +2,7 @@ import 'package:mono_core/mono_core.dart';
 
 @immutable
 class ExecPlugin extends TaskPlugin {
-  ExecPlugin() : super(const PluginId('exec'));
+  const ExecPlugin() : super(const PluginId('exec'));
 
   @override
   bool supports(CommandId commandId) => commandId.value.startsWith('exec:');

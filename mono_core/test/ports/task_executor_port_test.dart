@@ -13,7 +13,7 @@ class _FakeEnvBuilder implements CommandEnvironmentBuilder {
   @override
   Future<CommandEnvironment> build(
     CliInvocation inv, {
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required GroupStore groupStore,
   }) async {
     return _env;
   }
@@ -58,9 +58,9 @@ class _ProbeExecutor implements TaskExecutor {
   @override
   Future<int> execute({
     required TaskSpec task,
-    required CliInvocation inv,
+    required CliInvocation invocation,
     required Logger logger,
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required GroupStore groupStore,
     required CommandEnvironmentBuilder envBuilder,
     required PluginResolver plugins,
     Map<String, String> env = const {},
@@ -68,7 +68,7 @@ class _ProbeExecutor implements TaskExecutor {
   }) async {
     lastArgs = {
       'task': task,
-      'inv': inv,
+      'inv': invocation,
       'env': env,
       'dryRunLabel': dryRunLabel,
     };
@@ -96,9 +96,9 @@ void main() {
 
       final code = await const _ProbeExecutor().execute(
         task: task,
-        inv: inv,
+        invocation: inv,
         logger: const _NoopLogger(),
-        groupStoreFactory: (_) => const _FakeGroupStore(),
+        groupStore: const _FakeGroupStore(),
         envBuilder: _FakeEnvBuilder(env),
         plugins: const _FakePlugins(),
         env: const {'A': 'B'},

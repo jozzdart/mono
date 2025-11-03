@@ -31,9 +31,7 @@ void main() {
 
         final outB = StringBuffer();
         final errB = StringBuffer();
-        final inv = const CliInvocation(commandPath: ['tasks']);
-        final code = await TasksCommand.run(
-            inv: inv,
+        final code = await TasksCommand.runCommand(
             logger: BufferingLogger(outB, errB),
             workspaceConfig: workspaceConfig);
         expect(code, 0);

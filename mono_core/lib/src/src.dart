@@ -1,8 +1,10 @@
 export 'cli/cli_ast.dart';
+export 'cli/cli_context.dart';
 export 'cli/command_router.dart';
 export 'cli/completion_contracts.dart';
 export 'cli/engine_contracts.dart';
 export 'cli/parser_contracts.dart';
+export 'cli/registered_command.dart';
 export 'cli/usage_contracts.dart';
 export 'config/config_interfaces.dart';
 export 'config/config_types.dart';

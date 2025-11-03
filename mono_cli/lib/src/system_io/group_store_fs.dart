@@ -1,7 +1,9 @@
+import 'package:mono_cli/mono_cli.dart';
+
 import 'package:mono_core/mono_core.dart';
 
 class FileGroupStore implements GroupStore {
-  FileGroupStore(this._folder);
+  const FileGroupStore(this._folder);
 
   final ListConfigFolder _folder;
 
@@ -21,4 +23,23 @@ class FileGroupStore implements GroupStore {
   @override
   Future<void> writeGroup(String groupName, List<String> members) =>
       _folder.writeList(groupName, members);
+
+  static Future<FileGroupStore> create({
+    required LoadedRootConfig loadedRootConfig,
+    required PathService pathService,
+  }) async {
+    final groupsPath =
+        pathService.join([loadedRootConfig.monocfgPath, 'groups']);
+    final folder = FileListConfigFolder(
+      basePath: groupsPath,
+    );
+    return FileGroupStore(folder);
+  }
+
+  static Future<FileGroupStore> createFromContext(CliContext context) async {
+    return await create(
+      pathService: context.pathService,
+      loadedRootConfig: await context.workspaceConfig.loadRootConfig(),
+    );
+  }
 }

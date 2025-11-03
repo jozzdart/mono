@@ -25,12 +25,11 @@ void main() {
 
         final outB = StringBuffer();
         final errB = StringBuffer();
-        final inv = const CliInvocation(commandPath: ['scan']);
-        final code = await ScanCommand.run(
-            inv: inv,
-            logger: BufferingLogger(outB, errB),
-            workspaceConfig: workspaceConfig,
-            packageScanner: const FileSystemPackageScanner());
+        final code = await ScanCommand.runCommand(
+          logger: BufferingLogger(outB, errB),
+          workspaceConfig: workspaceConfig,
+          packageScanner: const FileSystemPackageScanner(),
+        );
         expect(code, 0);
 
         final proj = File(p.join('monocfg', 'mono_projects.yaml'));
@@ -58,12 +57,11 @@ void main() {
 
         final outB = StringBuffer();
         final errB = StringBuffer();
-        final inv = const CliInvocation(commandPath: ['scan']);
-        final code = await ScanCommand.run(
-            inv: inv,
-            logger: BufferingLogger(outB, errB),
-            workspaceConfig: workspaceConfig,
-            packageScanner: const FileSystemPackageScanner());
+        final code = await ScanCommand.runCommand(
+          logger: BufferingLogger(outB, errB),
+          workspaceConfig: workspaceConfig,
+          packageScanner: const FileSystemPackageScanner(),
+        );
         expect(code, 0);
 
         final proj = File(p.join('monocfg', 'mono_projects.yaml'));

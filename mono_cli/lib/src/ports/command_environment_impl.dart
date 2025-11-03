@@ -20,7 +20,7 @@ class DefaultCommandEnvironmentBuilder implements CommandEnvironmentBuilder {
   @override
   Future<CommandEnvironment> build(
     CliInvocation inv, {
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required GroupStore groupStore,
   }) async {
     // Load configuration and resolve monocfg path via injected workspace config
     final loaded = await workspaceConfig.loadRootConfig();
@@ -39,7 +39,8 @@ class DefaultCommandEnvironmentBuilder implements CommandEnvironmentBuilder {
     final graph = graphBuilder.build(packages);
 
     // Load groups
-    final store = groupStoreFactory(monocfgPath);
+
+    final store = groupStore;
     final groups = <String, Set<String>>{};
     final names = await store.listGroups();
     for (final name in names) {
