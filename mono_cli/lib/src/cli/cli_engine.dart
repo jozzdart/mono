@@ -2,7 +2,35 @@ import 'package:mono_core/mono_core.dart';
 
 import 'command_router_impl.dart';
 
-Future<int> runCliApp(
+class DefaultCliEngine implements CliEngine {
+  const DefaultCliEngine();
+
+  @override
+  Future<int> run(
+    List<String> argv, {
+    required CliParser parser,
+    required Logger logger,
+    required void Function(CommandRouter router) register,
+    String Function()? helpText,
+    Future<int?> Function({
+      required CliInvocation inv,
+      required Logger logger,
+    })? fallback,
+    String unknownCommandHelpHint = 'help',
+  }) {
+    return _runCli(
+      argv,
+      parser: parser,
+      logger: logger,
+      register: register,
+      helpText: helpText,
+      fallback: fallback,
+      unknownCommandHelpHint: unknownCommandHelpHint,
+    );
+  }
+}
+
+Future<int> _runCli(
   List<String> argv, {
   required CliParser parser,
   required Logger logger,

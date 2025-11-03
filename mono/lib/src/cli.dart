@@ -34,6 +34,7 @@ class CliWiring {
     required this.plugins,
     required this.workspaceConfig,
     required this.taskExecutor,
+    this.engine,
   });
 
   final CliParser parser;
@@ -54,6 +55,7 @@ class CliWiring {
   final PluginResolver plugins;
   final WorkspaceConfig workspaceConfig;
   final TaskExecutor taskExecutor;
+  final CliEngine? engine;
 }
 
 Future<int> runCli(
@@ -68,7 +70,9 @@ Future<int> runCli(
       wiring?.workspaceConfig ?? const FileWorkspaceConfig();
   final logger = wiring?.logger ?? const StdLogger();
 
-  return runCliApp(
+  final engine = wiring?.engine ?? const DefaultCliEngine();
+
+  return engine.run(
     argv,
     parser: parser,
     logger: logger,

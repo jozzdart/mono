@@ -10,7 +10,7 @@ void main() {
       final logger = RecordingLogger();
       var registerCalled = false;
 
-      final code = await runCliApp(
+      final code = await const DefaultCliEngine().run(
         const <String>[],
         parser: const ArgsCliParser(),
         logger: logger,
@@ -28,7 +28,7 @@ void main() {
     test('prints help and returns 0 for --help', () async {
       final logger = RecordingLogger();
 
-      final code = await runCliApp(
+      final code = await const DefaultCliEngine().run(
         const <String>['--help'],
         parser: const ArgsCliParser(),
         logger: logger,
@@ -43,7 +43,7 @@ void main() {
     test('does not print help if helpText is null', () async {
       final logger = RecordingLogger();
 
-      final code = await runCliApp(
+      final code = await const DefaultCliEngine().run(
         const <String>['help'],
         parser: const ArgsCliParser(),
         logger: logger,
@@ -58,7 +58,7 @@ void main() {
     test('dispatches registered command and returns its code', () async {
       final logger = RecordingLogger();
 
-      final code = await runCliApp(
+      final code = await const DefaultCliEngine().run(
         const <String>['hello'],
         parser: const ArgsCliParser(),
         logger: logger,
@@ -78,7 +78,7 @@ void main() {
     test('resolves aliases via router', () async {
       final logger = RecordingLogger();
 
-      final code = await runCliApp(
+      final code = await const DefaultCliEngine().run(
         const <String>['-v'],
         parser: const ArgsCliParser(),
         logger: logger,
@@ -96,7 +96,7 @@ void main() {
     test('uses fallback when command not found', () async {
       final logger = RecordingLogger();
 
-      final code = await runCliApp(
+      final code = await const DefaultCliEngine().run(
         const <String>['unknown'],
         parser: const ArgsCliParser(),
         logger: logger,
@@ -117,7 +117,7 @@ void main() {
     test('returns error and logs when unknown and no fallback', () async {
       final logger = RecordingLogger();
 
-      final code = await runCliApp(
+      final code = await const DefaultCliEngine().run(
         const <String>['nope'],
         parser: const ArgsCliParser(),
         logger: logger,
@@ -135,7 +135,7 @@ void main() {
     test('fallback can return null, then engine reports unknown', () async {
       final logger = RecordingLogger();
 
-      final code = await runCliApp(
+      final code = await const DefaultCliEngine().run(
         const <String>['nope'],
         parser: const ArgsCliParser(),
         logger: logger,
@@ -156,7 +156,7 @@ void main() {
     test('catches handler exceptions and returns 1 with error logs', () async {
       final logger = RecordingLogger();
 
-      final code = await runCliApp(
+      final code = await const DefaultCliEngine().run(
         const <String>['boom'],
         parser: const ArgsCliParser(),
         logger: logger,

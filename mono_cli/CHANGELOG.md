@@ -2,7 +2,7 @@
 
 - Removed export of `mono_core`
 - `DefaultCommandEnvironmentBuilder` now uses injected core dependencies
-- New: Added CLI engine `runCliApp` to centralize parse/help/dispatch (exported)
+- New: `DefaultCliEngine` implements core `CliEngine`
 
 ## 0.0.5
 

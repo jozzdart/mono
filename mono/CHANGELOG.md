@@ -2,7 +2,7 @@
 
 - Imported `mono_core` into `mono`
 - Updated commands to depend on `mono_core` ports only
-- Delegate CLI loop to `mono_cli` `runCliApp` engine (no behavior change)
+- Use pluggable `CliEngine` (default from `mono_cli`), no behavior change
 
 ## 0.0.5
 
