@@ -23,5 +23,6 @@ class StyledText {
 /// Theme interface for mapping log semantics to style tokens.
 abstract class StyleTheme {
   Set<StyleToken> stylesForLevel(LogLevel level);
-  Set<StyleToken> stylesForCategory(String category) => const <StyleToken>{};
+  Set<StyleToken> stylesForCategory(LogCategory category) =>
+      const <StyleToken>{};
 }

@@ -5,9 +5,9 @@ Contracts for the logging pipeline and API.
 ## Components
 
 - `Logger` and `LoggerFactory`: high-level API and child logger creation.
-- `LogSink`: side-effect target (e.g., console, file). No IO here, just the contract.
+- `LogSink`: side-effect target (e.g., console, file). No IO here, just the contract. Implements `flush()`/`close()` for buffered/async outputs.
 - `LogFormatter`: converts a `LogRecord` into an output object (string, renderable, etc.).
-- `LogRouter`: routes records to sinks (optionally with per-sink filters).
+- `LogRouter`: routes records to sinks (optionally with per-sink filters). Exposes `flush()`/`close()` to cascade lifecycle to sinks.
 - `LogPipeline`: convenience composition of `LogFormatter` + `LogRouter`.
 - `FilterPolicy`, `LogFilter`: filtering hooks.
 - `LogScope`: capture/silence policies with summary reporting.
@@ -19,6 +19,7 @@ Contracts for the logging pipeline and API.
 3. Formatter transforms the record into output form.
 4. Router sends the record to one or more sinks.
 5. Sinks perform side-effects (outside this package).
+6. `flush()`/`close()` drain and finalize outputs when the app exits or before critical transitions.
 
 ## Scopes
 

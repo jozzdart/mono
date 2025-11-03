@@ -5,6 +5,8 @@ abstract class LogRouter {
   void addSink(LogSink sink, {LogFilter? filter});
   void removeSink(SinkId id);
   void route(LogRecord record);
+  Future<void> flush();
+  Future<void> close();
 }
 
 /// Optional higher-level pipeline interface for plugging formatter and router.

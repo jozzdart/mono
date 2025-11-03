@@ -52,8 +52,8 @@ Recommended:
 ### 2) Pipeline: formatter, router, sinks
 
 - `LogFormatter`: map `LogRecord` → concrete output (e.g., colorized string, JSON)
-- `LogRouter`: route records to sinks, optionally with per-sink `LogFilter`
-- `LogSink`: perform side effects (console, file, memory); expose `flush()` if useful
+ - `LogRouter`: route records to sinks, optionally with per-sink `LogFilter`; provide `flush()`/`close()` to cascade lifecycle to sinks
+ - `LogSink`: perform side effects (console, file, memory); implement `flush()`/`close()`
 
 Tips:
 
@@ -128,6 +128,7 @@ Behavior for long-running processes:
 - Minimize allocations in hot paths; throttle progress updates
 - Be thread/isolates safe if used concurrently
 - Avoid interleaving progress display with normal logs unless using pinned regions
+ - Provide `Logger.flush()` / `Logger.close()` so apps can deterministically drain logs and tear down progress/scopes before exit
 
 ## Example (intended usage)
 

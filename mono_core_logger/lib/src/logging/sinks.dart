@@ -6,7 +6,10 @@ typedef SinkId = String;
 abstract class LogSink {
   SinkId get id;
   void handle(LogRecord record);
-  void flush() {}
+  Future<void> flush() async {}
+  Future<void> close() async {
+    await flush();
+  }
 }
 
 /// Formats a record into an implementation-defined output (string/renderable/or structured).

@@ -7,7 +7,7 @@ abstract class Logger {
     Object message, {
     List<LogTag> tags = const <LogTag>[],
     LogFields? fields,
-    String? category,
+    LogCategory? category,
   });
 
   // Convenience shortcuts
@@ -52,6 +52,10 @@ abstract class Logger {
     CaptureMode capture = CaptureMode.none,
     SilencePolicy silence = SilencePolicy.none,
   });
+
+  // Lifecycle
+  Future<void> flush();
+  Future<void> close();
 }
 
 /// Section scope for grouping related logs under a titled heading.
@@ -63,7 +67,7 @@ abstract class SectionScope {
 /// Factory for composing child loggers with merged context/category/tags.
 abstract class LoggerFactory {
   Logger child({
-    String? category,
+    LogCategory? category,
     List<LogTag> tags = const <LogTag>[],
     LogFields? fields,
     LogContext? context,

@@ -10,12 +10,12 @@ class LevelAtLeast implements FilterExpression {
 }
 
 class HasTag implements FilterExpression {
-  final String tag;
+  final LogTag tag;
   const HasTag(this.tag);
 }
 
 class CategoryIs implements FilterExpression {
-  final String category;
+  final LogCategory category;
   const CategoryIs(this.category);
 }
 

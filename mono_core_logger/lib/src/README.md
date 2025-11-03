@@ -25,6 +25,7 @@ import 'package:mono_core_logger/mono_core_logger.dart';
 - Implementation-agnostic: no dependencies on terminal control.
 - Separation of concerns: models vs renderers, records vs formatting vs routing.
 - Extensibility: pluggable sinks/formatters/routers; renderable content is open-ended.
+ - Message body is strongly typed: `LogRecord.body` uses `MessageBody` (`TextMessage` or `RenderableMessage`).
 
 ## Out of scope
 

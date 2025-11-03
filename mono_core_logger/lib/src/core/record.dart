@@ -35,10 +35,10 @@ class LogRecord {
   final DateTime timestamp;
   final LogLevel level;
 
-  /// Either a plain String or a Renderable (defined in renderables.dart)
-  final Object body;
+  /// Message body wrapper (`TextMessage` or `RenderableMessage`).
+  final MessageBody body;
   final List<LogTag> tags;
-  final String? category;
+  final LogCategory? category;
   final LogFields fields;
   final LogContext context;
 

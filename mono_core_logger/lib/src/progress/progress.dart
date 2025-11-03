@@ -12,9 +12,6 @@ enum ProgressDisplayMode {
   silent,
 }
 
-/// Identifier for a pinned display region.
-typedef PinnedRegionId = String;
-
 /// Immutable snapshot of a progress task.
 class ProgressTask {
   final String id;
