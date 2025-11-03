@@ -2,7 +2,12 @@ import 'package:mono_cli/mono_cli.dart';
 import 'package:mono_core/mono_core.dart';
 
 class DefaultTaskExecutor implements TaskExecutor {
-  const DefaultTaskExecutor();
+  const DefaultTaskExecutor({
+    this.processRunner = const DefaultProcessRunner(),
+    this.commandPlanner = const DefaultCommandPlanner(),
+  });
+  final ProcessRunner processRunner;
+  final CommandPlanner commandPlanner;
 
   @override
   Future<int> execute({
@@ -36,8 +41,8 @@ class DefaultTaskExecutor implements TaskExecutor {
       return 1;
     }
 
-    final plan = const DefaultCommandPlanner()
-        .plan(task: task, targets: targets) as SimpleExecutionPlan;
+    final plan = commandPlanner.plan(task: task, targets: targets)
+        as SimpleExecutionPlan;
 
     if (inv.options['dry-run']?.isNotEmpty == true) {
       final label =
@@ -48,8 +53,8 @@ class DefaultTaskExecutor implements TaskExecutor {
     }
 
     final runner = Runner(
-      processRunner: const DefaultProcessRunner(),
-      logger: const StdLogger(),
+      processRunner: processRunner,
+      logger: logger,
       options: RunnerOptions(
         concurrency: envCtx.effectiveConcurrency,
         env: env,
