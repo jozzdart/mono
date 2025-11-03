@@ -1,4 +1,3 @@
-/// Cooperative cancellation token.
 abstract class CancelToken {
   bool get isCancelled;
   Object? get reason;

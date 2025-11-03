@@ -1,4 +1,4 @@
-import 'levels.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 /// Tag value for grouping/filtering logs.
 typedef LogTag = String;

@@ -1,4 +1,4 @@
-import '../progress.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 /// Represents a group of related progress tasks (nesting/aggregation hint).
 abstract class ProgressGroupHandle {

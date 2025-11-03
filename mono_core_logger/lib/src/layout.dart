@@ -1,5 +1,3 @@
-/// Region and layout hints for renderers.
-
 typedef RegionId = String;
 
 enum LayoutHint {

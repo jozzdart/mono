@@ -1,4 +1,4 @@
-import 'record.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 typedef LogFilter = bool Function(LogRecord record);
 

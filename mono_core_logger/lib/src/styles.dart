@@ -1,4 +1,4 @@
-import 'levels.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 /// Semantic style tokens (actual colors/styles are implementation-defined).
 enum StyleToken {

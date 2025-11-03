@@ -1,5 +1,4 @@
-import 'record.dart';
-import 'filters.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 /// How logs are captured within a scope for later summarization.
 enum CaptureMode {

@@ -1,4 +1,4 @@
-import '../renderables.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 class CodeBlockRenderable extends Renderable {
   final String code;

@@ -1,4 +1,4 @@
-import 'renderables.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 /// Union for a log message body (text or renderable).
 abstract class MessageBody {

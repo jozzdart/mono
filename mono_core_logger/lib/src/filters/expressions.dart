@@ -1,5 +1,4 @@
-import '../levels.dart';
-import '../filters.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 abstract class FilterExpression {
   const FilterExpression();

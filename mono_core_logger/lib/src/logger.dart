@@ -1,9 +1,4 @@
-import 'levels.dart';
-import 'progress.dart';
-import 'record.dart';
-import 'renderables.dart';
-import 'scopes.dart';
-import 'filters.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 /// High-level logging API.
 abstract class Logger {

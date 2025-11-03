@@ -1,6 +1,4 @@
-import 'filters.dart';
-import 'record.dart';
-import 'sinks.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 /// Routes records to sinks, optionally applying filters per-sink.
 abstract class LogRouter {

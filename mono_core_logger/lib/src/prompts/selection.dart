@@ -1,4 +1,4 @@
-import 'models.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 class SelectionConstraints {
   final int? min;

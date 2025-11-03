@@ -1,4 +1,4 @@
-import '../layout.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 /// Logical input events for prompts, independent of actual key presses.
 abstract class PromptInput {

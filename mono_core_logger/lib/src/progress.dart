@@ -1,4 +1,4 @@
-import 'levels.dart';
+import 'package:mono_core_logger/mono_core_logger.dart';
 
 /// Hint for how progress should be displayed by an implementation.
 enum ProgressDisplayMode {
