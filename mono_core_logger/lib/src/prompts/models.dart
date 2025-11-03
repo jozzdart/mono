@@ -72,17 +72,17 @@ abstract class PromptModel<TState> {
 }
 
 /// A running prompt session with a model and a future result.
-abstract class PromptSession<T> {
+abstract class PromptSession<TValue, TState> {
   const PromptSession();
-  PromptModel<Object?> get model;
-  Future<T> get result;
+  PromptModel<TState> get model;
+  Future<TValue> get result;
   void input(PromptInput input);
   void close();
 }
 
 /// Visual renderer contract that observes a prompt model and draws it into a region.
-abstract class PromptRenderer {
+abstract class PromptRenderer<TState> {
   const PromptRenderer();
-  void attach(PromptModel<Object?> model, {RegionId? region});
-  void detach(PromptModel<Object?> model);
+  void attach(PromptModel<TState> model, {RegionId? region});
+  void detach(PromptModel<TState> model);
 }
