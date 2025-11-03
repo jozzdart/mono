@@ -3,6 +3,7 @@ import 'package:mono_cli/mono_cli.dart';
 import 'package:test/test.dart';
 
 import '../util/fakes.dart';
+import 'package:mono_core/mono_core.dart';
 
 void main() {
   group('VersionCommand', () {

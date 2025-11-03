@@ -1,4 +1,5 @@
 import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 import 'commands/setup.dart';
 import 'commands/scan.dart';
@@ -95,6 +96,7 @@ Future<int> runCli(
         inv: inv,
         logger: logger,
         workspaceConfig: workspaceConfig,
+        packageScanner: wiring!.packageScanner,
       );
     });
 
@@ -136,7 +138,8 @@ Future<int> runCli(
         inv: inv,
         logger: logger,
         workspaceConfig: workspaceConfig,
-        groupStoreFactory: wiring!.groupStoreFactory,
+        packageScanner: wiring!.packageScanner,
+        groupStoreFactory: wiring.groupStoreFactory,
       );
     });
 
@@ -154,7 +157,8 @@ Future<int> runCli(
         logger: logger,
         prompter: prompter,
         workspaceConfig: workspaceConfig,
-        groupStoreFactory: wiring!.groupStoreFactory,
+        packageScanner: wiring!.packageScanner,
+        groupStoreFactory: wiring.groupStoreFactory,
       );
     });
 

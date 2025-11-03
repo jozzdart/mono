@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:mono_cli/mono_cli.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:mono_core/mono_core.dart';
 
 String writePubspec(String dir, String name,
     {bool flutter = false, String? depsYaml}) {

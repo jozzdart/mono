@@ -1,5 +1,6 @@
 import 'package:mono_cli/mono_cli.dart' hide equals;
 import 'package:test/test.dart';
+import 'package:mono_core/mono_core.dart';
 
 void main() {
   group('YamlConfigValidator', () {

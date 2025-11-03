@@ -1,7 +1,7 @@
 name: mono_cli
 description: CLI exports and implementations for the Mono CLI, used by the mono package.
 resolution: workspace
-version: 0.0.5
+version: 0.0.6
 homepage: https://github.com/jozzdart/mono
 repository: https://github.com/jozzdart/mono/tree/main/mono_cli
 issue_tracker: https://github.com/jozzdart/mono/issues

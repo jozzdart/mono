@@ -4,6 +4,7 @@ import 'package:mono/src/commands/scan.dart';
 import 'package:mono_cli/mono_cli.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:mono_core/mono_core.dart';
 
 import '../util/fs_fixtures.dart';
 import '../util/fakes.dart';
@@ -28,7 +29,8 @@ void main() {
         final code = await ScanCommand.run(
             inv: inv,
             logger: BufferingLogger(outB, errB),
-            workspaceConfig: workspaceConfig);
+            workspaceConfig: workspaceConfig,
+            packageScanner: const FileSystemPackageScanner());
         expect(code, 0);
 
         final proj = File(p.join('monocfg', 'mono_projects.yaml'));
@@ -60,7 +62,8 @@ void main() {
         final code = await ScanCommand.run(
             inv: inv,
             logger: BufferingLogger(outB, errB),
-            workspaceConfig: workspaceConfig);
+            workspaceConfig: workspaceConfig,
+            packageScanner: const FileSystemPackageScanner());
         expect(code, 0);
 
         final proj = File(p.join('monocfg', 'mono_projects.yaml'));

@@ -1,3 +1,7 @@
+## 0.0.6
+
+- Removed export of `mono_core`
+
 ## 0.0.5
 
 - Breaking: Moved CLI IO to `Logger` across router and executor implementations.

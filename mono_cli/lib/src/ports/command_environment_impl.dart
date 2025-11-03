@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 /// Default implementation building a CommandEnvironment from files and CLI opts.
 class DefaultCommandEnvironmentBuilder implements CommandEnvironmentBuilder {

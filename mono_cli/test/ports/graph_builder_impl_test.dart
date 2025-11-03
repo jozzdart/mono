@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 import '../util/test_doubles.dart';
 

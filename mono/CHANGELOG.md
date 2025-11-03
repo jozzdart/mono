@@ -1,3 +1,8 @@
+## 0.0.6
+
+- Imported `mono_core` into `mono`
+- Updated commands to depend on `mono_core` ports only
+
 ## 0.0.5
 
 - Breaking: Switched CLI IO to `Logger` and simplified `runCli` signature.

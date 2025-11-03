@@ -4,6 +4,7 @@ import 'package:mono/src/commands/list.dart';
 import 'package:mono_cli/mono_cli.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:mono_core/mono_core.dart';
 
 import '../util/fs_fixtures.dart';
 import '../util/fakes.dart';
@@ -41,7 +42,17 @@ void main() {
         final code = await ListCommand.run(
             inv: inv,
             logger: BufferingLogger(outB, errB),
-            workspaceConfig: workspaceConfig);
+            workspaceConfig: workspaceConfig,
+            packageScanner: const FileSystemPackageScanner(),
+            groupStoreFactory: (String monocfgPath) {
+              final groupsPath =
+                  const DefaultPathService().join([monocfgPath, 'groups']);
+              final folder = FileListConfigFolder(
+                basePath: groupsPath,
+                namePolicy: const DefaultSlugNamePolicy(),
+              );
+              return FileGroupStore(folder);
+            });
         expect(code, 0);
         final out = outB.toString();
         expect(out, contains('- a → /tmp/a (dart)'));
@@ -70,7 +81,17 @@ void main() {
         final code = await ListCommand.run(
             inv: inv,
             logger: BufferingLogger(outB, errB),
-            workspaceConfig: workspaceConfig);
+            workspaceConfig: workspaceConfig,
+            packageScanner: const FileSystemPackageScanner(),
+            groupStoreFactory: (String monocfgPath) {
+              final groupsPath =
+                  const DefaultPathService().join([monocfgPath, 'groups']);
+              final folder = FileListConfigFolder(
+                basePath: groupsPath,
+                namePolicy: const DefaultSlugNamePolicy(),
+              );
+              return FileGroupStore(folder);
+            });
         expect(code, 0);
         final out = outB.toString();
         expect(out, contains('a → '));
@@ -99,7 +120,17 @@ void main() {
         final code = await ListCommand.run(
             inv: inv,
             logger: BufferingLogger(outB, errB),
-            workspaceConfig: workspaceConfig);
+            workspaceConfig: workspaceConfig,
+            packageScanner: const FileSystemPackageScanner(),
+            groupStoreFactory: (String monocfgPath) {
+              final groupsPath =
+                  const DefaultPathService().join([monocfgPath, 'groups']);
+              final folder = FileListConfigFolder(
+                basePath: groupsPath,
+                namePolicy: const DefaultSlugNamePolicy(),
+              );
+              return FileGroupStore(folder);
+            });
         expect(code, 0);
         final out = outB.toString();
         expect(out, contains('- dev → a, b'));
@@ -131,7 +162,17 @@ void main() {
         final code = await ListCommand.run(
             inv: inv,
             logger: BufferingLogger(outB, errB),
-            workspaceConfig: workspaceConfig);
+            workspaceConfig: workspaceConfig,
+            packageScanner: const FileSystemPackageScanner(),
+            groupStoreFactory: (String monocfgPath) {
+              final groupsPath =
+                  const DefaultPathService().join([monocfgPath, 'groups']);
+              final folder = FileListConfigFolder(
+                basePath: groupsPath,
+                namePolicy: const DefaultSlugNamePolicy(),
+              );
+              return FileGroupStore(folder);
+            });
         expect(code, 0);
         final out = outB.toString();
         expect(out, contains('- fmt (plugin: format)'));

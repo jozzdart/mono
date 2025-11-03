@@ -4,6 +4,7 @@ import 'package:mono/src/commands/ungroup.dart';
 import 'package:mono_cli/mono_cli.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:mono_core/mono_core.dart';
 
 import '../util/fakes.dart';
 import '../util/fs_fixtures.dart';

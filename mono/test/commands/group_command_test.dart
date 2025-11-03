@@ -4,6 +4,7 @@ import 'package:mono/src/commands/group.dart';
 import 'package:mono_cli/mono_cli.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:mono_core/mono_core.dart';
 
 import '../util/fakes.dart';
 import '../util/fs_fixtures.dart';
@@ -29,6 +30,16 @@ void main() {
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
           workspaceConfig: workspaceConfig,
+          packageScanner: const FileSystemPackageScanner(),
+          groupStoreFactory: (String monocfgPath) {
+            final groupsPath =
+                const DefaultPathService().join([monocfgPath, 'groups']);
+            final folder = FileListConfigFolder(
+              basePath: groupsPath,
+              namePolicy: const DefaultSlugNamePolicy(),
+            );
+            return FileGroupStore(folder);
+          },
         );
         expect(code, 2);
         expect(errB.toString(), contains('Usage: mono group <group_name>'));
@@ -52,6 +63,16 @@ void main() {
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
           workspaceConfig: workspaceConfig,
+          packageScanner: const FileSystemPackageScanner(),
+          groupStoreFactory: (String monocfgPath) {
+            final groupsPath =
+                const DefaultPathService().join([monocfgPath, 'groups']);
+            final folder = FileListConfigFolder(
+              basePath: groupsPath,
+              namePolicy: const DefaultSlugNamePolicy(),
+            );
+            return FileGroupStore(folder);
+          },
         );
         expect(code, 2);
         expect(errB.toString(), contains('Invalid group name: ":bad"'));
@@ -79,6 +100,16 @@ void main() {
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(nextConfirm: false),
           workspaceConfig: workspaceConfig,
+          packageScanner: const FileSystemPackageScanner(),
+          groupStoreFactory: (String monocfgPath) {
+            final groupsPath =
+                const DefaultPathService().join([monocfgPath, 'groups']);
+            final folder = FileListConfigFolder(
+              basePath: groupsPath,
+              namePolicy: const DefaultSlugNamePolicy(),
+            );
+            return FileGroupStore(folder);
+          },
         );
         expect(code, 1);
         expect(errB.toString(), contains('Aborted.'));
@@ -107,6 +138,16 @@ void main() {
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(checklistIndices: [0, 2]),
           workspaceConfig: workspaceConfig,
+          packageScanner: const FileSystemPackageScanner(),
+          groupStoreFactory: (String monocfgPath) {
+            final groupsPath =
+                const DefaultPathService().join([monocfgPath, 'groups']);
+            final folder = FileListConfigFolder(
+              basePath: groupsPath,
+              namePolicy: const DefaultSlugNamePolicy(),
+            );
+            return FileGroupStore(folder);
+          },
         );
         expect(code, 0);
         expect(outB.toString(), contains('Group "g1" saved with 2 member(s).'));
@@ -137,6 +178,16 @@ void main() {
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(checklistIndices: [], nextConfirm: false),
           workspaceConfig: workspaceConfig,
+          packageScanner: const FileSystemPackageScanner(),
+          groupStoreFactory: (String monocfgPath) {
+            final groupsPath =
+                const DefaultPathService().join([monocfgPath, 'groups']);
+            final folder = FileListConfigFolder(
+              basePath: groupsPath,
+              namePolicy: const DefaultSlugNamePolicy(),
+            );
+            return FileGroupStore(folder);
+          },
         );
         expect(code, 1);
         expect(errB.toString(), contains('Aborted.'));
@@ -162,6 +213,16 @@ void main() {
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
           workspaceConfig: workspaceConfig,
+          packageScanner: const FileSystemPackageScanner(),
+          groupStoreFactory: (String monocfgPath) {
+            final groupsPath =
+                const DefaultPathService().join([monocfgPath, 'groups']);
+            final folder = FileListConfigFolder(
+              basePath: groupsPath,
+              namePolicy: const DefaultSlugNamePolicy(),
+            );
+            return FileGroupStore(folder);
+          },
         );
         expect(code, 2);
         expect(errB.toString(),
