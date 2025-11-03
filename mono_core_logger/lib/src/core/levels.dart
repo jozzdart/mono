@@ -1,5 +1,3 @@
-/// Log severity levels and categories.
-
 enum LogLevel {
   trace,
   debug,
