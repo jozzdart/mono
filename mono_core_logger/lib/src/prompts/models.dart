@@ -74,7 +74,7 @@ abstract class PromptModel<TState> {
 /// A running prompt session with a model and a future result.
 abstract class PromptSession<T> {
   const PromptSession();
-  PromptModel<dynamic> get model;
+  PromptModel<Object?> get model;
   Future<T> get result;
   void input(PromptInput input);
   void close();
@@ -83,6 +83,6 @@ abstract class PromptSession<T> {
 /// Visual renderer contract that observes a prompt model and draws it into a region.
 abstract class PromptRenderer {
   const PromptRenderer();
-  void attach(PromptModel<dynamic> model, {RegionId? region});
-  void detach(PromptModel<dynamic> model);
+  void attach(PromptModel<Object?> model, {RegionId? region});
+  void detach(PromptModel<Object?> model);
 }
