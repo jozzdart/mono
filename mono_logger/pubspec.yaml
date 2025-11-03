@@ -1,0 +1,25 @@
+name: mono_logger
+description: Implementation of the mono_core_logger package with concrete IO.
+resolution: workspace
+version: 0.0.1
+publish_to: "none"
+homepage: https://github.com/jozzdart/mono
+repository: https://github.com/jozzdart/mono/tree/main/mono_logger
+issue_tracker: https://github.com/jozzdart/mono/issues
+topics:
+  - mono
+  - monorepo
+  - cli
+  - logging
+  - logger
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  mono_core_logger:
+    path: ../mono_core_logger
+
+dev_dependencies:
+  lints:
+  test:

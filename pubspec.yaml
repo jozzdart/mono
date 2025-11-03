@@ -9,7 +9,7 @@ workspace:
   - mono
   - mono_cli
   - mono_core
-  - mono_core_logger
+  - mono_logger
 
 dependencies:
 
