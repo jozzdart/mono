@@ -1,6 +1,7 @@
 import 'package:mono/src/cli.dart';
 import 'package:mono_cli/mono_cli.dart';
 import 'package:test/test.dart';
+import 'package:mono_core/mono_core.dart';
 
 class _BufferingLogger implements Logger {
   _BufferingLogger(this.out, this.err);

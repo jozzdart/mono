@@ -1,17 +1,17 @@
 import 'dart:io';
 
-import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 class ScanCommand {
   static Future<int> run(
       {required CliInvocation inv,
       required Logger logger,
-      required WorkspaceConfig workspaceConfig}) async {
+      required WorkspaceConfig workspaceConfig,
+      required PackageScanner packageScanner}) async {
     final root = Directory.current.path;
     final loaded = await workspaceConfig.loadRootConfig();
     await workspaceConfig.ensureMonocfgScaffold(loaded.monocfgPath);
-    final scanner = const FileSystemPackageScanner();
-    final pkgs = await scanner.scan(
+    final pkgs = await packageScanner.scan(
       rootPath: root,
       includeGlobs: loaded.config.include,
       excludeGlobs: loaded.config.exclude,

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 class GroupCommand {
   static Future<int> run({
@@ -8,7 +8,8 @@ class GroupCommand {
     required Logger logger,
     required Prompter prompter,
     required WorkspaceConfig workspaceConfig,
-    GroupStore Function(String monocfgPath)? groupStoreFactory,
+    required PackageScanner packageScanner,
+    required GroupStore Function(String monocfgPath) groupStoreFactory,
   }) async {
     if (inv.positionals.isEmpty) {
       logger.log('Usage: mono group <group_name>', level: 'error');
@@ -21,24 +22,14 @@ class GroupCommand {
     }
 
     final loaded = await workspaceConfig.loadRootConfig();
-    final store = (groupStoreFactory ??
-        (String monocfgPath) {
-          final groupsPath =
-              const DefaultPathService().join([monocfgPath, 'groups']);
-          final folder = FileListConfigFolder(
-            basePath: groupsPath,
-            namePolicy: const DefaultSlugNamePolicy(),
-          );
-          return FileGroupStore(folder);
-        })(loaded.monocfgPath);
+    final store = groupStoreFactory(loaded.monocfgPath);
 
     // Load packages from cache or fallback scanner
     final projects =
         await workspaceConfig.readMonocfgProjects(loaded.monocfgPath);
     List<String> packageNames;
     if (projects.isEmpty) {
-      final scanner = const FileSystemPackageScanner();
-      final pkgs = await scanner.scan(
+      final pkgs = await packageScanner.scan(
         rootPath: Directory.current.path,
         includeGlobs: loaded.config.include,
         excludeGlobs: loaded.config.exclude,

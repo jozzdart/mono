@@ -1,4 +1,5 @@
 import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 import 'commands/setup.dart';
 import 'commands/scan.dart';
@@ -33,6 +34,7 @@ class CliWiring {
     required this.plugins,
     required this.workspaceConfig,
     required this.taskExecutor,
+    this.engine,
   });
 
   final CliParser parser;
@@ -53,125 +55,127 @@ class CliWiring {
   final PluginResolver plugins;
   final WorkspaceConfig workspaceConfig;
   final TaskExecutor taskExecutor;
+  final CliEngine? engine;
 }
 
-Future<int> runCli(
-  List<String> argv, {
-  CliWiring? wiring,
-}) async {
-  try {
-    final parser = wiring?.parser ?? const ArgsCliParser();
-    final inv = parser.parse(argv);
-    if (inv.commandPath.isEmpty ||
-        inv.commandPath.first == 'help' ||
-        inv.commandPath.first == '--help' ||
-        inv.commandPath.first == '-h') {
-      (wiring?.logger ?? const StdLogger()).log(_helpText);
-      return 0;
-    }
-    final prompter = wiring?.prompter ?? const ConsolePrompter();
-    final versionInfo = wiring?.versionInfo ??
-        const StaticVersionInfo(name: 'mono', version: 'unknown');
-    final workspaceConfig =
-        wiring?.workspaceConfig ?? const FileWorkspaceConfig();
-    final logger = wiring?.logger ?? const StdLogger();
+Future<int> runCli(List<String> argv, {CliWiring? wiring}) async {
+  final parser = wiring?.parser ?? const ArgsCliParser();
+  final prompter = wiring?.prompter ?? const ConsolePrompter();
+  final versionInfo =
+      wiring?.versionInfo ??
+      const StaticVersionInfo(name: 'mono', version: 'unknown');
+  final workspaceConfig =
+      wiring?.workspaceConfig ?? const FileWorkspaceConfig();
+  final logger = wiring?.logger ?? const StdLogger();
 
-    // Router-based dispatch
-    final router = DefaultCommandRouter();
-    router.register('version', ({required inv, required logger}) async {
-      return VersionCommand.run(inv: inv, logger: logger, version: versionInfo);
-    }, aliases: const ['--version', '-v', '--v']);
+  final engine = wiring?.engine ?? const DefaultCliEngine();
 
-    router.register('setup', ({required inv, required logger}) async {
-      return SetupCommand.run(
-        inv: inv,
-        logger: logger,
-        workspaceConfig: workspaceConfig,
-      );
-    });
+  return engine.run(
+    argv,
+    parser: parser,
+    logger: logger,
+    routerFactory: () => DefaultCommandRouter(),
+    helpText: () => _helpText,
+    unknownCommandHelpHint: 'mono help',
+    register: (router) {
+      router.register('version', ({required inv, required logger}) async {
+        return VersionCommand.run(
+          inv: inv,
+          logger: logger,
+          version: versionInfo,
+        );
+      }, aliases: const ['--version', '-v', '--v']);
 
-    router.register('scan', ({required inv, required logger}) async {
-      return ScanCommand.run(
-        inv: inv,
-        logger: logger,
-        workspaceConfig: workspaceConfig,
-      );
-    });
+      router.register('setup', ({required inv, required logger}) async {
+        return SetupCommand.run(
+          inv: inv,
+          logger: logger,
+          workspaceConfig: workspaceConfig,
+        );
+      });
 
-    router.register('get', ({required inv, required logger}) async {
-      return GetCommand.run(
-        inv: inv,
-        logger: logger,
-        groupStoreFactory: wiring!.groupStoreFactory,
-        envBuilder: wiring.envBuilder,
-        plugins: wiring.plugins,
-        executor: wiring.taskExecutor,
-      );
-    });
+      router.register('scan', ({required inv, required logger}) async {
+        return ScanCommand.run(
+          inv: inv,
+          logger: logger,
+          workspaceConfig: workspaceConfig,
+          packageScanner: wiring!.packageScanner,
+        );
+      });
 
-    router.register('format', ({required inv, required logger}) async {
-      return FormatCommand.run(
-        inv: inv,
-        logger: logger,
-        groupStoreFactory: wiring!.groupStoreFactory,
-        envBuilder: wiring.envBuilder,
-        plugins: wiring.plugins,
-        executor: wiring.taskExecutor,
-      );
-    });
+      router.register('get', ({required inv, required logger}) async {
+        return GetCommand.run(
+          inv: inv,
+          logger: logger,
+          groupStoreFactory: wiring!.groupStoreFactory,
+          envBuilder: wiring.envBuilder,
+          plugins: wiring.plugins,
+          executor: wiring.taskExecutor,
+        );
+      });
 
-    router.register('test', ({required inv, required logger}) async {
-      return TestCommand.run(
-        inv: inv,
-        logger: logger,
-        groupStoreFactory: wiring!.groupStoreFactory,
-        envBuilder: wiring.envBuilder,
-        plugins: wiring.plugins,
-        executor: wiring.taskExecutor,
-      );
-    });
+      router.register('format', ({required inv, required logger}) async {
+        return FormatCommand.run(
+          inv: inv,
+          logger: logger,
+          groupStoreFactory: wiring!.groupStoreFactory,
+          envBuilder: wiring.envBuilder,
+          plugins: wiring.plugins,
+          executor: wiring.taskExecutor,
+        );
+      });
 
-    router.register('list', ({required inv, required logger}) async {
-      return ListCommand.run(
-        inv: inv,
-        logger: logger,
-        workspaceConfig: workspaceConfig,
-        groupStoreFactory: wiring!.groupStoreFactory,
-      );
-    });
+      router.register('test', ({required inv, required logger}) async {
+        return TestCommand.run(
+          inv: inv,
+          logger: logger,
+          groupStoreFactory: wiring!.groupStoreFactory,
+          envBuilder: wiring.envBuilder,
+          plugins: wiring.plugins,
+          executor: wiring.taskExecutor,
+        );
+      });
 
-    router.register('tasks', ({required inv, required logger}) async {
-      return TasksCommand.run(
-        inv: inv,
-        logger: logger,
-        workspaceConfig: workspaceConfig,
-      );
-    });
+      router.register('list', ({required inv, required logger}) async {
+        return ListCommand.run(
+          inv: inv,
+          logger: logger,
+          workspaceConfig: workspaceConfig,
+          packageScanner: wiring!.packageScanner,
+          groupStoreFactory: wiring.groupStoreFactory,
+        );
+      });
 
-    router.register('group', ({required inv, required logger}) async {
-      return GroupCommand.run(
-        inv: inv,
-        logger: logger,
-        prompter: prompter,
-        workspaceConfig: workspaceConfig,
-        groupStoreFactory: wiring!.groupStoreFactory,
-      );
-    });
+      router.register('tasks', ({required inv, required logger}) async {
+        return TasksCommand.run(
+          inv: inv,
+          logger: logger,
+          workspaceConfig: workspaceConfig,
+        );
+      });
 
-    router.register('ungroup', ({required inv, required logger}) async {
-      return UngroupCommand.run(
-        inv: inv,
-        logger: logger,
-        prompter: prompter,
-        workspaceConfig: workspaceConfig,
-        groupStoreFactory: wiring!.groupStoreFactory,
-      );
-    });
+      router.register('group', ({required inv, required logger}) async {
+        return GroupCommand.run(
+          inv: inv,
+          logger: logger,
+          prompter: prompter,
+          workspaceConfig: workspaceConfig,
+          packageScanner: wiring!.packageScanner,
+          groupStoreFactory: wiring.groupStoreFactory,
+        );
+      });
 
-    final dispatched = await router.tryDispatch(inv: inv, logger: logger);
-    if (dispatched != null) return dispatched;
-    // Attempt to resolve as a task name
-    final maybe = await TaskCommand.tryRun(
+      router.register('ungroup', ({required inv, required logger}) async {
+        return UngroupCommand.run(
+          inv: inv,
+          logger: logger,
+          prompter: prompter,
+          workspaceConfig: workspaceConfig,
+          groupStoreFactory: wiring!.groupStoreFactory,
+        );
+      });
+    },
+    fallback: ({required inv, required logger}) => TaskCommand.tryRun(
       inv: inv,
       logger: logger,
       groupStoreFactory: wiring!.groupStoreFactory,
@@ -179,21 +183,12 @@ Future<int> runCli(
       workspaceConfig: workspaceConfig,
       envBuilder: wiring.envBuilder,
       executor: wiring.taskExecutor,
-    );
-    if (maybe != null) return maybe;
-
-    logger.log('Unknown command: ${inv.commandPath.join(' ')}', level: 'error');
-    logger.log('Use `mono help`', level: 'error');
-    return 1;
-  } catch (e, st) {
-    (wiring?.logger ?? const StdLogger())
-        .log('mono failed: $e', level: 'error');
-    (wiring?.logger ?? const StdLogger()).log('$st', level: 'error');
-    return 1;
-  }
+    ),
+  );
 }
 
-const String _helpText = 'mono - Manage Dart/Flutter monorepos\n\n'
+const String _helpText =
+    'mono - Manage Dart/Flutter monorepos\n\n'
     'Usage:\n'
     '  mono setup\n'
     '  mono scan\n'

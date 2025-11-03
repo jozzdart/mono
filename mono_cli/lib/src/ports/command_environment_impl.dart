@@ -1,33 +1,42 @@
 import 'dart:io';
 
 import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 /// Default implementation building a CommandEnvironment from files and CLI opts.
 class DefaultCommandEnvironmentBuilder implements CommandEnvironmentBuilder {
-  const DefaultCommandEnvironmentBuilder();
+  final WorkspaceConfig workspaceConfig;
+  final PackageScanner packageScanner;
+  final GraphBuilder graphBuilder;
+  final TargetSelector targetSelector;
+
+  const DefaultCommandEnvironmentBuilder({
+    this.workspaceConfig = const FileWorkspaceConfig(),
+    this.packageScanner = const FileSystemPackageScanner(),
+    this.graphBuilder = const DefaultGraphBuilder(),
+    this.targetSelector = const DefaultTargetSelector(),
+  });
 
   @override
   Future<CommandEnvironment> build(
     CliInvocation inv, {
     required GroupStore Function(String monocfgPath) groupStoreFactory,
   }) async {
-    // Load mono.yaml
-    final rawYaml = await _readFileIfExists('mono.yaml');
-    final loader = const YamlConfigLoader();
-    final config = loader.load(rawYaml);
-    final monocfgPath = _extractMonocfgPath(rawYaml);
+    // Load configuration and resolve monocfg path via injected workspace config
+    final loaded = await workspaceConfig.loadRootConfig();
+    final config = loaded.config;
+    final monocfgPath = loaded.monocfgPath;
 
     // Scan packages
     final root = Directory.current.path;
-    final scanner = const FileSystemPackageScanner();
-    final packages = await scanner.scan(
+    final packages = await packageScanner.scan(
       rootPath: root,
       includeGlobs: config.include,
       excludeGlobs: config.exclude,
     );
 
     // Build graph
-    final graph = const DefaultGraphBuilder().build(packages);
+    final graph = graphBuilder.build(packages);
 
     // Load groups
     final store = groupStoreFactory(monocfgPath);
@@ -38,8 +47,7 @@ class DefaultCommandEnvironmentBuilder implements CommandEnvironmentBuilder {
       groups[name] = members.toSet();
     }
 
-    // Selector and effective options
-    final selector = const DefaultTargetSelector();
+    // Effective options
     final effectiveOrder = _effectiveOrder(inv, config) == 'dependency';
     final effectiveConcurrency = _effectiveConcurrency(inv, config);
 
@@ -49,29 +57,11 @@ class DefaultCommandEnvironmentBuilder implements CommandEnvironmentBuilder {
       packages: packages,
       graph: graph,
       groups: groups,
-      selector: selector,
+      selector: targetSelector,
       effectiveOrder: effectiveOrder,
       effectiveConcurrency: effectiveConcurrency,
     );
   }
-}
-
-Future<String> _readFileIfExists(String path) async {
-  final f = File(path);
-  if (await f.exists()) return f.readAsString();
-  return '';
-}
-
-String _extractMonocfgPath(String rawYaml) {
-  if (rawYaml.trim().isEmpty) return 'monocfg';
-  final node = loadYaml(rawYaml, recover: true);
-  if (node is! YamlMap) return 'monocfg';
-  final settings = node['settings'];
-  if (settings is YamlMap) {
-    final v = settings['monocfgPath'];
-    if (v != null && v.toString().trim().isNotEmpty) return v.toString();
-  }
-  return 'monocfg';
 }
 
 String _effectiveOrder(CliInvocation inv, MonoConfig cfg) {

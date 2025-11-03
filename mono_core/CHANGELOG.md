@@ -1,3 +1,8 @@
+## 0.0.6
+
+- New port: `CliEngine` for CLI runtime abstraction.
+- Added `CommandRouterFactory` typedef and updated `CliEngine.run` to accept router factory.
+
 ## 0.0.5
 
 - Breaking: Replaced IOSink-based IO in core ports with `Logger`.

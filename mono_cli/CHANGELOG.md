@@ -1,3 +1,10 @@
+## 0.0.6
+
+- Removed export of `mono_core`
+- `DefaultCommandEnvironmentBuilder` now uses injected core dependencies
+- New: `DefaultCliEngine` implements core `CliEngine`
+- `DefaultCliEngine` now uses injected router factory instead of creating router directly
+
 ## 0.0.5
 
 - Breaking: Moved CLI IO to `Logger` across router and executor implementations.

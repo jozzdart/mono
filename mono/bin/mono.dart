@@ -29,7 +29,10 @@ Future<void> main(List<String> argv) async {
     versionInfo: StaticVersionInfo(name: 'mono', version: ver),
     envBuilder: const DefaultCommandEnvironmentBuilder(),
     plugins: plugins,
-    taskExecutor: const DefaultTaskExecutor(),
+    taskExecutor: DefaultTaskExecutor(
+      processRunner: const DefaultProcessRunner(),
+      commandPlanner: const DefaultCommandPlanner(),
+    ),
     groupStoreFactory: (String monocfgPath) {
       final groupsPath =
           const DefaultPathService().join([monocfgPath, 'groups']);

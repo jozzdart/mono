@@ -1,6 +1,6 @@
 import 'dart:io' show Platform;
 
-import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 class DefaultPlatformInfo implements PlatformInfo {
   const DefaultPlatformInfo();

@@ -1,13 +1,15 @@
 import 'dart:io';
 
-import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 class ListCommand {
   static Future<int> run(
       {required CliInvocation inv,
       required Logger logger,
       required WorkspaceConfig workspaceConfig,
-      GroupStore Function(String monocfgPath)? groupStoreFactory}) async {
+      required PackageScanner packageScanner,
+      required GroupStore Function(String monocfgPath)
+          groupStoreFactory}) async {
     final what =
         inv.positionals.isNotEmpty ? inv.positionals.first : 'packages';
     final loaded = await workspaceConfig.loadRootConfig();
@@ -16,8 +18,7 @@ class ListCommand {
           await workspaceConfig.readMonocfgProjects(loaded.monocfgPath);
       if (projects.isEmpty) {
         // Fallback to a quick scan if no cache yet
-        final scanner = const FileSystemPackageScanner();
-        final pkgs = await scanner.scan(
+        final pkgs = await packageScanner.scan(
           rootPath: Directory.current.path,
           includeGlobs: loaded.config.include,
           excludeGlobs: loaded.config.exclude,
@@ -34,16 +35,7 @@ class ListCommand {
       return 0;
     }
     if (what == 'groups') {
-      final store = (groupStoreFactory ??
-          (String monocfgPath) {
-            final groupsPath =
-                const DefaultPathService().join([monocfgPath, 'groups']);
-            final folder = FileListConfigFolder(
-              basePath: groupsPath,
-              namePolicy: const DefaultSlugNamePolicy(),
-            );
-            return FileGroupStore(folder);
-          })(loaded.monocfgPath);
+      final store = groupStoreFactory(loaded.monocfgPath);
       final names = await store.listGroups();
       for (final name in names) {
         final members = await store.readGroup(name);

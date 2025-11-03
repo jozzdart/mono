@@ -1,4 +1,4 @@
-import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 class SetupCommand {
   static Future<int> run(
