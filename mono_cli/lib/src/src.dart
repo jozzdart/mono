@@ -1,3 +1,4 @@
+export 'cli/cli_engine.dart';
 export 'cli/command_router_impl.dart';
 export 'cli/parser_args.dart';
 export 'config/schema_provider.dart';
