@@ -39,7 +39,7 @@ Future<int> runCliApp(
     }
 
     logger.log('Unknown command: ${inv.commandPath.join(' ')}', level: 'error');
-    logger.log('Use `' + unknownCommandHelpHint + '`', level: 'error');
+    logger.log('Use `$unknownCommandHelpHint`', level: 'error');
     return 1;
   } catch (e, st) {
     logger.log('CLI failed: $e', level: 'error');
