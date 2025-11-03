@@ -14,6 +14,11 @@ topics:
 environment:
   sdk: ">=3.5.0 <4.0.0"
 
+platforms:
+  linux:
+  macos:
+  windows:
+
 dependencies:
   mono_core: ^0.0.6
   args: ^2.5.0
