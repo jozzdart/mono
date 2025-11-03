@@ -1,6 +1,7 @@
 ## 0.0.6
 
 - Removed export of `mono_core`
+- `DefaultCommandEnvironmentBuilder` now uses injected core dependencies
 
 ## 0.0.5
 
