@@ -1,7 +1,5 @@
 import 'package:mono_core/mono_core.dart';
 
-import 'command_router_impl.dart';
-
 class DefaultCliEngine implements CliEngine {
   const DefaultCliEngine();
 
@@ -11,11 +9,10 @@ class DefaultCliEngine implements CliEngine {
     required CliParser parser,
     required Logger logger,
     required void Function(CommandRouter router) register,
+    required CommandRouterFactory routerFactory,
     String Function()? helpText,
-    Future<int?> Function({
-      required CliInvocation inv,
-      required Logger logger,
-    })? fallback,
+    Future<int?> Function({required CliInvocation inv, required Logger logger})?
+    fallback,
     String unknownCommandHelpHint = 'help',
   }) {
     return _runCli(
@@ -23,6 +20,7 @@ class DefaultCliEngine implements CliEngine {
       parser: parser,
       logger: logger,
       register: register,
+      routerFactory: routerFactory,
       helpText: helpText,
       fallback: fallback,
       unknownCommandHelpHint: unknownCommandHelpHint,
@@ -35,11 +33,10 @@ Future<int> _runCli(
   required CliParser parser,
   required Logger logger,
   required void Function(CommandRouter router) register,
+  required CommandRouterFactory routerFactory,
   String Function()? helpText,
-  Future<int?> Function({
-    required CliInvocation inv,
-    required Logger logger,
-  })? fallback,
+  Future<int?> Function({required CliInvocation inv, required Logger logger})?
+  fallback,
   String unknownCommandHelpHint = 'help',
 }) async {
   try {
@@ -55,7 +52,7 @@ Future<int> _runCli(
       return 0;
     }
 
-    final router = DefaultCommandRouter();
+    final router = routerFactory();
     register(router);
 
     final dispatched = await router.tryDispatch(inv: inv, logger: logger);

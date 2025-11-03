@@ -3,6 +3,7 @@
 - Imported `mono_core` into `mono`
 - Updated commands to depend on `mono_core` ports only
 - Use pluggable `CliEngine` (default from `mono_cli`), no behavior change
+- Updated wiring to pass router factory to engine
 
 ## 0.0.5
 

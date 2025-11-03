@@ -8,7 +8,7 @@ class _DummyEngine implements CliEngine {
   void Function(CommandRouter router)? lastRegister;
   String Function()? lastHelpText;
   Future<int?> Function({required CliInvocation inv, required Logger logger})?
-      lastFallback;
+  lastFallback;
   String? lastHint;
   CommandRouter? registerRouter;
   bool fallbackCalled = false;
@@ -19,11 +19,10 @@ class _DummyEngine implements CliEngine {
     required CliParser parser,
     required Logger logger,
     required void Function(CommandRouter router) register,
+    required CommandRouterFactory routerFactory,
     String Function()? helpText,
-    Future<int?> Function({
-      required CliInvocation inv,
-      required Logger logger,
-    })? fallback,
+    Future<int?> Function({required CliInvocation inv, required Logger logger})?
+    fallback,
     String unknownCommandHelpHint = 'help',
   }) async {
     lastArgv = argv;
@@ -70,8 +69,11 @@ class _DummyLogger implements Logger {
 class _DummyRouter implements CommandRouter {
   final Map<String, CommandHandler> handlers = <String, CommandHandler>{};
   @override
-  void register(String name, CommandHandler handler,
-      {List<String> aliases = const []}) {
+  void register(
+    String name,
+    CommandHandler handler, {
+    List<String> aliases = const [],
+  }) {
     handlers[name] = handler;
     for (final a in aliases) {
       handlers[a] = handler;
@@ -102,11 +104,14 @@ void main() {
         logger: logger,
         register: (router) {
           registerCalled = true;
-          (router as _DummyRouter).register('x', (
-              {required CliInvocation inv, required Logger logger}) async {
+          (router as _DummyRouter).register('x', ({
+            required CliInvocation inv,
+            required Logger logger,
+          }) async {
             return 0;
           }, aliases: const ['y']);
         },
+        routerFactory: () => _DummyRouter(),
         helpText: () => 'help',
         fallback: ({required inv, required logger}) async => null,
         unknownCommandHelpHint: 'mono help',
@@ -118,8 +123,10 @@ void main() {
       expect(engine.lastLogger, same(logger));
       expect(registerCalled, isTrue);
       expect(engine.registerRouter, isA<_DummyRouter>());
-      expect((engine.registerRouter as _DummyRouter).handlers.keys,
-          containsAll(['x', 'y']));
+      expect(
+        (engine.registerRouter as _DummyRouter).handlers.keys,
+        containsAll(['x', 'y']),
+      );
       expect(engine.lastHint, 'mono help');
     });
 
@@ -133,6 +140,7 @@ void main() {
         parser: parser,
         logger: logger,
         register: (_) {},
+        routerFactory: () => _DummyRouter(),
         helpText: null,
         fallback: null,
       );
@@ -151,6 +159,7 @@ void main() {
         parser: parser,
         logger: logger,
         register: (_) {},
+        routerFactory: () => _DummyRouter(),
         fallback: ({required inv, required logger}) async {
           fallbackCalled = true;
           return null;
@@ -162,5 +171,3 @@ void main() {
     });
   });
 }
-
-

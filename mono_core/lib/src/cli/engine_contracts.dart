@@ -8,11 +8,10 @@ abstract class CliEngine {
     required CliParser parser,
     required Logger logger,
     required void Function(CommandRouter router) register,
+    required CommandRouterFactory routerFactory,
     String Function()? helpText,
-    Future<int?> Function({
-      required CliInvocation inv,
-      required Logger logger,
-    })? fallback,
+    Future<int?> Function({required CliInvocation inv, required Logger logger})?
+    fallback,
     String unknownCommandHelpHint = 'help',
   });
 }

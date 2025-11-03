@@ -58,13 +58,11 @@ class CliWiring {
   final CliEngine? engine;
 }
 
-Future<int> runCli(
-  List<String> argv, {
-  CliWiring? wiring,
-}) async {
+Future<int> runCli(List<String> argv, {CliWiring? wiring}) async {
   final parser = wiring?.parser ?? const ArgsCliParser();
   final prompter = wiring?.prompter ?? const ConsolePrompter();
-  final versionInfo = wiring?.versionInfo ??
+  final versionInfo =
+      wiring?.versionInfo ??
       const StaticVersionInfo(name: 'mono', version: 'unknown');
   final workspaceConfig =
       wiring?.workspaceConfig ?? const FileWorkspaceConfig();
@@ -76,12 +74,16 @@ Future<int> runCli(
     argv,
     parser: parser,
     logger: logger,
+    routerFactory: () => DefaultCommandRouter(),
     helpText: () => _helpText,
     unknownCommandHelpHint: 'mono help',
     register: (router) {
       router.register('version', ({required inv, required logger}) async {
         return VersionCommand.run(
-            inv: inv, logger: logger, version: versionInfo);
+          inv: inv,
+          logger: logger,
+          version: versionInfo,
+        );
       }, aliases: const ['--version', '-v', '--v']);
 
       router.register('setup', ({required inv, required logger}) async {
@@ -185,7 +187,8 @@ Future<int> runCli(
   );
 }
 
-const String _helpText = 'mono - Manage Dart/Flutter monorepos\n\n'
+const String _helpText =
+    'mono - Manage Dart/Flutter monorepos\n\n'
     'Usage:\n'
     '  mono setup\n'
     '  mono scan\n'

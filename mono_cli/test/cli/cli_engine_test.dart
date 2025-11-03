@@ -5,25 +5,28 @@ import '../util/test_doubles.dart';
 
 void main() {
   group('runCliApp', () {
-    test('prints help and returns 0 for empty argv without registering',
-        () async {
-      final logger = RecordingLogger();
-      var registerCalled = false;
+    test(
+      'prints help and returns 0 for empty argv without registering',
+      () async {
+        final logger = RecordingLogger();
+        var registerCalled = false;
 
-      final code = await const DefaultCliEngine().run(
-        const <String>[],
-        parser: const ArgsCliParser(),
-        logger: logger,
-        helpText: () => 'HELP',
-        register: (_) {
-          registerCalled = true;
-        },
-      );
+        final code = await const DefaultCliEngine().run(
+          const <String>[],
+          parser: const ArgsCliParser(),
+          logger: logger,
+          routerFactory: () => DefaultCommandRouter(),
+          helpText: () => 'HELP',
+          register: (_) {
+            registerCalled = true;
+          },
+        );
 
-      expect(code, 0);
-      expect(registerCalled, isFalse);
-      expect(logger.entries.map((e) => e.message), contains('HELP'));
-    });
+        expect(code, 0);
+        expect(registerCalled, isFalse);
+        expect(logger.entries.map((e) => e.message), contains('HELP'));
+      },
+    );
 
     test('prints help and returns 0 for --help', () async {
       final logger = RecordingLogger();
@@ -32,6 +35,7 @@ void main() {
         const <String>['--help'],
         parser: const ArgsCliParser(),
         logger: logger,
+        routerFactory: () => DefaultCommandRouter(),
         helpText: () => 'HELP',
         register: (_) {},
       );
@@ -47,6 +51,7 @@ void main() {
         const <String>['help'],
         parser: const ArgsCliParser(),
         logger: logger,
+        routerFactory: () => DefaultCommandRouter(),
         helpText: null,
         register: (_) {},
       );
@@ -62,6 +67,7 @@ void main() {
         const <String>['hello'],
         parser: const ArgsCliParser(),
         logger: logger,
+        routerFactory: () => DefaultCommandRouter(),
         helpText: () => 'HELP',
         register: (router) {
           router.register('hello', ({required inv, required logger}) async {
@@ -82,6 +88,7 @@ void main() {
         const <String>['-v'],
         parser: const ArgsCliParser(),
         logger: logger,
+        routerFactory: () => DefaultCommandRouter(),
         helpText: () => 'HELP',
         register: (router) {
           router.register('version', ({required inv, required logger}) async {
@@ -100,6 +107,7 @@ void main() {
         const <String>['unknown'],
         parser: const ArgsCliParser(),
         logger: logger,
+        routerFactory: () => DefaultCommandRouter(),
         helpText: () => 'HELP',
         register: (_) {},
         fallback: ({required inv, required logger}) async {
@@ -121,13 +129,16 @@ void main() {
         const <String>['nope'],
         parser: const ArgsCliParser(),
         logger: logger,
+        routerFactory: () => DefaultCommandRouter(),
         helpText: () => 'HELP',
         register: (_) {},
       );
 
       expect(code, 1);
-      final errors =
-          logger.byLevel('error').map((e) => e.message).toList(growable: false);
+      final errors = logger
+          .byLevel('error')
+          .map((e) => e.message)
+          .toList(growable: false);
       expect(errors.any((m) => m.startsWith('Unknown command: nope')), isTrue);
       expect(errors.any((m) => m.contains('Use `help`')), isTrue);
     });
@@ -139,6 +150,7 @@ void main() {
         const <String>['nope'],
         parser: const ArgsCliParser(),
         logger: logger,
+        routerFactory: () => DefaultCommandRouter(),
         helpText: () => 'HELP',
         register: (_) {},
         fallback: ({required inv, required logger}) async => null,
@@ -147,10 +159,9 @@ void main() {
       expect(code, 1);
       final errors = logger.byLevel('error');
       expect(
-          errors
-              .map((e) => e.message)
-              .any((m) => m.contains('Unknown command')),
-          isTrue);
+        errors.map((e) => e.message).any((m) => m.contains('Unknown command')),
+        isTrue,
+      );
     });
 
     test('catches handler exceptions and returns 1 with error logs', () async {
@@ -160,6 +171,7 @@ void main() {
         const <String>['boom'],
         parser: const ArgsCliParser(),
         logger: logger,
+        routerFactory: () => DefaultCommandRouter(),
         helpText: () => 'HELP',
         register: (router) {
           router.register('boom', ({required inv, required logger}) async {
