@@ -22,5 +22,3 @@ extension LogHelpers on Logger {
   void divider({int width = 40, String char = '─'}) =>
       log(List.filled(width, char).join(), level: 'divider');
 }
-
-

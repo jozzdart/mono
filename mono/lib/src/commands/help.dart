@@ -47,7 +47,7 @@ class HelpCommand extends Command {
       for (final c in sorted) {
         final name = _displayName(c);
         final pad = ' ' * (maxNameLen - name.length);
-        buffer.writeln('  ' + name + pad + '  ' + c.description);
+        buffer.writeln('  $name$pad  ${c.description}');
       }
     }
 

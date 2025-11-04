@@ -3,6 +3,8 @@
 - Default pretty logging (colors + icons, no timestamp); supports `--no-color`, `--no-icons`, `--timestamp`.
 - Setup now normalizes `mono.yaml`, adding defaults and fixing invalid values.
 - CLI reads `logger` defaults from `mono.yaml`; flags still override.
+- Fixed logging output adding unnecessary empty spaces.
+- Improved help output style and formatting.
 
 ## 0.0.6
 

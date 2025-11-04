@@ -1,7 +1,7 @@
 name: mono
 description: The fastest and most flexible CLI for managing Dart/Flutter monorepos, tasks, scanning, groups, and more.
 resolution: workspace
-version: 0.0.6
+version: 0.0.7
 homepage: https://github.com/jozzdart/mono
 repository: https://github.com/jozzdart/mono/tree/main/mono
 issue_tracker: https://github.com/jozzdart/mono/issues
@@ -20,8 +20,8 @@ platforms:
   windows:
 
 dependencies:
-  mono_cli: ^0.0.6
-  mono_core: ^0.0.5
+  mono_cli: ^0.0.7
+  mono_core: ^0.0.7
 
 dev_dependencies:
   lints:

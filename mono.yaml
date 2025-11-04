@@ -12,6 +12,10 @@ include:
 exclude:
   - "config/**"
   - ".dart_tool/**"
-packages: {}
-groups: {}
-tasks: {}
+packages:
+groups:
+tasks:
+  analyze:
+    plugin: exec
+    run:
+      - "dart analyze ."
