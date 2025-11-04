@@ -9,14 +9,11 @@ import 'package:path/path.dart' as p;
 import '../util/fs_fixtures.dart';
 import '../util/fakes.dart';
 
-GroupStore _defaultGroupStoreFactory(String monocfgPath) {
-  final groupsPath = const DefaultPathService().join([monocfgPath, 'groups']);
-  final folder = FileListConfigFolder(
-    basePath: groupsPath,
-    namePolicy: const DefaultSlugNamePolicy(),
-  );
-  return FileGroupStore(folder);
-}
+GroupStore groupStore = FileGroupStore(
+  FileListConfigFolder(basePath: 'monocfg/groups'),
+);
+
+Future<int> fallbackCommand() => Future.value(0);
 
 void main() {
   late WorkspaceConfig workspaceConfig;
@@ -25,32 +22,7 @@ void main() {
     workspaceConfig = const FileWorkspaceConfig();
   });
 
-  group('TaskCommand.tryRun', () {
-    test('returns null when task is undefined', () async {
-      final ws = await createTempWorkspace('mono_task_');
-      ws.enter();
-      try {
-        await writeMonoYaml();
-        await ensureMonocfg('monocfg');
-        final outB = StringBuffer();
-        final errB = StringBuffer();
-        final inv = const CliInvocation(commandPath: ['build']);
-        final code = await TaskCommand.tryRun(
-          inv: inv,
-          logger: BufferingLogger(outB, errB),
-          groupStoreFactory: _defaultGroupStoreFactory,
-          plugins: PluginRegistry({}),
-          workspaceConfig: workspaceConfig,
-          envBuilder: const DefaultCommandEnvironmentBuilder(),
-          executor: const DefaultTaskExecutor(),
-        );
-        expect(code, isNull);
-      } finally {
-        ws.exit();
-        ws.dispose();
-      }
-    });
-
+  group('TaskCommand.runCommand', () {
     test('exec task without targets errors', () async {
       final ws = await createTempWorkspace('mono_task_');
       ws.enter();
@@ -65,14 +37,15 @@ void main() {
         final outB = StringBuffer();
         final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['build']);
-        final code = await TaskCommand.tryRun(
-          inv: inv,
+        final code = await TaskCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          groupStoreFactory: _defaultGroupStoreFactory,
-          plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          plugins: PluginRegistry({}),
           envBuilder: const DefaultCommandEnvironmentBuilder(),
           executor: const DefaultTaskExecutor(),
+          fallbackCommand: fallbackCommand,
+          groupStore: groupStore,
         );
         expect(code, 2);
         expect(errB.toString(),
@@ -103,14 +76,15 @@ void main() {
           },
           targets: const [TargetAll()],
         );
-        final code = await TaskCommand.tryRun(
-          inv: inv,
+        final code = await TaskCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          groupStoreFactory: _defaultGroupStoreFactory,
-          plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          plugins: PluginRegistry({}),
           envBuilder: const DefaultCommandEnvironmentBuilder(),
           executor: const DefaultTaskExecutor(),
+          fallbackCommand: fallbackCommand,
+          groupStore: groupStore,
         );
         expect(code, 0);
         expect(outB.toString(),
@@ -139,14 +113,15 @@ void main() {
             'dry-run': ['1']
           },
         );
-        final codeGet = await TaskCommand.tryRun(
-          inv: invGet,
+        final codeGet = await TaskCommand.runCommand(
+          invocation: invGet,
           logger: BufferingLogger(outB, errB),
-          groupStoreFactory: _defaultGroupStoreFactory,
-          plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          plugins: PluginRegistry({}),
           envBuilder: const DefaultCommandEnvironmentBuilder(),
           executor: const DefaultTaskExecutor(),
+          fallbackCommand: fallbackCommand,
+          groupStore: groupStore,
         );
         expect(codeGet, 0);
         expect(outB.toString(), contains('Would run get for 1 packages'));
@@ -159,12 +134,13 @@ void main() {
             'dry-run': ['1']
           },
         );
-        final codeClean = await TaskCommand.tryRun(
-          inv: invClean,
+        final codeClean = await TaskCommand.runCommand(
+          invocation: invClean,
           logger: BufferingLogger(outB2, errB2),
-          groupStoreFactory: _defaultGroupStoreFactory,
-          plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          plugins: PluginRegistry({}),
+          fallbackCommand: fallbackCommand,
+          groupStore: groupStore,
           envBuilder: const DefaultCommandEnvironmentBuilder(),
           executor: const DefaultTaskExecutor(),
         );
@@ -192,12 +168,13 @@ void main() {
             'dry-run': ['1']
           },
         );
-        final code = await TaskCommand.tryRun(
-          inv: inv,
+        final code = await TaskCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          groupStoreFactory: _defaultGroupStoreFactory,
-          plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          plugins: PluginRegistry({}),
+          fallbackCommand: fallbackCommand,
+          groupStore: groupStore,
           envBuilder: const DefaultCommandEnvironmentBuilder(),
           executor: const DefaultTaskExecutor(),
         );
@@ -226,12 +203,13 @@ void main() {
             'check': ['1']
           },
         );
-        final code = await TaskCommand.tryRun(
-          inv: inv,
+        final code = await TaskCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          groupStoreFactory: _defaultGroupStoreFactory,
-          plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          plugins: PluginRegistry({}),
+          fallbackCommand: fallbackCommand,
+          groupStore: groupStore,
           envBuilder: const DefaultCommandEnvironmentBuilder(),
           executor: const DefaultTaskExecutor(),
         );
@@ -259,12 +237,13 @@ void main() {
             'dry-run': ['1']
           },
         );
-        final code = await TaskCommand.tryRun(
-          inv: inv,
+        final code = await TaskCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          groupStoreFactory: _defaultGroupStoreFactory,
-          plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          plugins: PluginRegistry({}),
+          fallbackCommand: fallbackCommand,
+          groupStore: groupStore,
           envBuilder: const DefaultCommandEnvironmentBuilder(),
           executor: const DefaultTaskExecutor(),
         );
@@ -292,12 +271,13 @@ void main() {
           },
           targets: [TargetAll()],
         );
-        final code = await TaskCommand.tryRun(
-          inv: inv,
+        final code = await TaskCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          groupStoreFactory: _defaultGroupStoreFactory,
-          plugins: PluginRegistry({}),
           workspaceConfig: workspaceConfig,
+          plugins: PluginRegistry({}),
+          fallbackCommand: fallbackCommand,
+          groupStore: groupStore,
           envBuilder: const DefaultCommandEnvironmentBuilder(),
           executor: const DefaultTaskExecutor(),
         );

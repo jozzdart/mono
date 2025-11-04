@@ -4,6 +4,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
+import 'package:mono_cli/mono_cli.dart';
+import 'package:mono_core/mono_core.dart';
 
 class TempWorkspace {
   TempWorkspace(this.rootPath) : _prevCwd = Directory.current.path;
@@ -39,72 +41,43 @@ Future<File> writeMonoYaml({
   Map<String, List<String>> groups = const {},
   Map<String, Map<String, Object?>> tasks = const {},
 }) async {
-  String quote(String v) {
-    if (v.contains('#') ||
-        v.contains(':') ||
-        v.contains('*') ||
-        v.contains(' ')) {
-      return '"${v.replaceAll('"', '\\"')}"';
+  // Start from centralized defaults and override selected fields for tests
+  final base = defaultConfig();
+  final taskDefs = <String, TaskDefinition>{};
+  for (final e in tasks.entries) {
+    final m = e.value;
+    final depends = (m['dependsOn'] is List)
+        ? (m['dependsOn'] as List).map((x) => '$x').toList()
+        : const <String>[];
+    final env = <String, String>{};
+    if (m['env'] is Map) {
+      for (final ev in (m['env'] as Map).entries) {
+        env['${ev.key}'] = '${ev.value}';
+      }
     }
-    return v;
+    final run = (m['run'] is List)
+        ? (m['run'] as List).map((x) => '$x').toList()
+        : const <String>[];
+    taskDefs[e.key] = TaskDefinition(
+      plugin: m['plugin']?.toString(),
+      dependsOn: depends,
+      env: env,
+      run: run,
+    );
   }
 
-  final sb = StringBuffer();
-  sb.writeln('# mono configuration');
-  sb.writeln('settings:');
-  sb.writeln('  monocfgPath: $monocfgPath');
-  sb.writeln('  concurrency: auto');
-  sb.writeln('  defaultOrder: dependency');
-  sb.writeln('include:');
-  for (final g in include) {
-    sb.writeln('  - ${quote(g)}');
-  }
-  sb.writeln('exclude:');
-  for (final g in exclude) {
-    sb.writeln('  - ${quote(g)}');
-  }
-  sb.writeln('groups:');
-  if (groups.isEmpty) {
-    sb.writeln('  {}');
-  } else {
-    for (final e in groups.entries) {
-      sb.writeln('  ${e.key}:');
-      for (final item in e.value) {
-        sb.writeln('    - ${quote(item)}');
-      }
-    }
-  }
-  sb.writeln('tasks:');
-  if (tasks.isEmpty) {
-    sb.writeln('  {}');
-  } else {
-    for (final e in tasks.entries) {
-      sb.writeln('  ${e.key}:');
-      final def = e.value;
-      if (def['plugin'] != null) sb.writeln('    plugin: ${def['plugin']}');
-      if (def['dependsOn'] is List && (def['dependsOn'] as List).isNotEmpty) {
-        sb.writeln('    dependsOn:');
-        for (final d in (def['dependsOn'] as List)) {
-          sb.writeln('      - ${quote('$d')}');
-        }
-      }
-      if (def['env'] is Map && (def['env'] as Map).isNotEmpty) {
-        sb.writeln('    env:');
-        for (final ev in (def['env'] as Map).entries) {
-          sb.writeln('      ${ev.key}: ${quote('${ev.value}')}');
-        }
-      }
-      if (def['run'] is List && (def['run'] as List).isNotEmpty) {
-        sb.writeln('    run:');
-        for (final r in (def['run'] as List)) {
-          sb.writeln('      - ${quote('$r')}');
-        }
-      }
-    }
-  }
+  final cfg = MonoConfig(
+    include: include,
+    exclude: exclude,
+    packages: base.packages,
+    groups: groups,
+    tasks: taskDefs,
+    settings: base.settings,
+    logger: base.logger,
+  );
 
   final f = File(path);
-  await f.writeAsString(sb.toString());
+  await f.writeAsString(toYaml(cfg, monocfgPath: monocfgPath));
   return f;
 }
 

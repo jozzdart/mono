@@ -5,7 +5,7 @@ import 'package:mono_core/mono_core.dart';
 
 @immutable
 class TestPlugin extends TaskPlugin {
-  TestPlugin() : super(const PluginId('test'));
+  const TestPlugin() : super(const PluginId('test'));
 
   static const CommandId testCmd = CommandId('test');
 

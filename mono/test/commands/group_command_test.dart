@@ -9,6 +9,10 @@ import 'package:mono_core/mono_core.dart';
 import '../util/fakes.dart';
 import '../util/fs_fixtures.dart';
 
+GroupStore groupStore = FileGroupStore(
+  FileListConfigFolder(basePath: 'monocfg/groups'),
+);
+
 void main() {
   late WorkspaceConfig workspaceConfig;
 
@@ -25,21 +29,14 @@ void main() {
         final outB = StringBuffer();
         final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['group']);
-        final code = await GroupCommand.run(
-          inv: inv,
+        final code = await GroupCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          prompter: FakePrompter(),
+          groupStore: groupStore,
           workspaceConfig: workspaceConfig,
           packageScanner: const FileSystemPackageScanner(),
-          groupStoreFactory: (String monocfgPath) {
-            final groupsPath =
-                const DefaultPathService().join([monocfgPath, 'groups']);
-            final folder = FileListConfigFolder(
-              basePath: groupsPath,
-              namePolicy: const DefaultSlugNamePolicy(),
-            );
-            return FileGroupStore(folder);
-          },
+          prompter: FakePrompter(),
+          plugins: PluginRegistry({}),
         );
         expect(code, 2);
         expect(errB.toString(), contains('Usage: mono group <group_name>'));
@@ -58,21 +55,14 @@ void main() {
         final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['group'], positionals: [':bad']);
-        final code = await GroupCommand.run(
-          inv: inv,
+        final code = await GroupCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          prompter: FakePrompter(),
+          groupStore: groupStore,
           workspaceConfig: workspaceConfig,
           packageScanner: const FileSystemPackageScanner(),
-          groupStoreFactory: (String monocfgPath) {
-            final groupsPath =
-                const DefaultPathService().join([monocfgPath, 'groups']);
-            final folder = FileListConfigFolder(
-              basePath: groupsPath,
-              namePolicy: const DefaultSlugNamePolicy(),
-            );
-            return FileGroupStore(folder);
-          },
+          prompter: FakePrompter(),
+          plugins: PluginRegistry({}),
         );
         expect(code, 2);
         expect(errB.toString(), contains('Invalid group name: ":bad"'));
@@ -95,21 +85,14 @@ void main() {
         final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['group'], positionals: ['dev']);
-        final code = await GroupCommand.run(
-          inv: inv,
+        final code = await GroupCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(nextConfirm: false),
           workspaceConfig: workspaceConfig,
           packageScanner: const FileSystemPackageScanner(),
-          groupStoreFactory: (String monocfgPath) {
-            final groupsPath =
-                const DefaultPathService().join([monocfgPath, 'groups']);
-            final folder = FileListConfigFolder(
-              basePath: groupsPath,
-              namePolicy: const DefaultSlugNamePolicy(),
-            );
-            return FileGroupStore(folder);
-          },
+          groupStore: groupStore,
+          plugins: PluginRegistry({}),
         );
         expect(code, 1);
         expect(errB.toString(), contains('Aborted.'));
@@ -133,21 +116,14 @@ void main() {
         final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['group'], positionals: ['g1']);
-        final code = await GroupCommand.run(
-          inv: inv,
+        final code = await GroupCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(checklistIndices: [0, 2]),
           workspaceConfig: workspaceConfig,
           packageScanner: const FileSystemPackageScanner(),
-          groupStoreFactory: (String monocfgPath) {
-            final groupsPath =
-                const DefaultPathService().join([monocfgPath, 'groups']);
-            final folder = FileListConfigFolder(
-              basePath: groupsPath,
-              namePolicy: const DefaultSlugNamePolicy(),
-            );
-            return FileGroupStore(folder);
-          },
+          groupStore: groupStore,
+          plugins: PluginRegistry({}),
         );
         expect(code, 0);
         expect(outB.toString(), contains('Group "g1" saved with 2 member(s).'));
@@ -173,21 +149,14 @@ void main() {
         final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['group'], positionals: ['g2']);
-        final code = await GroupCommand.run(
-          inv: inv,
+        final code = await GroupCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
-          prompter: FakePrompter(checklistIndices: [], nextConfirm: false),
+          groupStore: groupStore,
           workspaceConfig: workspaceConfig,
           packageScanner: const FileSystemPackageScanner(),
-          groupStoreFactory: (String monocfgPath) {
-            final groupsPath =
-                const DefaultPathService().join([monocfgPath, 'groups']);
-            final folder = FileListConfigFolder(
-              basePath: groupsPath,
-              namePolicy: const DefaultSlugNamePolicy(),
-            );
-            return FileGroupStore(folder);
-          },
+          prompter: FakePrompter(checklistIndices: [], nextConfirm: false),
+          plugins: PluginRegistry({}),
         );
         expect(code, 1);
         expect(errB.toString(), contains('Aborted.'));
@@ -208,21 +177,14 @@ void main() {
         final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['group'], positionals: ['foo']);
-        final code = await GroupCommand.run(
-          inv: inv,
+        final code = await GroupCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
           workspaceConfig: workspaceConfig,
           packageScanner: const FileSystemPackageScanner(),
-          groupStoreFactory: (String monocfgPath) {
-            final groupsPath =
-                const DefaultPathService().join([monocfgPath, 'groups']);
-            final folder = FileListConfigFolder(
-              basePath: groupsPath,
-              namePolicy: const DefaultSlugNamePolicy(),
-            );
-            return FileGroupStore(folder);
-          },
+          groupStore: groupStore,
+          plugins: PluginRegistry({}),
         );
         expect(code, 2);
         expect(errB.toString(),

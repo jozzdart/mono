@@ -20,7 +20,7 @@ class DefaultCommandEnvironmentBuilder implements CommandEnvironmentBuilder {
   @override
   Future<CommandEnvironment> build(
     CliInvocation inv, {
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required GroupStore groupStore,
   }) async {
     // Load configuration and resolve monocfg path via injected workspace config
     final loaded = await workspaceConfig.loadRootConfig();
@@ -39,7 +39,8 @@ class DefaultCommandEnvironmentBuilder implements CommandEnvironmentBuilder {
     final graph = graphBuilder.build(packages);
 
     // Load groups
-    final store = groupStoreFactory(monocfgPath);
+
+    final store = groupStore;
     final groups = <String, Set<String>>{};
     final names = await store.listGroups();
     for (final name in names) {
@@ -48,7 +49,8 @@ class DefaultCommandEnvironmentBuilder implements CommandEnvironmentBuilder {
     }
 
     // Effective options
-    final effectiveOrder = _effectiveOrder(inv, config) == 'dependency';
+    final effectiveOrder =
+        _effectiveOrder(inv, config) == orderToString(DefaultOrder.dependency);
     final effectiveConcurrency = _effectiveConcurrency(inv, config);
 
     return CommandEnvironment(
@@ -65,13 +67,13 @@ class DefaultCommandEnvironmentBuilder implements CommandEnvironmentBuilder {
 }
 
 String _effectiveOrder(CliInvocation inv, MonoConfig cfg) {
-  final list = inv.options['order'];
+  final list = inv.options[OptionKeys.order];
   final fromCli = (list != null && list.isNotEmpty) ? list.first : null;
   return fromCli ?? cfg.settings.defaultOrder;
 }
 
 int _effectiveConcurrency(CliInvocation inv, MonoConfig cfg) {
-  final list = inv.options['concurrency'];
+  final list = inv.options[OptionKeys.concurrency];
   final fromCli = (list != null && list.isNotEmpty) ? list.first : null;
   final str = fromCli ?? cfg.settings.concurrency;
   final n = int.tryParse(str);

@@ -41,20 +41,8 @@ class FileWorkspaceConfig implements WorkspaceConfig {
   Future<void> writeRootConfigIfMissing({String path = 'mono.yaml'}) async {
     final f = File(path);
     if (await f.exists()) return;
-    final content = '''# mono configuration
-settings:
-  monocfgPath: monocfg
-  concurrency: auto
-  defaultOrder: dependency
-include:
-  - "**"
-exclude:
-  - "monocfg/**"
-  - ".dart_tool/**"
-groups: {}
-tasks: {}
-''';
-    await f.writeAsString(content);
+    final yaml = toYaml(defaultConfig(), monocfgPath: 'monocfg');
+    await f.writeAsString(yaml);
   }
 
   @override
@@ -161,6 +149,10 @@ tasks: {}
     sb.writeln('  monocfgPath: ${loaded.monocfgPath}');
     sb.writeln('  concurrency: ${cfg.settings.concurrency}');
     sb.writeln('  defaultOrder: ${cfg.settings.defaultOrder}');
+    sb.writeln('logger:');
+    sb.writeln('  color: ${cfg.logger.color}');
+    sb.writeln('  icons: ${cfg.logger.icons}');
+    sb.writeln('  timestamp: ${cfg.logger.timestamp}');
     sb.writeln('include:');
     for (final g in cfg.include) {
       sb.writeln('  - ${quote(g)}');
@@ -217,5 +209,18 @@ tasks: {}
 
     final f = File(path);
     await f.writeAsString(sb.toString());
+  }
+
+  @override
+  Future<void> writeRootConfigNormalized(
+      {String path = 'mono.yaml', Logger? logger}) async {
+    final loaded = await loadRootConfig(path: path);
+    final normalized = normalizeRootConfig(
+      loaded.rawYaml,
+      monocfgPath: loaded.monocfgPath,
+      logger: logger,
+    );
+    final f = File(path);
+    await f.writeAsString(normalized.yaml);
   }
 }

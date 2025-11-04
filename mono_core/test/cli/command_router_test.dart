@@ -1,120 +1,160 @@
 import 'package:mono_core/mono_core.dart';
 import 'package:test/test.dart';
 
-// A simple fake router to validate the CommandRouter contract.
-class _FakeCommandRouter implements CommandRouter {
-  _FakeCommandRouter();
-
-  final Map<String, CommandHandler> _handlers = <String, CommandHandler>{};
-
-  @override
-  void register(String name, CommandHandler handler,
-      {List<String> aliases = const []}) {
-    _handlers[name] = handler;
-    for (final alias in aliases) {
-      _handlers[alias] = handler;
-    }
-  }
+// A simple fake command for testing
+class _TestCommand extends Command {
+  const _TestCommand({
+    required this.name,
+    this.aliases = const [],
+  });
 
   @override
-  Future<int?> tryDispatch({
-    required CliInvocation inv,
-    required Logger logger,
-  }) async {
-    if (inv.commandPath.isEmpty) return null;
-    final h = _handlers[inv.commandPath.first];
-    if (h == null) return null;
-    return h(inv: inv, logger: logger);
+  final String name;
+
+  @override
+  final List<String> aliases;
+
+  @override
+  String get description => 'Test command';
+
+  @override
+  Future<int> run(CliContext context) async {
+    return 0;
   }
 }
 
-class _NoopLogger implements Logger {
-  const _NoopLogger();
+// A simple fake router to validate the CommandRouter contract.
+class _FakeCommandRouter implements CommandRouter {
+  _FakeCommandRouter({
+    required this.commands,
+    required this.helpCommand,
+    required this.fallbackCommand,
+  });
+
+  final List<Command> commands;
+  final Command helpCommand;
+  final Command fallbackCommand;
+
   @override
-  void log(String message, {String? scope, String level = 'info'}) {}
+  Command getCommand(CliInvocation inv) {
+    if (inv.commandPath.isEmpty) return helpCommand;
+    final commandName = inv.commandPath.first;
+    final command = commands
+        .where((c) => c.name == commandName || c.aliases.contains(commandName))
+        .firstOrNull;
+    if (command == null) return fallbackCommand;
+    return command;
+  }
+
+  @override
+  List<Command> getAllCommands() => commands;
+
+  @override
+  String getUnknownCommandHelpHint() => helpCommand.name;
 }
 
 void main() {
   group('CommandRouter contract', () {
-    test('CommandHandler typedef is callable with named parameters', () async {
-      handler({
-        required CliInvocation inv,
-        required Logger logger,
-      }) async {
-        return 42;
-      }
-
-      final inv = const CliInvocation(commandPath: ['x']);
-      final code = await handler(inv: inv, logger: const _NoopLogger());
-      expect(code, 42);
+    test('getCommand returns help command for empty command path', () {
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = _FakeCommandRouter(
+        commands: [],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      final inv = const CliInvocation(commandPath: []);
+      final command = router.getCommand(inv);
+      expect(command, same(helpCommand));
     });
 
-    test('register and dispatch by name', () async {
-      final router = _FakeCommandRouter();
-      CliInvocation? seenInv;
-      router.register('hello', ({required inv, required logger}) async {
-        seenInv = inv;
-        return 0;
-      });
+    test('getCommand returns registered command by name', () {
+      final helloCommand = const _TestCommand(name: 'hello');
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = _FakeCommandRouter(
+        commands: [helloCommand],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
       final inv = const CliInvocation(commandPath: ['hello']);
-      final code =
-          await router.tryDispatch(inv: inv, logger: const _NoopLogger());
-      expect(code, 0);
-      expect(seenInv, same(inv));
+      final command = router.getCommand(inv);
+      expect(command, same(helloCommand));
     });
 
-    test('register with aliases and dispatch via alias', () async {
-      final router = _FakeCommandRouter();
-      router.register('version', ({required inv, required logger}) async {
-        return 7;
-      }, aliases: const ['--version', '-v']);
-
-      final code1 = await router.tryDispatch(
-          inv: const CliInvocation(commandPath: ['--version']),
-          logger: const _NoopLogger());
-      final code2 = await router.tryDispatch(
-          inv: const CliInvocation(commandPath: ['-v']),
-          logger: const _NoopLogger());
-      expect(code1, 7);
-      expect(code2, 7);
-    });
-
-    test('returns null for unknown or empty command', () async {
-      final router = _FakeCommandRouter();
-      expect(
-        await router.tryDispatch(
-            inv: const CliInvocation(commandPath: ['nope']),
-            logger: const _NoopLogger()),
-        isNull,
+    test('getCommand returns registered command by alias', () {
+      final versionCommand = const _TestCommand(
+        name: 'version',
+        aliases: ['--version', '-v'],
       );
-      expect(
-        await router.tryDispatch(
-            inv: const CliInvocation(commandPath: []),
-            logger: const _NoopLogger()),
-        isNull,
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = _FakeCommandRouter(
+        commands: [versionCommand],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
       );
+
+      final command1 =
+          router.getCommand(const CliInvocation(commandPath: ['--version']));
+      final command2 =
+          router.getCommand(const CliInvocation(commandPath: ['-v']));
+      expect(command1, same(versionCommand));
+      expect(command2, same(versionCommand));
     });
 
-    test('re-registering a name overrides previous handler', () async {
-      final router = _FakeCommandRouter();
-      router.register('cmd', ({required inv, required logger}) async => 1);
-      router.register('cmd', ({required inv, required logger}) async => 2);
-      final code = await router.tryDispatch(
-          inv: const CliInvocation(commandPath: ['cmd']),
-          logger: const _NoopLogger());
-      expect(code, 2);
+    test('getCommand returns fallback command for unknown command', () {
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = _FakeCommandRouter(
+        commands: [],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      final inv = const CliInvocation(commandPath: ['nope']);
+      final command = router.getCommand(inv);
+      expect(command, same(fallbackCommand));
     });
 
-    test('aliases can be re-bound by later registrations', () async {
-      final router = _FakeCommandRouter();
-      router.register('a', ({required inv, required logger}) async => 10,
-          aliases: const ['x']);
-      router.register('b', ({required inv, required logger}) async => 20,
-          aliases: const ['x']);
-      final code = await router.tryDispatch(
-          inv: const CliInvocation(commandPath: ['x']),
-          logger: const _NoopLogger());
-      expect(code, 20);
+    test('getAllCommands returns all registered commands', () {
+      final cmd1 = const _TestCommand(name: 'cmd1');
+      final cmd2 = const _TestCommand(name: 'cmd2');
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = _FakeCommandRouter(
+        commands: [cmd1, cmd2],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      final allCommands = router.getAllCommands();
+      expect(allCommands, [cmd1, cmd2]);
+    });
+
+    test('getUnknownCommandHelpHint returns help command name', () {
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = _FakeCommandRouter(
+        commands: [],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      expect(router.getUnknownCommandHelpHint(), 'help');
+    });
+
+    test('aliases are matched correctly when multiple commands exist', () {
+      final cmd1 = const _TestCommand(name: 'a', aliases: ['x']);
+      final cmd2 = const _TestCommand(name: 'b', aliases: ['x']);
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = _FakeCommandRouter(
+        commands: [cmd1, cmd2],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      // When multiple commands share an alias, firstOrNull returns the first match
+      final command =
+          router.getCommand(const CliInvocation(commandPath: ['x']));
+      expect(command, same(cmd1));
     });
   });
 }

@@ -12,16 +12,17 @@ class DefaultTaskExecutor implements TaskExecutor {
   @override
   Future<int> execute({
     required TaskSpec task,
-    required CliInvocation inv,
+    required CliInvocation invocation,
     required Logger logger,
-    required GroupStore Function(String) groupStoreFactory,
+    required GroupStore groupStore,
     required CommandEnvironmentBuilder envBuilder,
     required PluginResolver plugins,
     Map<String, String> env = const {},
     String? dryRunLabel,
   }) async {
-    final envCtx =
-        await envBuilder.build(inv, groupStoreFactory: groupStoreFactory);
+    final inv = invocation;
+
+    final envCtx = await envBuilder.build(inv, groupStore: groupStore);
 
     if (envCtx.packages.isEmpty) {
       logger.log('No packages found. Run `mono scan` first.', level: 'error');

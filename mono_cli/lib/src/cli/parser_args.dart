@@ -26,11 +26,15 @@ class ArgsCliParser implements CliParser {
     final rest = argv.sublist(1);
 
     final parser = ArgParser(allowTrailingOptions: true)
-      ..addOption('concurrency', abbr: 'j')
-      ..addOption('order')
-      ..addFlag('dry-run', defaultsTo: false)
-      ..addFlag('check', defaultsTo: false)
-      ..addMultiOption('targets', abbr: 't');
+      ..addOption(OptionKeys.concurrency, abbr: 'j')
+      ..addOption(OptionKeys.order)
+      ..addFlag(OptionKeys.dryRun, defaultsTo: false)
+      ..addFlag(OptionKeys.check, defaultsTo: false)
+      ..addMultiOption(OptionKeys.targets, abbr: 't')
+      // Global pretty-logging flags (only included in options when explicitly passed)
+      ..addFlag(OptionKeys.color, defaultsTo: true, negatable: true)
+      ..addFlag(OptionKeys.icons, defaultsTo: true, negatable: true)
+      ..addFlag(OptionKeys.timestamp, defaultsTo: false, negatable: true);
 
     final results = parser.parse(rest);
 
@@ -48,11 +52,25 @@ class ArgsCliParser implements CliParser {
       options[k] = list;
     }
 
-    put('concurrency', results['concurrency']);
-    put('order', results['order']);
-    if (results['dry-run'] == true) put('dry-run', 'true');
-    if (results['check'] == true) put('check', 'true');
-    put('targets', results['targets']);
+    put(OptionKeys.concurrency, results[OptionKeys.concurrency]);
+    put(OptionKeys.order, results[OptionKeys.order]);
+    if (results[OptionKeys.dryRun] == true) put(OptionKeys.dryRun, 'true');
+    if (results[OptionKeys.check] == true) put(OptionKeys.check, 'true');
+    put(OptionKeys.targets, results[OptionKeys.targets]);
+
+    // Only include pretty-logging flags when explicitly provided on CLI
+    if (results.wasParsed(OptionKeys.color)) {
+      put(OptionKeys.color,
+          results[OptionKeys.color] == true ? 'true' : 'false');
+    }
+    if (results.wasParsed(OptionKeys.icons)) {
+      put(OptionKeys.icons,
+          results[OptionKeys.icons] == true ? 'true' : 'false');
+    }
+    if (results.wasParsed(OptionKeys.timestamp)) {
+      put(OptionKeys.timestamp,
+          results[OptionKeys.timestamp] == true ? 'true' : 'false');
+    }
 
     final targets = <TargetExpr>[];
     for (final token in positionals.expand((p) => p.split(','))) {

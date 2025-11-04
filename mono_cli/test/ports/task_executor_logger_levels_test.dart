@@ -9,7 +9,7 @@ class _EmptyEnvBuilder implements CommandEnvironmentBuilder {
   @override
   Future<CommandEnvironment> build(
     CliInvocation inv, {
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required GroupStore groupStore,
   }) async {
     return CommandEnvironment(
       config: const MonoConfig(include: [], exclude: []),
@@ -43,7 +43,7 @@ class _SingleEnvBuilder implements CommandEnvironmentBuilder {
   @override
   Future<CommandEnvironment> build(
     CliInvocation inv, {
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required GroupStore groupStore,
   }) async {
     return CommandEnvironment(
       config: const MonoConfig(include: [], exclude: []),
@@ -58,9 +58,9 @@ class _SingleEnvBuilder implements CommandEnvironmentBuilder {
   }
 }
 
-GroupStore _groups(String path) => FileGroupStore(
-      FileListConfigFolder(basePath: '$path/groups'),
-    );
+GroupStore groupStore = FileGroupStore(
+  FileListConfigFolder(basePath: 'monocfg/groups'),
+);
 
 void main() {
   group('DefaultTaskExecutor logger levels', () {
@@ -70,9 +70,9 @@ void main() {
       final code = await exec.execute(
         task:
             TaskSpec(id: const CommandId('get'), plugin: const PluginId('pub')),
-        inv: const CliInvocation(commandPath: ['get']),
+        invocation: const CliInvocation(commandPath: ['get']),
         logger: logger,
-        groupStoreFactory: _groups,
+        groupStore: groupStore,
         envBuilder: const _EmptyEnvBuilder(),
         plugins: PluginRegistry({}),
       );
@@ -87,9 +87,10 @@ void main() {
       final code = await exec.execute(
         task:
             TaskSpec(id: const CommandId('get'), plugin: const PluginId('pub')),
-        inv: const CliInvocation(commandPath: ['get'], targets: [TargetAll()]),
+        invocation:
+            const CliInvocation(commandPath: ['get'], targets: [TargetAll()]),
         logger: logger,
-        groupStoreFactory: _groups,
+        groupStore: groupStore,
         envBuilder: const _SingleEnvBuilder(selector: _NoneSelector()),
         plugins: PluginRegistry({}),
       );
@@ -105,7 +106,7 @@ void main() {
         task: TaskSpec(
             id: const CommandId('exec:echo hi'),
             plugin: const PluginId('exec')),
-        inv: const CliInvocation(
+        invocation: const CliInvocation(
           commandPath: ['build'],
           options: {
             'dry-run': ['1']
@@ -113,7 +114,7 @@ void main() {
           targets: [TargetAll()],
         ),
         logger: logger,
-        groupStoreFactory: _groups,
+        groupStore: groupStore,
         envBuilder: const _SingleEnvBuilder(),
         plugins: PluginRegistry({}),
         dryRunLabel: 'build',

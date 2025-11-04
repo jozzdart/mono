@@ -1,12 +1,21 @@
 # mono configuration
 settings:
   monocfgPath: config
-  concurrency: auto
+  concurrency: 1
   defaultOrder: dependency
+logger:
+  color: true
+  icons: true
+  timestamp: false
 include:
   - "**"
 exclude:
   - "config/**"
   - ".dart_tool/**"
-groups: {}
-tasks: {}
+packages:
+groups:
+tasks:
+  analyze:
+    plugin: exec
+    run:
+      - "dart analyze ."

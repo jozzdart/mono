@@ -1,16 +1,43 @@
 import 'dart:io';
 
+import 'package:mono_cli/mono_cli.dart';
 import 'package:mono_core/mono_core.dart';
 
-class GroupCommand {
-  static Future<int> run({
-    required CliInvocation inv,
+class GroupCommand extends Command {
+  const GroupCommand();
+
+  @override
+  String get name => 'group';
+
+  @override
+  String get description => 'Create or overwrite a named group interactively';
+
+  @override
+  Future<int> run(
+    CliContext context,
+  ) async {
+    return await runCommand(
+      invocation: context.invocation,
+      logger: context.logger,
+      workspaceConfig: context.workspaceConfig,
+      packageScanner: context.packageScanner,
+      prompter: context.prompter,
+      plugins: context.plugins,
+      groupStore: await FileGroupStore.createFromContext(context),
+    );
+  }
+
+  static Future<int> runCommand({
+    required CliInvocation invocation,
     required Logger logger,
-    required Prompter prompter,
     required WorkspaceConfig workspaceConfig,
     required PackageScanner packageScanner,
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required Prompter prompter,
+    required PluginResolver plugins,
+    required GroupStore groupStore,
   }) async {
+    final inv = invocation;
+
     if (inv.positionals.isEmpty) {
       logger.log('Usage: mono group <group_name>', level: 'error');
       return 2;
@@ -22,7 +49,7 @@ class GroupCommand {
     }
 
     final loaded = await workspaceConfig.loadRootConfig();
-    final store = groupStoreFactory(loaded.monocfgPath);
+    final store = groupStore;
 
     // Load packages from cache or fallback scanner
     final projects =

@@ -2,6 +2,7 @@ export 'cli.dart';
 export 'commands/format.dart';
 export 'commands/get.dart';
 export 'commands/group.dart';
+export 'commands/help.dart';
 export 'commands/list.dart';
 export 'commands/scan.dart';
 export 'commands/setup.dart';

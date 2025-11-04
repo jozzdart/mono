@@ -9,6 +9,7 @@ class MonoConfig {
     this.groups = const {},
     this.tasks = const {},
     this.settings = const Settings(),
+    this.logger = const LoggerSettings(),
   });
 
   final List<String> include;
@@ -20,6 +21,7 @@ class MonoConfig {
   // taskId -> definition
   final Map<String, TaskDefinition> tasks;
   final Settings settings;
+  final LoggerSettings logger;
 }
 
 @immutable
@@ -49,6 +51,18 @@ class Settings {
   final String defaultOrder; // 'dependency' or 'none'
   final String shellWindows;
   final String shellPosix;
+}
+
+@immutable
+class LoggerSettings {
+  const LoggerSettings({
+    this.color = true,
+    this.icons = true,
+    this.timestamp = false,
+  });
+  final bool color;
+  final bool icons;
+  final bool timestamp;
 }
 
 @immutable

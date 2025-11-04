@@ -1,25 +1,47 @@
+import 'package:mono_cli/mono_cli.dart';
 import 'package:mono_core/mono_core.dart';
 
-@immutable
-class FormatCommand {
-  static Future<int> run({
-    required CliInvocation inv,
+class FormatCommand extends Command {
+  const FormatCommand();
+
+  @override
+  String get name => 'format';
+
+  @override
+  String get description => 'Format code (use --check for dry-run)';
+
+  @override
+  Future<int> run(
+    CliContext context,
+  ) async =>
+      await runCommand(
+        invocation: context.invocation,
+        logger: context.logger,
+        groupStore: await FileGroupStore.createFromContext(context),
+        envBuilder: context.envBuilder,
+        plugins: context.plugins,
+        executor: context.executor,
+      );
+
+  static Future<int> runCommand({
+    required CliInvocation invocation,
     required Logger logger,
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required GroupStore groupStore,
     required CommandEnvironmentBuilder envBuilder,
     required PluginResolver plugins,
     required TaskExecutor executor,
   }) async {
-    final bool checkMode = inv.options['check']?.isNotEmpty == true;
+    final bool checkMode = invocation.options['check']?.isNotEmpty == true;
     final task = TaskSpec(
       id: CommandId(checkMode ? 'format:check' : 'format'),
       plugin: const PluginId('format'),
     );
-    return executor.execute(
+
+    return await executor.execute(
       task: task,
-      inv: inv,
+      invocation: invocation,
       logger: logger,
-      groupStoreFactory: groupStoreFactory,
+      groupStore: groupStore,
       envBuilder: envBuilder,
       plugins: plugins,
     );

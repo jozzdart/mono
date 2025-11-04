@@ -83,6 +83,34 @@ void main() {
         ]);
         expect(inv.options['targets'], ['a', 'b', 'c', 'd']);
       });
+
+      test('pretty flags are only included when explicitly provided', () {
+        final inv = parse(['run']);
+        expect(inv.options.containsKey('color'), isFalse);
+        expect(inv.options.containsKey('icons'), isFalse);
+        expect(inv.options.containsKey('timestamp'), isFalse);
+      });
+
+      test('--color/--no-color captured as true/false', () {
+        final inv1 = parse(['run', '--color']);
+        expect(inv1.options['color'], ['true']);
+        final inv2 = parse(['run', '--no-color']);
+        expect(inv2.options['color'], ['false']);
+      });
+
+      test('--icons/--no-icons captured as true/false', () {
+        final inv1 = parse(['run', '--icons']);
+        expect(inv1.options['icons'], ['true']);
+        final inv2 = parse(['run', '--no-icons']);
+        expect(inv2.options['icons'], ['false']);
+      });
+
+      test('--timestamp/--no-timestamp captured as true/false', () {
+        final inv1 = parse(['run', '--timestamp']);
+        expect(inv1.options['timestamp'], ['true']);
+        final inv2 = parse(['run', '--no-timestamp']);
+        expect(inv2.options['timestamp'], ['false']);
+      });
     });
 
     group('positionals and targets parsing', () {

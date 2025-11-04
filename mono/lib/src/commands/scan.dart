@@ -2,12 +2,30 @@ import 'dart:io';
 
 import 'package:mono_core/mono_core.dart';
 
-class ScanCommand {
-  static Future<int> run(
-      {required CliInvocation inv,
-      required Logger logger,
-      required WorkspaceConfig workspaceConfig,
-      required PackageScanner packageScanner}) async {
+class ScanCommand extends Command {
+  const ScanCommand();
+
+  @override
+  String get name => 'scan';
+
+  @override
+  String get description => 'Scan workspace and cache packages';
+
+  @override
+  Future<int> run(
+    CliContext context,
+  ) =>
+      runCommand(
+        logger: context.logger,
+        workspaceConfig: context.workspaceConfig,
+        packageScanner: context.packageScanner,
+      );
+
+  static Future<int> runCommand({
+    required Logger logger,
+    required WorkspaceConfig workspaceConfig,
+    required PackageScanner packageScanner,
+  }) async {
     final root = Directory.current.path;
     final loaded = await workspaceConfig.loadRootConfig();
     await workspaceConfig.ensureMonocfgScaffold(loaded.monocfgPath);

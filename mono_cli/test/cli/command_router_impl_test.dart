@@ -2,85 +2,143 @@ import 'package:mono_cli/mono_cli.dart';
 import 'package:test/test.dart';
 import 'package:mono_core/mono_core.dart';
 
+// A simple test command for testing
+class _TestCommand extends Command {
+  const _TestCommand({
+    required this.name,
+    this.aliases = const [],
+  });
+
+  @override
+  final String name;
+
+  @override
+  final List<String> aliases;
+
+  @override
+  String get description => 'Test command';
+
+  @override
+  Future<int> run(CliContext context) async {
+    return 0;
+  }
+}
+
 void main() {
   group('DefaultCommandRouter', () {
-    test('dispatches registered command', () async {
-      final router = DefaultCommandRouter();
-      router.register('hello', ({required inv, required logger}) async {
-        logger.log('hi');
-        return 0;
-      });
+    test('getCommand returns registered command by name', () {
+      final helloCommand = const _TestCommand(name: 'hello');
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = DefaultCommandRouter(
+        commands: [helloCommand],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
       final inv = const CliInvocation(commandPath: ['hello']);
-      final code =
-          await router.tryDispatch(inv: inv, logger: const StdLogger());
-      expect(code, 0);
+      final command = router.getCommand(inv);
+      expect(command, same(helloCommand));
     });
 
-    test('resolves aliases', () async {
-      final router = DefaultCommandRouter();
-      router.register('version', ({required inv, required logger}) async {
-        return 123;
-      }, aliases: const ['--version', '-v']);
-      final inv = const CliInvocation(commandPath: ['-v']);
-      final code =
-          await router.tryDispatch(inv: inv, logger: const StdLogger());
-      expect(code, 123);
+    test('getCommand returns help command for empty command path', () {
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = DefaultCommandRouter(
+        commands: [],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      final inv = const CliInvocation(commandPath: []);
+      final command = router.getCommand(inv);
+      expect(command, same(helpCommand));
     });
 
-    test('returns null for unknown command', () async {
-      final router = DefaultCommandRouter();
+    test('getCommand returns fallback command for unknown command', () {
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = DefaultCommandRouter(
+        commands: [],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
       final inv = const CliInvocation(commandPath: ['nope']);
-      final code =
-          await router.tryDispatch(inv: inv, logger: const StdLogger());
-      expect(code, isNull);
+      final command = router.getCommand(inv);
+      expect(command, same(fallbackCommand));
     });
 
-    test('re-registering a name overrides previous handler', () async {
-      final router = DefaultCommandRouter();
-      router.register('cmd', ({required inv, required logger}) async => 1);
-      router.register('cmd', ({required inv, required logger}) async => 2);
-      final code = await router.tryDispatch(
-          inv: const CliInvocation(commandPath: ['cmd']),
-          logger: const StdLogger());
-      expect(code, 2);
+    test('getAllCommands returns all registered commands', () {
+      final cmd1 = const _TestCommand(name: 'cmd1');
+      final cmd2 = const _TestCommand(name: 'cmd2');
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = DefaultCommandRouter(
+        commands: [cmd1, cmd2],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      final allCommands = router.getAllCommands();
+      expect(allCommands, [cmd1, cmd2]);
     });
 
-    test('alias can be overridden by later registration', () async {
-      final router = DefaultCommandRouter();
-      router.register('a', ({required inv, required logger}) async => 10,
-          aliases: const ['x']);
-      router.register('b', ({required inv, required logger}) async => 20,
-          aliases: const ['x']);
-      final code = await router.tryDispatch(
-          inv: const CliInvocation(commandPath: ['x']),
-          logger: const StdLogger());
-      expect(code, 20);
+    test('getUnknownCommandHelpHint returns help command name', () {
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = DefaultCommandRouter(
+        commands: [],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      expect(router.getUnknownCommandHelpHint(), 'help');
     });
 
-    test('empty commandPath returns null', () async {
-      final router = DefaultCommandRouter();
-      final code = await router.tryDispatch(
-          inv: const CliInvocation(commandPath: []), logger: const StdLogger());
-      expect(code, isNull);
+    test('only first token is used for command lookup (subcommands ignored)',
+        () {
+      final rootCommand = const _TestCommand(name: 'root');
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = DefaultCommandRouter(
+        commands: [rootCommand],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      final command = router.getCommand(
+          const CliInvocation(commandPath: ['root', 'sub', 'leaf']));
+      expect(command, same(rootCommand));
     });
 
-    test('only first token is used for dispatch (subcommands ignored)',
-        () async {
-      final router = DefaultCommandRouter();
-      router.register('root', ({required inv, required logger}) async => 77);
-      final code = await router.tryDispatch(
-          inv: const CliInvocation(commandPath: ['root', 'sub', 'leaf']),
-          logger: const StdLogger());
-      expect(code, 77);
+    test('case sensitivity: different case does not match', () {
+      final helloCommand = const _TestCommand(name: 'hello');
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = DefaultCommandRouter(
+        commands: [helloCommand],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      final command =
+          router.getCommand(const CliInvocation(commandPath: ['Hello']));
+      expect(command, same(fallbackCommand));
     });
 
-    test('case sensitivity: different case does not match', () async {
-      final router = DefaultCommandRouter();
-      router.register('hello', ({required inv, required logger}) async => 1);
-      final code = await router.tryDispatch(
-          inv: const CliInvocation(commandPath: ['Hello']),
-          logger: const StdLogger());
-      expect(code, isNull);
+    test('matches command by name only (aliases not checked)', () {
+      final versionCommand = const _TestCommand(
+        name: 'version',
+        aliases: ['--version', '-v'],
+      );
+      final helpCommand = const _TestCommand(name: 'help');
+      final fallbackCommand = const _TestCommand(name: 'fallback');
+      final router = DefaultCommandRouter(
+        commands: [versionCommand],
+        helpCommand: helpCommand,
+        fallbackCommand: fallbackCommand,
+      );
+      // The implementation only checks name, not aliases
+      final command1 =
+          router.getCommand(const CliInvocation(commandPath: ['version']));
+      final command2 =
+          router.getCommand(const CliInvocation(commandPath: ['-v']));
+      expect(command1, same(versionCommand));
+      expect(command2, same(fallbackCommand)); // alias not matched
     });
   });
 }

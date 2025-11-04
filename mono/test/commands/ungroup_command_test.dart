@@ -9,13 +9,11 @@ import 'package:mono_core/mono_core.dart';
 import '../util/fakes.dart';
 import '../util/fs_fixtures.dart';
 
+GroupStore groupStore = FileGroupStore(
+  FileListConfigFolder(basePath: 'monocfg/groups'),
+);
+
 void main() {
-  late WorkspaceConfig workspaceConfig;
-
-  setUp(() async {
-    workspaceConfig = const FileWorkspaceConfig();
-  });
-
   group('UngroupCommand', () {
     test('usage error when name missing', () async {
       final ws = await createTempWorkspace('mono_ungroup_');
@@ -25,11 +23,11 @@ void main() {
         final outB = StringBuffer();
         final errB = StringBuffer();
         final inv = const CliInvocation(commandPath: ['ungroup']);
-        final code = await UngroupCommand.run(
-          inv: inv,
+        final code = await UngroupCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
-          workspaceConfig: workspaceConfig,
+          store: groupStore,
         );
         expect(code, 2);
         expect(errB.toString(), contains('Usage: mono ungroup <group_name>'));
@@ -49,11 +47,11 @@ void main() {
         final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['ungroup'], positionals: ['dev']);
-        final code = await UngroupCommand.run(
-          inv: inv,
+        final code = await UngroupCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(),
-          workspaceConfig: workspaceConfig,
+          store: groupStore,
         );
         expect(code, 2);
         expect(errB.toString(), contains('Group "dev" does not exist.'));
@@ -75,11 +73,11 @@ void main() {
         final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['ungroup'], positionals: ['dev']);
-        final code = await UngroupCommand.run(
-          inv: inv,
+        final code = await UngroupCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(nextConfirm: false),
-          workspaceConfig: workspaceConfig,
+          store: groupStore,
         );
         expect(code, 1);
         expect(errB.toString(), contains('Aborted.'));
@@ -103,11 +101,11 @@ void main() {
         final errB = StringBuffer();
         final inv =
             const CliInvocation(commandPath: ['ungroup'], positionals: ['dev']);
-        final code = await UngroupCommand.run(
-          inv: inv,
+        final code = await UngroupCommand.runCommand(
+          invocation: inv,
           logger: BufferingLogger(outB, errB),
           prompter: FakePrompter(nextConfirm: true),
-          workspaceConfig: workspaceConfig,
+          store: groupStore,
         );
         expect(code, 0);
         expect(outB.toString(), contains('Group "dev" removed.'));

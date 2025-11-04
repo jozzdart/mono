@@ -10,9 +10,9 @@ abstract class TaskExecutor {
 
   Future<int> execute({
     required TaskSpec task,
-    required CliInvocation inv,
+    required CliInvocation invocation,
     required Logger logger,
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required GroupStore groupStore,
     required CommandEnvironmentBuilder envBuilder,
     required PluginResolver plugins,
     Map<String, String> env,

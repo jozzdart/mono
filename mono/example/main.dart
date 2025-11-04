@@ -1,4 +1,4 @@
-import 'package:mono/src/cli.dart';
+import 'package:mono/mono_cli.dart';
 import 'package:mono_cli/mono_cli.dart';
 
 Future<void> main() async {
@@ -15,13 +15,13 @@ Future<void> main() async {
     clock: const SystemClock(),
     logger: const StdLogger(),
     pathService: const DefaultPathService(),
-    platform: const DefaultPlatformInfo(),
-    versionInfo: const StaticVersionInfo(name: 'mono', version: 'example'),
     envBuilder: const DefaultCommandEnvironmentBuilder(),
     plugins: PluginRegistry({}),
     taskExecutor: const DefaultTaskExecutor(),
-    groupStoreFactory: (String monocfgPath) => FileGroupStore(
-      FileListConfigFolder(basePath: '$monocfgPath/groups'),
+    router: DefaultCommandRouter(
+      commands: [],
+      fallbackCommand: TasksCommand(),
+      helpCommand: HelpCommand(),
     ),
   );
   final code = await runCli(['help'], wiring: wiring);

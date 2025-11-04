@@ -44,4 +44,7 @@ abstract class WorkspaceConfig {
 
   Future<void> writeRootConfigGroups(
       String path, Map<String, List<String>> groups);
+
+  Future<void> writeRootConfigNormalized(
+      {String path = 'mono.yaml', Logger? logger});
 }

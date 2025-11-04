@@ -29,6 +29,6 @@ abstract class CommandEnvironmentBuilder {
 
   Future<CommandEnvironment> build(
     CliInvocation inv, {
-    required GroupStore Function(String monocfgPath) groupStoreFactory,
+    required GroupStore groupStore,
   });
 }

@@ -2,7 +2,7 @@ import 'package:mono_core/mono_core.dart';
 
 @immutable
 class PubPlugin extends TaskPlugin {
-  PubPlugin() : super(const PluginId('pub'));
+  const PubPlugin() : super(const PluginId('pub'));
 
   static const CommandId getCmd = CommandId('get');
   static const CommandId cleanCmd = CommandId('clean');

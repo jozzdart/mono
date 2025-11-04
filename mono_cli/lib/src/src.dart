@@ -1,7 +1,9 @@
 export 'cli/cli_engine.dart';
 export 'cli/command_router_impl.dart';
+export 'cli/help_builder.dart';
 export 'cli/parser_args.dart';
-export 'config/schema_provider.dart';
+export 'config/defaults.dart';
+export 'config/spec.dart';
 export 'config/yaml_loader.dart';
 export 'config/yaml_validator.dart';
 export 'external_exports/args.dart';

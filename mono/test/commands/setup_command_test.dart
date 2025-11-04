@@ -25,11 +25,10 @@ void main() {
 
         final outB = StringBuffer();
         final errB = StringBuffer();
-        final inv = const CliInvocation(commandPath: ['setup']);
-        final code = await SetupCommand.run(
-            inv: inv,
-            logger: BufferingLogger(outB, errB),
-            workspaceConfig: workspaceConfig);
+        final code = await SetupCommand.runCommand(
+          logger: BufferingLogger(outB, errB),
+          workspaceConfig: workspaceConfig,
+        );
         expect(code, 0);
 
         expect(File('mono.yaml').existsSync(), isTrue);
@@ -55,11 +54,10 @@ void main() {
 
         final outB = StringBuffer();
         final errB = StringBuffer();
-        final inv = const CliInvocation(commandPath: ['setup']);
-        final code = await SetupCommand.run(
-            inv: inv,
-            logger: BufferingLogger(outB, errB),
-            workspaceConfig: workspaceConfig);
+        final code = await SetupCommand.runCommand(
+          logger: BufferingLogger(outB, errB),
+          workspaceConfig: workspaceConfig,
+        );
         expect(code, 0);
         expect(File('mono.yaml').existsSync(), isTrue);
         expect(Directory(p.join('monocfg', 'groups')).existsSync(), isTrue);
