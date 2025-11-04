@@ -63,7 +63,6 @@ tasks: {}
 
       expect(Directory(cfgDir).existsSync(), isTrue);
       expect(Directory(p.join(cfgDir, 'groups')).existsSync(), isTrue);
-      expect(File(p.join(cfgDir, 'mono_projects.yaml')).existsSync(), isTrue);
       expect(File(p.join(cfgDir, 'tasks.yaml')).existsSync(), isTrue);
 
       // modify then re-run
@@ -75,49 +74,58 @@ tasks: {}
 
     test('readMonocfgProjects handles missing/invalid and reads valid entries',
         () async {
-      final cfgDir = p.join(tmp.path, 'cfg1');
-      await Directory(cfgDir).create(recursive: true);
+      // Point CWD to temp so loader reads tmp/mono.yaml
+      final prev = Directory.current;
+      Directory.current = tmp.path;
+      try {
+        // missing mono.yaml
+        expect(await ws.readMonocfgProjects('ignored'), isEmpty);
 
-      // missing file
-      expect(await ws.readMonocfgProjects(cfgDir), isEmpty);
+        // invalid mono.yaml shape
+        await File('mono.yaml').writeAsString('[]');
+        expect(await ws.readMonocfgProjects('ignored'), isEmpty);
 
-      // invalid YAML shape
-      await File(p.join(cfgDir, 'mono_projects.yaml')).writeAsString('[]');
-      expect(await ws.readMonocfgProjects(cfgDir), isEmpty);
+        // wrong types for maps
+        await File('mono.yaml').writeAsString('dart_projects: 42');
+        expect(await ws.readMonocfgProjects('ignored'), isEmpty);
 
-      // wrong type for packages
-      await File(p.join(cfgDir, 'mono_projects.yaml'))
-          .writeAsString('packages: 42');
-      expect(await ws.readMonocfgProjects(cfgDir), isEmpty);
-
-      // valid entries (one incomplete ignored)
-      await File(p.join(cfgDir, 'mono_projects.yaml')).writeAsString('''
-packages:
-  - name: a
-    path: pkgs/a
-    kind: dart
-  - name: b
-    path: pkgs/b
-    kind: flutter
-  - name: incomplete
-    path: ''
+        // valid entries across dart/flutter (one incomplete ignored)
+        await File('mono.yaml').writeAsString('''
+settings: {monocfgPath: monocfg}
+include: ["**"]
+exclude: []
+dart_projects:
+  a: pkgs/a
+  incomplete: ''
+flutter_projects:
+  b: pkgs/b
+groups: {}
+tasks: {}
 ''');
-      final list = await ws.readMonocfgProjects(cfgDir);
-      expect(list.length, 2);
-      expect(list.first.name, 'a');
-      expect(list.last.kind, 'flutter');
+        final list = await ws.readMonocfgProjects('ignored');
+        expect(list.length, 2);
+        expect(list.firstWhere((p) => p.name == 'a').kind, 'dart');
+        expect(list.firstWhere((p) => p.name == 'b').kind, 'flutter');
+      } finally {
+        Directory.current = prev.path;
+      }
     });
 
     test('writeMonocfgProjects round-trips via reader', () async {
-      final cfgDir = p.join(tmp.path, 'cfg2');
-      await Directory(cfgDir).create(recursive: true);
-      final pkgs = <PackageRecord>[
-        const PackageRecord(name: 'x', path: 'packages/x', kind: 'dart'),
-        const PackageRecord(name: 'y', path: 'packages/y', kind: 'flutter'),
-      ];
-      await ws.writeMonocfgProjects(cfgDir, pkgs);
-      final read = await ws.readMonocfgProjects(cfgDir);
-      expect(read.map((p) => p.name), containsAll(['x', 'y']));
+      // Write to root mono.yaml (writer uses toYaml)
+      final prev = Directory.current;
+      Directory.current = tmp.path;
+      try {
+        final pkgs = <PackageRecord>[
+          const PackageRecord(name: 'x', path: 'packages/x', kind: 'dart'),
+          const PackageRecord(name: 'y', path: 'packages/y', kind: 'flutter'),
+        ];
+        await ws.writeMonocfgProjects('ignored', pkgs);
+        final read = await ws.readMonocfgProjects('ignored');
+        expect(read.map((p) => p.name), containsAll(['x', 'y']));
+      } finally {
+        Directory.current = prev.path;
+      }
     });
 
     test('readMonocfgTasks parses mapping into primitives', () async {
@@ -153,7 +161,7 @@ include:
   - "**"
 exclude:
   - ".dart_tool/**"
-packages:
+dart_projects:
   a: packages/a
 tasks:
   t1:
@@ -179,7 +187,8 @@ groups: {}
       // preserved bits
       expect(text, contains('include:'));
       expect(text, contains('exclude:'));
-      expect(text, contains('packages:'));
+      expect(text, contains('dart_projects:'));
+      expect(text, contains('flutter_projects:'));
       expect(text, contains('tasks:'));
     });
   });

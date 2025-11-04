@@ -1,19 +1,58 @@
 # mono configuration
+# Settings: basic CLI options
 settings:
   monocfgPath: config
   concurrency: 1
   defaultOrder: dependency
+
+# Logger: colors/icons/timestamp
 logger:
   color: true
   icons: true
   timestamp: false
+
+# Include globs used to scan for packages
+# Example:
+# - packages/**
+# - apps/**
 include:
   - "**"
+
+# Exclude globs to skip during scan
+# Example:
+# - **/build/**
+# - **/.dart_tool/**
 exclude:
   - "config/**"
   - ".dart_tool/**"
-packages:
+
+# Dart projects map (name -> relative path)
+# Example:
+# core: packages/core
+dart_projects:
+  mono_cli: mono_cli
+  mono: mono
+  mono_core: mono_core
+
+# Flutter projects map (name -> relative path)
+# Example:
+# app: apps/app
+flutter_projects:
+
+# Groups combine packages and/or other groups
+# Example:
+# apps:
+#   - app
+# tooling:
+#   - core
 groups:
+
+# Tasks can be invoked as commands (merged with monocfg/tasks.yaml)
+# Example:
+# build_all:
+#   plugin: exec
+#   run:
+#     - dart run build_runner build -d
 tasks:
   analyze:
     plugin: exec

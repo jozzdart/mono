@@ -1,3 +1,9 @@
+## 0.0.8
+
+- Breaking: Replaced `packages`/`projects` with `dart_projects` and `flutter_projects` maps in `mono.yaml` (loader, writer, workspace IO updated).
+- Writer: Generated `mono.yaml` now includes section comments and short examples for easier editing.
+- Workspace: Project cache no longer uses `monocfg/mono_projects.yaml`; reads/writes from root `mono.yaml`.
+
 ## 0.0.7
 
 - Default pretty logging (colors + icons, no timestamp); supports `--no-color`, `--no-icons`, `--timestamp`.

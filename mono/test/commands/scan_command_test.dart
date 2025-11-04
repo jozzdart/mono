@@ -17,7 +17,7 @@ void main() {
   });
 
   group('ScanCommand', () {
-    test('writes empty projects file when no packages', () async {
+    test('writes empty projects map in mono.yaml when no packages', () async {
       final ws = await createTempWorkspace('mono_scan_');
       ws.enter();
       try {
@@ -32,10 +32,8 @@ void main() {
         );
         expect(code, 0);
 
-        final proj = File(p.join('monocfg', 'mono_projects.yaml'));
-        expect(proj.existsSync(), isTrue);
-        final contents = await proj.readAsString();
-        expect(contents.trim(), startsWith('packages:'));
+        final projects = await workspaceConfig.readMonocfgProjects('monocfg');
+        expect(projects, isEmpty);
         expect(outB.toString(), contains('Detected 0 packages'));
         expect(errB.toString().trim(), isEmpty);
       } finally {
@@ -64,11 +62,9 @@ void main() {
         );
         expect(code, 0);
 
-        final proj = File(p.join('monocfg', 'mono_projects.yaml'));
-        expect(proj.existsSync(), isTrue);
-        final contents = await proj.readAsString();
-        expect(contents, contains('name: a'));
-        expect(contents, contains('name: b'));
+        final list = await workspaceConfig.readMonocfgProjects('monocfg');
+        expect(list.length, 2);
+        expect(list.map((e) => e.name), containsAll(['a', 'b']));
         expect(outB.toString(), contains('Detected 2 packages'));
         expect(errB.toString().trim(), isEmpty);
       } finally {

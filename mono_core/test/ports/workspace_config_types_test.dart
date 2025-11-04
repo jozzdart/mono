@@ -15,7 +15,7 @@ void main() {
       const cfg = MonoConfig(
         include: ['**'],
         exclude: [],
-        packages: {'a': 'packages/a'},
+        dartProjects: {'a': 'packages/a'},
         groups: {
           'g': ['a']
         },

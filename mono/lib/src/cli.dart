@@ -5,7 +5,6 @@ class CliWiring {
   const CliWiring({
     required this.parser,
     required this.configLoader,
-    required this.configValidator,
     required this.packageScanner,
     required this.graphBuilder,
     required this.targetSelector,
@@ -23,7 +22,6 @@ class CliWiring {
 
   final CliParser parser;
   final ConfigLoader configLoader;
-  final ConfigValidator configValidator;
   final PackageScanner packageScanner;
   final GraphBuilder graphBuilder;
   final TargetSelector targetSelector;

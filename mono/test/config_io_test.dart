@@ -8,12 +8,16 @@ void main() {
   group('workspace config filesystem helpers', () {
     late Directory tmp;
     const ws = FileWorkspaceConfig();
+    late String prevCwd;
 
     setUp(() async {
       tmp = await Directory.systemTemp.createTemp('mono_config_io_test_');
+      prevCwd = Directory.current.path;
+      Directory.current = tmp.path;
     });
 
     tearDown(() async {
+      Directory.current = prevCwd;
       if (await tmp.exists()) await tmp.delete(recursive: true);
     });
 
@@ -61,7 +65,6 @@ tasks: {}
 
       expect(Directory(cfgDir).existsSync(), isTrue);
       expect(Directory('$cfgDir/groups').existsSync(), isTrue);
-      expect(File('$cfgDir/mono_projects.yaml').existsSync(), isTrue);
       expect(File('$cfgDir/tasks.yaml').existsSync(), isTrue);
 
       // modify files then re-run; content should be preserved
@@ -72,33 +75,28 @@ tasks: {}
 
     test('readMonocfgProjects handles missing/invalid and valid entries',
         () async {
-      final cfgDir = '${tmp.path}/monocfg2';
-      await Directory(cfgDir).create(recursive: true);
+      // missing mono.yaml
+      expect(await ws.readMonocfgProjects('monocfg2'), isEmpty);
 
-      // missing file
-      expect(await ws.readMonocfgProjects(cfgDir), isEmpty);
-
-      // invalid YAML
-      await File('$cfgDir/mono_projects.yaml').writeAsString('[]');
-      expect(await ws.readMonocfgProjects(cfgDir), isEmpty);
+      // invalid shapes in mono.yaml
+      await File('mono.yaml').writeAsString('dart_projects: 3\n');
+      expect(await ws.readMonocfgProjects('monocfg2'), isEmpty);
 
       // wrong shape
-      await File('$cfgDir/mono_projects.yaml').writeAsString('packages: 42');
-      expect(await ws.readMonocfgProjects(cfgDir), isEmpty);
+      await File('mono.yaml').writeAsString('flutter_projects: 42\n');
+      expect(await ws.readMonocfgProjects('monocfg2'), isEmpty);
 
-      // valid entries, with one incomplete
-      await File('$cfgDir/mono_projects.yaml').writeAsString('''
-packages:
-  - name: a
-    path: pkgs/a
-    kind: dart
-  - name: b
-    path: pkgs/b
-    kind: flutter
-  - name: incomplete
-    path: ''
+      // valid entries across dart/flutter maps
+      await File('mono.yaml').writeAsString('''
+settings: {}
+include: ["**"]
+exclude: []
+dart_projects:
+  a: pkgs/a
+flutter_projects:
+  b: pkgs/b
 ''');
-      final list = await ws.readMonocfgProjects(cfgDir);
+      final list = await ws.readMonocfgProjects('monocfg2');
       expect(list.length, 2);
       expect(list[0].name, 'a');
       expect(list[0].path, 'pkgs/a');
@@ -109,14 +107,13 @@ packages:
 
     test('writeMonocfgProjects writes YAML that round-trips via reader',
         () async {
-      final cfgDir = '${tmp.path}/monocfg3';
-      await Directory(cfgDir).create(recursive: true);
+      await ws.writeRootConfigIfMissing(path: 'mono.yaml');
       final pkgs = <PackageRecord>[
         const PackageRecord(name: 'x', path: 'packages/x', kind: 'dart'),
         const PackageRecord(name: 'y', path: 'packages/y', kind: 'flutter'),
       ];
-      await ws.writeMonocfgProjects(cfgDir, pkgs);
-      final read = await ws.readMonocfgProjects(cfgDir);
+      await ws.writeMonocfgProjects('monocfg3', pkgs);
+      final read = await ws.readMonocfgProjects('monocfg3');
       expect(read.length, 2);
       expect(read.map((p) => p.name), containsAll(['x', 'y']));
       expect(read.firstWhere((p) => p.name == 'y').kind, 'flutter');
@@ -159,7 +156,7 @@ include:
   - "**"
 exclude:
   - ".dart_tool/**"
-packages:
+dart_projects:
   a: packages/a
 tasks:
   t1:
@@ -178,7 +175,7 @@ groups: {}
       // preserved bits
       expect(text, contains('include:'));
       expect(text, contains('exclude:'));
-      expect(text, contains('packages:'));
+      expect(text, contains('dart_projects:'));
       expect(text, contains('tasks:'));
       // groups rendered with quotes for special items
       expect(text, contains('groups:'));

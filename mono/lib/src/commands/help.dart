@@ -21,10 +21,11 @@ class HelpCommand extends Command {
 
     final buffer = StringBuffer();
 
+    buffer.writeln(sep);
     for (final line in _logo) {
       buffer.writeln(line);
     }
-    buffer.writeln('mono - Manage Dart/Flutter monorepos');
+
     buffer.writeln(sep);
 
     buffer.writeln('Usage');
@@ -54,6 +55,7 @@ class HelpCommand extends Command {
     buffer.writeln(sep);
     buffer.writeln('Global options');
     buffer.writeln('  --[no-]color  --[no-]icons  --[no-]timestamp');
+    buffer.writeln(sep);
 
     stdout.writeln(buffer.toString().trimRight());
 
@@ -93,10 +95,9 @@ const _logo = <String>[
   """
                                  
                                  
-,--,--,--. ,---. ,--,--,  ,---.  
-|        || .-. ||      \\| .-. | 
-|  |  |  |' '-' '|  ||  |' '-' ' 
-`--`--`--' `---' `--''--' `---'  
-
+  __ _  ___  ___  ___ 
+ /  ' \\/ _ \\/ _ \\/ _ \\
+/_/_/_/\\___/_//_/\\___/
+                      
 """
 ];

@@ -7,7 +7,6 @@ Future<void> main() async {
     prompter: const ConsolePrompter(),
     parser: const ArgsCliParser(),
     configLoader: const YamlConfigLoader(),
-    configValidator: const YamlConfigValidator(),
     packageScanner: const FileSystemPackageScanner(),
     graphBuilder: const DefaultGraphBuilder(),
     targetSelector: const DefaultTargetSelector(),

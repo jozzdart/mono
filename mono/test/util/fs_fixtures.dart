@@ -69,7 +69,8 @@ Future<File> writeMonoYaml({
   final cfg = MonoConfig(
     include: include,
     exclude: exclude,
-    packages: base.packages,
+    dartProjects: base.dartProjects,
+    flutterProjects: base.flutterProjects,
     groups: groups,
     tasks: taskDefs,
     settings: base.settings,
@@ -84,10 +85,6 @@ Future<File> writeMonoYaml({
 Future<void> ensureMonocfg(String monocfgPath) async {
   Directory(monocfgPath).createSync(recursive: true);
   Directory(p.join(monocfgPath, 'groups')).createSync(recursive: true);
-  final projects = File(p.join(monocfgPath, 'mono_projects.yaml'));
-  if (!projects.existsSync()) {
-    projects.writeAsStringSync('packages: []\n');
-  }
   final tasks = File(p.join(monocfgPath, 'tasks.yaml'));
   if (!tasks.existsSync()) {
     tasks.writeAsStringSync('# tasks:\n');

@@ -9,7 +9,6 @@ class FakeWiring extends CliWiring {
       : super(
           parser: ArgsCliParser(),
           configLoader: YamlConfigLoader(),
-          configValidator: YamlConfigValidator(),
           packageScanner: FileSystemPackageScanner(),
           graphBuilder: DefaultGraphBuilder(),
           targetSelector: DefaultTargetSelector(),
