@@ -25,18 +25,16 @@ void main() {
       final ws = await createTempWorkspace('mono_list_');
       ws.enter();
       try {
-        await writeMonoYaml();
         await ensureMonocfg('monocfg');
-        final projPath = p.join('monocfg', 'mono_projects.yaml');
         await writeFile(
-          projPath,
-          'packages:\n'
-          '  - name: a\n'
-          '    path: /tmp/a\n'
-          '    kind: dart\n'
-          '  - name: b\n'
-          '    path: /tmp/b\n'
-          '    kind: flutter\n',
+          'mono.yaml',
+          'settings: {}\n'
+              'include: ["**"]\n'
+              'exclude: []\n'
+              'dart_projects:\n'
+              '  a: /tmp/a\n'
+              'flutter_projects:\n'
+              '  b: /tmp/b\n',
         );
 
         final outB = StringBuffer();

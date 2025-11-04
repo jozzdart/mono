@@ -15,6 +15,9 @@ void main() {
     addTearDown(() async => tmp.delete(recursive: true));
 
     final missing = '${tmp.path}/definitely_missing.txt';
+    final prev = Directory.current.path;
+    Directory.current = tmp.path;
+    addTearDown(() => Directory.current = prev);
     final contents = await workspaceConfig.readMonocfgProjects(missing);
     expect(contents, isEmpty);
   });

@@ -34,8 +34,6 @@ void main() {
         expect(File('mono.yaml').existsSync(), isTrue);
         expect(Directory(p.join('monocfg')).existsSync(), isTrue);
         expect(Directory(p.join('monocfg', 'groups')).existsSync(), isTrue);
-        expect(
-            File(p.join('monocfg', 'mono_projects.yaml')).existsSync(), isTrue);
         expect(File(p.join('monocfg', 'tasks.yaml')).existsSync(), isTrue);
         expect(outB.toString(), contains('Created/verified mono.yaml'));
         expect(errB.toString().trim(), isEmpty);
@@ -61,8 +59,6 @@ void main() {
         expect(code, 0);
         expect(File('mono.yaml').existsSync(), isTrue);
         expect(Directory(p.join('monocfg', 'groups')).existsSync(), isTrue);
-        expect(
-            File(p.join('monocfg', 'mono_projects.yaml')).existsSync(), isTrue);
         expect(File(p.join('monocfg', 'tasks.yaml')).existsSync(), isTrue);
         expect(errB.toString().trim(), isEmpty);
       } finally {
