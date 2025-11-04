@@ -1,11 +1,6 @@
-import 'package:mono_core/mono_core.dart';
+import 'dart:io';
 
-const String _helpHeader = 'mono - Manage Dart/Flutter monorepos\n\n'
-    'Usage:\n'
-    '  mono <command> [targets] [options]\n\n'
-    'Notes:\n'
-    '- Built-in commands like get run on all packages when no targets are given.\n'
-    '- External tasks require explicit targets; use "all" to run on all packages.';
+import 'package:mono_core/mono_core.dart';
 
 class HelpCommand extends Command {
   const HelpCommand();
@@ -22,9 +17,46 @@ class HelpCommand extends Command {
   ) async {
     final router = context.router;
     final commands = router.getAllCommands();
-    final helpText = build(commands, header: _helpHeader);
-    final logger = context.logger;
-    logger.log(helpText);
+    const sep = '────────────────────────────────────────────────────────────';
+
+    final buffer = StringBuffer();
+
+    for (final line in _logo) {
+      buffer.writeln(line);
+    }
+    buffer.writeln('mono - Manage Dart/Flutter monorepos');
+    buffer.writeln(sep);
+
+    buffer.writeln('Usage');
+    buffer.writeln('  mono <command> [targets] [options]');
+    buffer.writeln(sep);
+
+    buffer.writeln('Notes');
+    buffer.writeln(
+        '  - Built-in commands like get run on all packages when no targets are given.');
+    buffer.writeln(
+        '  - External tasks require explicit targets; use "all" to run on all packages.');
+    buffer.writeln(sep);
+
+    buffer.writeln('Commands');
+    if (commands.isNotEmpty) {
+      final sorted = [...commands]..sort((a, b) => a.name.compareTo(b.name));
+      final maxNameLen = sorted
+          .map((c) => _displayName(c).length)
+          .fold<int>(0, (m, e) => e > m ? e : m);
+      for (final c in sorted) {
+        final name = _displayName(c);
+        final pad = ' ' * (maxNameLen - name.length);
+        buffer.writeln('  ' + name + pad + '  ' + c.description);
+      }
+    }
+
+    buffer.writeln(sep);
+    buffer.writeln('Global options');
+    buffer.writeln('  --[no-]color  --[no-]icons  --[no-]timestamp');
+
+    stdout.writeln(buffer.toString().trimRight());
+
     return 0;
   }
 
@@ -56,3 +88,15 @@ class HelpCommand extends Command {
     return '${c.name} ($aliasStr)';
   }
 }
+
+const _logo = <String>[
+  """
+                                 
+                                 
+,--,--,--. ,---. ,--,--,  ,---.  
+|        || .-. ||      \\| .-. | 
+|  |  |  |' '-' '|  ||  |' '-' ' 
+`--`--`--' `---' `--''--' `---'  
+
+"""
+];
