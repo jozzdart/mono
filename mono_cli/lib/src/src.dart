@@ -5,7 +5,6 @@ export 'cli/parser_args.dart';
 export 'config/defaults.dart';
 export 'config/spec.dart';
 export 'config/yaml_loader.dart';
-export 'config/yaml_validator.dart';
 export 'external_exports/args.dart';
 export 'external_exports/glob.dart';
 export 'external_exports/path.dart';

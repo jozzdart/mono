@@ -76,7 +76,8 @@ class YamlConfigLoader implements ConfigLoader {
 
     final include = strList(m['include']);
     final exclude = strList(m['exclude']);
-    final packages = mapSS(m['packages']);
+    final dartProjects = mapSS(m['dart_projects']);
+    final flutterProjects = mapSS(m['flutter_projects']);
     final groups = mapSL(m['groups']);
     final taskDefs = tasks(m['tasks']);
 
@@ -117,7 +118,8 @@ class YamlConfigLoader implements ConfigLoader {
     return MonoConfig(
       include: include,
       exclude: exclude,
-      packages: packages,
+      dartProjects: dartProjects,
+      flutterProjects: flutterProjects,
       groups: groups,
       tasks: taskDefs,
       settings: settings,

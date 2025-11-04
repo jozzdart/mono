@@ -14,7 +14,8 @@ MonoConfig defaultConfig() {
       "monocfg/**",
       ".dart_tool/**",
     ],
-    packages: {},
+    dartProjects: {},
+    flutterProjects: {},
     groups: {},
     tasks: {},
     settings: Settings(
@@ -37,37 +38,70 @@ String _quote(String v) {
   return v;
 }
 
-String toYaml(MonoConfig cfg, {required String monocfgPath}) {
+String toYaml(
+  MonoConfig cfg, {
+  required String monocfgPath,
+}) {
   final sb = StringBuffer();
   sb.writeln('# mono configuration');
+  sb.writeln('# Settings: basic CLI options');
   sb.writeln('settings:');
   sb.writeln('  monocfgPath: $monocfgPath');
   sb.writeln('  concurrency: ${cfg.settings.concurrency}');
   sb.writeln('  defaultOrder: ${cfg.settings.defaultOrder}');
+  sb.writeln('');
+  sb.writeln('# Logger: colors/icons/timestamp');
   sb.writeln('logger:');
   sb.writeln('  color: ${cfg.logger.color}');
   sb.writeln('  icons: ${cfg.logger.icons}');
   sb.writeln('  timestamp: ${cfg.logger.timestamp}');
+  sb.writeln('');
+  sb.writeln('# Include globs used to scan for packages');
+  sb.writeln('# Example:');
+  sb.writeln('# - packages/**');
+  sb.writeln('# - apps/**');
   sb.writeln('include:');
   for (final g in cfg.include) {
     sb.writeln('  - ${_quote(g)}');
   }
+  sb.writeln('');
+  sb.writeln('# Exclude globs to skip during scan');
+  sb.writeln('# Example:');
+  sb.writeln('# - **/build/**');
+  sb.writeln('# - **/.dart_tool/**');
   sb.writeln('exclude:');
   for (final g in cfg.exclude) {
     sb.writeln('  - ${_quote(g)}');
   }
-  sb.writeln('packages:');
-  if (cfg.packages.isEmpty) {
-    sb.writeln('  {}');
-  } else {
-    for (final e in cfg.packages.entries) {
+  sb.writeln('');
+  sb.writeln('# Dart projects map (name -> relative path)');
+  sb.writeln('# Example:');
+  sb.writeln('# core: packages/core');
+  sb.writeln('dart_projects:');
+  if (cfg.dartProjects.isNotEmpty) {
+    for (final e in cfg.dartProjects.entries) {
       sb.writeln('  ${e.key}: ${_quote(e.value)}');
     }
   }
+  sb.writeln('');
+  sb.writeln('# Flutter projects map (name -> relative path)');
+  sb.writeln('# Example:');
+  sb.writeln('# app: apps/app');
+  sb.writeln('flutter_projects:');
+  if (cfg.flutterProjects.isNotEmpty) {
+    for (final e in cfg.flutterProjects.entries) {
+      sb.writeln('  ${e.key}: ${_quote(e.value)}');
+    }
+  }
+  sb.writeln('');
+  sb.writeln('# Groups combine packages and/or other groups');
+  sb.writeln('# Example:');
+  sb.writeln('# apps:');
+  sb.writeln('#   - app');
+  sb.writeln('# tooling:');
+  sb.writeln('#   - core');
   sb.writeln('groups:');
-  if (cfg.groups.isEmpty) {
-    sb.writeln('  {}');
-  } else {
+  if (cfg.groups.isNotEmpty) {
     for (final e in cfg.groups.entries) {
       sb.writeln('  ${e.key}:');
       for (final item in e.value) {
@@ -75,10 +109,16 @@ String toYaml(MonoConfig cfg, {required String monocfgPath}) {
       }
     }
   }
+  sb.writeln('');
+  sb.writeln(
+      '# Tasks can be invoked as commands (merged with monocfg/tasks.yaml)');
+  sb.writeln('# Example:');
+  sb.writeln('# build_all:');
+  sb.writeln('#   plugin: exec');
+  sb.writeln('#   run:');
+  sb.writeln('#     - dart run build_runner build -d');
   sb.writeln('tasks:');
-  if (cfg.tasks.isEmpty) {
-    sb.writeln('  {}');
-  } else {
+  if (cfg.tasks.isNotEmpty) {
     for (final e in cfg.tasks.entries) {
       sb.writeln('  ${e.key}:');
       final def = e.value;
@@ -143,7 +183,8 @@ ConfigNormalizationResult normalizeRootConfig(
   final normalized = MonoConfig(
     include: loaded.include.isEmpty ? defaults.include : loaded.include,
     exclude: loaded.exclude.isEmpty ? defaults.exclude : loaded.exclude,
-    packages: loaded.packages,
+    dartProjects: loaded.dartProjects,
+    flutterProjects: loaded.flutterProjects,
     groups: loaded.groups,
     tasks: loaded.tasks,
     settings: Settings(
@@ -179,6 +220,9 @@ ConfigNormalizationResult normalizeRootConfig(
     logger?.log(m, level: 'info');
   }
 
-  final yaml = toYaml(normalized, monocfgPath: monocfgPath);
+  final yaml = toYaml(
+    normalized,
+    monocfgPath: monocfgPath,
+  );
   return ConfigNormalizationResult(yaml: yaml, messages: msgs);
 }

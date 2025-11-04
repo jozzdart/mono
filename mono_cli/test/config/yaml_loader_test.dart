@@ -9,7 +9,8 @@ void main() {
 
       expect(config.include, isEmpty);
       expect(config.exclude, isEmpty);
-      expect(config.packages, isEmpty);
+      expect(config.dartProjects, isEmpty);
+      expect(config.flutterProjects, isEmpty);
       expect(config.groups, isEmpty);
       expect(config.tasks, isEmpty);
       expect(config.settings.concurrency, equals('auto'));
@@ -33,10 +34,10 @@ exclude:
       expect(config.exclude, equals(<String>['build/**', '3', 'false']));
     });
 
-    test('parses packages map coercing keys/values to strings', () {
+    test('parses dart_projects map coercing keys/values to strings', () {
       final loader = YamlConfigLoader();
       final yaml = '''
-packages:
+dart_projects:
   app: apps/app
   1: 2
   other: 3
@@ -44,7 +45,7 @@ packages:
 
       final config = loader.load(yaml);
       expect(
-          config.packages,
+          config.dartProjects,
           equals(<String, String>{
             'app': 'apps/app',
             '1': '2',

@@ -65,7 +65,8 @@ void main() {
       const cfg = MonoConfig(include: ['packages/**'], exclude: []);
       expect(cfg.include, equals(['packages/**']));
       expect(cfg.exclude, isEmpty);
-      expect(cfg.packages, isEmpty);
+      expect(cfg.dartProjects, isEmpty);
+      expect(cfg.flutterProjects, isEmpty);
       expect(cfg.groups, isEmpty);
       expect(cfg.tasks, isEmpty);
       expect(cfg.settings.concurrency, equals('auto'));
@@ -77,7 +78,7 @@ void main() {
       const cfg = MonoConfig(
         include: ['apps/**', 'packages/**'],
         exclude: ['**/build/**'],
-        packages: {'core': 'packages/core'},
+        dartProjects: {'core': 'packages/core'},
         groups: {
           'ci': ['core', 'apps/*'],
         },
@@ -87,7 +88,7 @@ void main() {
 
       expect(cfg.include, equals(['apps/**', 'packages/**']));
       expect(cfg.exclude, equals(['**/build/**']));
-      expect(cfg.packages, equals({'core': 'packages/core'}));
+      expect(cfg.dartProjects, equals({'core': 'packages/core'}));
       expect(
           cfg.groups,
           equals({

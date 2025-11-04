@@ -5,7 +5,8 @@ class MonoConfig {
   const MonoConfig({
     required this.include,
     required this.exclude,
-    this.packages = const {},
+    this.dartProjects = const {},
+    this.flutterProjects = const {},
     this.groups = const {},
     this.tasks = const {},
     this.settings = const Settings(),
@@ -14,8 +15,10 @@ class MonoConfig {
 
   final List<String> include;
   final List<String> exclude;
-  // name -> relative path overrides
-  final Map<String, String> packages;
+  // name -> relative path for pure Dart packages
+  final Map<String, String> dartProjects;
+  // name -> relative path for Flutter packages
+  final Map<String, String> flutterProjects;
   // group -> list of members (names or globs)
   final Map<String, List<String>> groups;
   // taskId -> definition

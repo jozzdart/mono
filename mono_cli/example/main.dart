@@ -16,12 +16,8 @@ tasks:
   const loader = YamlConfigLoader();
   final config = loader.load(yamlText);
 
-  const validator = YamlConfigValidator();
-  final issues = validator.validate(config);
-
   const logger = StdLogger();
   logger.log('Tokens: $tokens', scope: 'example');
   logger.log('Command: ${invocation.commandPath.join(' ')}', scope: 'example');
   logger.log('Config include: ${config.include}', scope: 'example');
-  logger.log('Issues: ${issues.length}', scope: 'example');
 }

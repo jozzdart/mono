@@ -44,7 +44,7 @@ class ScanCommand extends Command {
     ];
     await workspaceConfig.writeMonocfgProjects(loaded.monocfgPath, records);
     logger.log(
-        'Detected ${records.length} packages and wrote ${loaded.monocfgPath}/mono_projects.yaml');
+        'Detected ${records.length} packages and wrote projects to mono.yaml');
     return 0;
   }
 }

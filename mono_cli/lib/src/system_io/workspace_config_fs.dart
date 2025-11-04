@@ -55,10 +55,6 @@ class FileWorkspaceConfig implements WorkspaceConfig {
     if (!await groupsDir.exists()) {
       await groupsDir.create(recursive: true);
     }
-    final projects = File('$monocfgPath/mono_projects.yaml');
-    if (!await projects.exists()) {
-      await projects.writeAsString('packages: []\n');
-    }
     final tasks = File('$monocfgPath/tasks.yaml');
     if (!await tasks.exists()) {
       await tasks.writeAsString('# tasks:\n');
@@ -67,22 +63,31 @@ class FileWorkspaceConfig implements WorkspaceConfig {
 
   @override
   Future<List<PackageRecord>> readMonocfgProjects(String monocfgPath) async {
-    final f = File('$monocfgPath/mono_projects.yaml');
-    if (!await f.exists()) return const <PackageRecord>[];
-    final raw = await f.readAsString();
+    // Projects are now stored in the root mono.yaml under
+    // 'dart_projects:' and 'flutter_projects:' maps.
+    final loaded = await loadRootConfig();
+    final raw = loaded.rawYaml;
+    if (raw.trim().isEmpty) return const <PackageRecord>[];
     final y = loadYaml(raw, recover: true);
     if (y is! YamlMap) return const <PackageRecord>[];
-    final list = y['packages'];
-    if (list is! YamlList) return const <PackageRecord>[];
     final out = <PackageRecord>[];
-    for (final node in list.nodes) {
-      final m = node.value;
-      if (m is! YamlMap) continue;
-      final name = m['name']?.toString() ?? '';
-      final path = m['path']?.toString() ?? '';
-      final kind = m['kind']?.toString() ?? 'dart';
-      if (name.isEmpty || path.isEmpty) continue;
-      out.add(PackageRecord(name: name, path: path, kind: kind));
+    final dartMap = y['dart_projects'];
+    if (dartMap is YamlMap) {
+      for (final e in dartMap.nodes.entries) {
+        final name = e.key.value.toString();
+        final path = e.value.value.toString();
+        if (name.isEmpty || path.isEmpty) continue;
+        out.add(PackageRecord(name: name, path: path, kind: 'dart'));
+      }
+    }
+    final flutterMap = y['flutter_projects'];
+    if (flutterMap is YamlMap) {
+      for (final e in flutterMap.nodes.entries) {
+        final name = e.key.value.toString();
+        final path = e.value.value.toString();
+        if (name.isEmpty || path.isEmpty) continue;
+        out.add(PackageRecord(name: name, path: path, kind: 'flutter'));
+      }
     }
     return out;
   }
@@ -92,15 +97,37 @@ class FileWorkspaceConfig implements WorkspaceConfig {
     String monocfgPath,
     List<PackageRecord> packages,
   ) async {
-    final sb = StringBuffer();
-    sb.writeln('packages:');
+    // Build updated config with separated dart/flutter maps and write via toYaml.
+    final loaded = await loadRootConfig();
+    final cfg = loaded.config;
+    final dartMap = <String, String>{
+      for (final e in cfg.dartProjects.entries) e.key: e.value,
+    };
+    final flutterMap = <String, String>{
+      for (final e in cfg.flutterProjects.entries) e.key: e.value,
+    };
     for (final p in packages) {
-      sb.writeln('  - name: ${p.name}');
-      sb.writeln('    path: ${p.path}');
-      sb.writeln('    kind: ${p.kind}');
+      if (p.kind == 'flutter') {
+        flutterMap[p.name] = p.path;
+        dartMap.remove(p.name);
+      } else {
+        dartMap[p.name] = p.path;
+        flutterMap.remove(p.name);
+      }
     }
-    final f = File('$monocfgPath/mono_projects.yaml');
-    await f.writeAsString(sb.toString());
+    final updated = MonoConfig(
+      include: cfg.include,
+      exclude: cfg.exclude,
+      dartProjects: dartMap,
+      flutterProjects: flutterMap,
+      groups: cfg.groups,
+      tasks: cfg.tasks,
+      settings: cfg.settings,
+      logger: cfg.logger,
+    );
+    final yaml = toYaml(updated, monocfgPath: loaded.monocfgPath);
+    final f = File('mono.yaml');
+    await f.writeAsString(yaml);
   }
 
   @override
@@ -132,83 +159,19 @@ class FileWorkspaceConfig implements WorkspaceConfig {
   ) async {
     final loaded = await loadRootConfig(path: path);
     final cfg = loaded.config;
-
-    String quote(String v) {
-      if (v.contains('#') ||
-          v.contains(':') ||
-          v.contains('*') ||
-          v.contains(' ')) {
-        return '"${v.replaceAll('"', '\\"')}"';
-      }
-      return v;
-    }
-
-    final sb = StringBuffer();
-    sb.writeln('# mono configuration');
-    sb.writeln('settings:');
-    sb.writeln('  monocfgPath: ${loaded.monocfgPath}');
-    sb.writeln('  concurrency: ${cfg.settings.concurrency}');
-    sb.writeln('  defaultOrder: ${cfg.settings.defaultOrder}');
-    sb.writeln('logger:');
-    sb.writeln('  color: ${cfg.logger.color}');
-    sb.writeln('  icons: ${cfg.logger.icons}');
-    sb.writeln('  timestamp: ${cfg.logger.timestamp}');
-    sb.writeln('include:');
-    for (final g in cfg.include) {
-      sb.writeln('  - ${quote(g)}');
-    }
-    sb.writeln('exclude:');
-    for (final g in cfg.exclude) {
-      sb.writeln('  - ${quote(g)}');
-    }
-    if (cfg.packages.isNotEmpty) {
-      sb.writeln('packages:');
-      for (final e in cfg.packages.entries) {
-        sb.writeln('  ${e.key}: ${quote(e.value)}');
-      }
-    }
-    sb.writeln('groups:');
-    if (groups.isEmpty) {
-      sb.writeln('  {}');
-    } else {
-      for (final e in groups.entries) {
-        sb.writeln('  ${e.key}:');
-        for (final item in e.value) {
-          sb.writeln('    - ${quote(item)}');
-        }
-      }
-    }
-    sb.writeln('tasks:');
-    if (cfg.tasks.isEmpty) {
-      sb.writeln('  {}');
-    } else {
-      for (final e in cfg.tasks.entries) {
-        sb.writeln('  ${e.key}:');
-        final def = e.value;
-        if (def.plugin != null) sb.writeln('    plugin: ${def.plugin}');
-        if (def.dependsOn.isNotEmpty) {
-          sb.writeln('    dependsOn:');
-          for (final d in def.dependsOn) {
-            sb.writeln('      - ${quote(d)}');
-          }
-        }
-        if (def.env.isNotEmpty) {
-          sb.writeln('    env:');
-          for (final ev in def.env.entries) {
-            sb.writeln('      ${ev.key}: ${quote(ev.value)}');
-          }
-        }
-        if (def.run.isNotEmpty) {
-          sb.writeln('    run:');
-          for (final r in def.run) {
-            sb.writeln('      - ${quote(r)}');
-          }
-        }
-      }
-    }
-
+    final updated = MonoConfig(
+      include: cfg.include,
+      exclude: cfg.exclude,
+      dartProjects: cfg.dartProjects,
+      flutterProjects: cfg.flutterProjects,
+      groups: groups,
+      tasks: cfg.tasks,
+      settings: cfg.settings,
+      logger: cfg.logger,
+    );
+    final yaml = toYaml(updated, monocfgPath: loaded.monocfgPath);
     final f = File(path);
-    await f.writeAsString(sb.toString());
+    await f.writeAsString(yaml);
   }
 
   @override

@@ -32,7 +32,6 @@ Future<void> main(List<String> argv) async {
     prompter: const ConsolePrompter(),
     parser: parser,
     configLoader: const YamlConfigLoader(),
-    configValidator: const YamlConfigValidator(),
     packageScanner: const FileSystemPackageScanner(),
     graphBuilder: const DefaultGraphBuilder(),
     targetSelector: const DefaultTargetSelector(),
