@@ -10,10 +10,11 @@ class StdLogger implements Logger {
     final prefix = scope != null ? '[$scope]' : '';
     final line =
         '${DateTime.now().toIso8601String()} [$level] $prefix $message';
+    final out = line.trimRight();
     if (level == 'error') {
-      stderr.writeln(line);
+      stderr.writeln(out);
     } else {
-      stdout.writeln(line);
+      stdout.writeln(out);
     }
   }
 }
@@ -48,9 +49,8 @@ class PrettyLogger implements Logger {
 
   @override
   void log(String message, {String? scope, String level = 'info'}) {
-    final ts = config.showTimestamp
-        ? '${DateTime.now().toIso8601String()} '
-        : '';
+    final ts =
+        config.showTimestamp ? '${DateTime.now().toIso8601String()} ' : '';
     final scopePrefix = scope != null && scope.isNotEmpty
         ? _maybeColor('[$scope]', _ansiDim)
         : '';
@@ -66,10 +66,11 @@ class PrettyLogger implements Logger {
     parts.add(message);
 
     final line = parts.join(' ');
+    final out = line.trimRight();
     if (level == 'error') {
-      stderr.writeln(line);
+      stderr.writeln(out);
     } else {
-      stdout.writeln(line);
+      stdout.writeln(out);
     }
   }
 

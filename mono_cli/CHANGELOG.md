@@ -1,6 +1,10 @@
 ## 0.0.7
 
 - New: `PrettyLogger` with configurable colors/icons/timestamp and CLI flags `--color/--no-color`, `--icons/--no-icons`, `--timestamp/--no-timestamp`.
+- Added YAML `logger` section support in loader and schema.
+- Centralized config defaults and canonical writer (`defaultConfig`, `toYaml`, `normalizeRootConfig`).
+- New config spec constants/enums: `SectionKeys`, `OptionKeys`, `DefaultOrder`, `Concurrency`.
+- Workspace config: `writeRootConfigIfMissing` and `writeRootConfigNormalized` now generate YAML from defaults (no hardcoded templates).
 
 ## 0.0.6
 

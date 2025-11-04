@@ -132,5 +132,24 @@ settings:
       expect(invalid.settings.shellWindows, equals('powershell'));
       expect(invalid.settings.shellPosix, equals('bash'));
     });
+
+    test('parses logger booleans and applies defaults when absent', () {
+      final loader = YamlConfigLoader();
+      final yaml = '''
+logger:
+  color: false
+  icons: true
+  timestamp: true
+''';
+      final config = loader.load(yaml);
+      expect(config.logger.color, isFalse);
+      expect(config.logger.icons, isTrue);
+      expect(config.logger.timestamp, isTrue);
+
+      final absent = loader.load('logger: {}');
+      expect(absent.logger.color, isTrue);
+      expect(absent.logger.icons, isTrue);
+      expect(absent.logger.timestamp, isFalse);
+    });
   });
 }

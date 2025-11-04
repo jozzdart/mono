@@ -80,17 +80,39 @@ class YamlConfigLoader implements ConfigLoader {
     final groups = mapSL(m['groups']);
     final taskDefs = tasks(m['tasks']);
 
-    final settingsNode = m['settings'];
+    final settingsNode = m[SectionKeys.settings];
     final settings = settingsNode is Map || settingsNode is YamlMap
         ? Settings(
-            concurrency: (settingsNode['concurrency'] ?? 'auto').toString(),
-            defaultOrder:
-                (settingsNode['defaultOrder'] ?? 'dependency').toString(),
+            concurrency: (settingsNode[OptionKeys.concurrency] ??
+                    Concurrency.auto.toString())
+                .toString(),
+            defaultOrder: (settingsNode['defaultOrder'] ??
+                    orderToString(DefaultOrder.dependency))
+                .toString(),
             shellWindows:
                 (settingsNode['shellWindows'] ?? 'powershell').toString(),
             shellPosix: (settingsNode['shellPosix'] ?? 'bash').toString(),
           )
         : const Settings();
+
+    final loggerNode = m[SectionKeys.logger];
+    bool asBool(Object? v, bool d) {
+      if (v is bool) return v;
+      if (v is String) {
+        final s = v.toLowerCase().trim();
+        if (s == 'true' || s == '1' || s == 'yes') return true;
+        if (s == 'false' || s == '0' || s == 'no') return false;
+      }
+      return d;
+    }
+
+    final logger = loggerNode is Map || loggerNode is YamlMap
+        ? LoggerSettings(
+            color: asBool(loggerNode[OptionKeys.color], true),
+            icons: asBool(loggerNode[OptionKeys.icons], true),
+            timestamp: asBool(loggerNode[OptionKeys.timestamp], false),
+          )
+        : const LoggerSettings();
 
     return MonoConfig(
       include: include,
@@ -99,6 +121,7 @@ class YamlConfigLoader implements ConfigLoader {
       groups: groups,
       tasks: taskDefs,
       settings: settings,
+      logger: logger,
     );
   }
 }

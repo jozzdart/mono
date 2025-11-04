@@ -25,6 +25,7 @@ class SetupCommand extends Command {
     await workspaceConfig.writeRootConfigIfMissing();
     final loaded = await workspaceConfig.loadRootConfig();
     await workspaceConfig.ensureMonocfgScaffold(loaded.monocfgPath);
+    await workspaceConfig.writeRootConfigNormalized(logger: logger);
     logger.log(
         'Created/verified mono.yaml and ${loaded.monocfgPath}/ scaffolding');
     return 0;

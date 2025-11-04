@@ -6,21 +6,25 @@ import 'package:mono/mono_cli.dart';
 import 'package:mono_core/mono_core.dart';
 
 Future<void> main(List<String> argv) async {
-  // Pre-parse to compute pretty logging configuration with defaults (A):
-  // color=true, icons=true, timestamp=false. Only override when flags are provided.
+  // Pre-parse flags and load YAML to compute pretty logging configuration
   const parser = ArgsCliParser();
   final inv = parser.parse(argv);
-  bool _boolOpt(String key, bool defaultValue) {
+  final loaded = await const FileWorkspaceConfig().loadRootConfig();
+
+  bool? boolOptOrNull(String key) {
     final list = inv.options[key];
-    if (list == null || list.isEmpty) return defaultValue;
+    if (list == null || list.isEmpty) return null;
     final v = list.first.toLowerCase();
-    return v == 'true' || v == '1' || v == 'yes';
+    if (v == 'true' || v == '1' || v == 'yes') return true;
+    if (v == 'false' || v == '0' || v == 'no') return false;
+    return null;
   }
 
   final pretty = PrettyLogger(PrettyLogConfig(
-    showColors: _boolOpt('color', true),
-    showIcons: _boolOpt('icons', true),
-    showTimestamp: _boolOpt('timestamp', false),
+    showColors: boolOptOrNull(OptionKeys.color) ?? loaded.config.logger.color,
+    showIcons: boolOptOrNull(OptionKeys.icons) ?? loaded.config.logger.icons,
+    showTimestamp:
+        boolOptOrNull(OptionKeys.timestamp) ?? loaded.config.logger.timestamp,
   ));
 
   final wiring = CliWiring(

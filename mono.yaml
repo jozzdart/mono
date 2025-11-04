@@ -1,12 +1,17 @@
 # mono configuration
 settings:
   monocfgPath: config
-  concurrency: auto
+  concurrency: 1
   defaultOrder: dependency
+logger:
+  color: true
+  icons: true
+  timestamp: false
 include:
   - "**"
 exclude:
   - "config/**"
   - ".dart_tool/**"
+packages: {}
 groups: {}
 tasks: {}
