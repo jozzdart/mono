@@ -1,3 +1,7 @@
+## 0.0.7
+
+- Default pretty logging (colors + icons, no timestamp); supports `--no-color`, `--no-icons`, `--timestamp`.
+
 ## 0.0.6
 
 - Imported `mono_core` into `mono`

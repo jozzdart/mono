@@ -6,10 +6,27 @@ import 'package:mono/mono_cli.dart';
 import 'package:mono_core/mono_core.dart';
 
 Future<void> main(List<String> argv) async {
+  // Pre-parse to compute pretty logging configuration with defaults (A):
+  // color=true, icons=true, timestamp=false. Only override when flags are provided.
+  const parser = ArgsCliParser();
+  final inv = parser.parse(argv);
+  bool _boolOpt(String key, bool defaultValue) {
+    final list = inv.options[key];
+    if (list == null || list.isEmpty) return defaultValue;
+    final v = list.first.toLowerCase();
+    return v == 'true' || v == '1' || v == 'yes';
+  }
+
+  final pretty = PrettyLogger(PrettyLogConfig(
+    showColors: _boolOpt('color', true),
+    showIcons: _boolOpt('icons', true),
+    showTimestamp: _boolOpt('timestamp', false),
+  ));
+
   final wiring = CliWiring(
     workspaceConfig: const FileWorkspaceConfig(),
     prompter: const ConsolePrompter(),
-    parser: const ArgsCliParser(),
+    parser: parser,
     configLoader: const YamlConfigLoader(),
     configValidator: const YamlConfigValidator(),
     packageScanner: const FileSystemPackageScanner(),
@@ -17,7 +34,7 @@ Future<void> main(List<String> argv) async {
     targetSelector: const DefaultTargetSelector(),
     commandPlanner: const DefaultCommandPlanner(),
     clock: const SystemClock(),
-    logger: const StdLogger(),
+    logger: pretty,
     pathService: const DefaultPathService(),
     envBuilder: const DefaultCommandEnvironmentBuilder(),
     plugins: _plugins,

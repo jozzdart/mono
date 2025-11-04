@@ -1,3 +1,7 @@
+## 0.0.7
+
+- New: `PrettyLogger` with configurable colors/icons/timestamp and CLI flags `--color/--no-color`, `--icons/--no-icons`, `--timestamp/--no-timestamp`.
+
 ## 0.0.6
 
 - Removed export of `mono_core`

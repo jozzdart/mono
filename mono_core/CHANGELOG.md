@@ -1,3 +1,7 @@
+## 0.0.7
+
+- New: `Logger` extension helpers (`info`, `warn`, `error`, `success`, `debug`, `header`, `divider`) exported via `src/src.dart`.
+
 ## 0.0.6
 
 - New port: `CliEngine` for CLI runtime abstraction.

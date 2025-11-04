@@ -30,7 +30,11 @@ class ArgsCliParser implements CliParser {
       ..addOption('order')
       ..addFlag('dry-run', defaultsTo: false)
       ..addFlag('check', defaultsTo: false)
-      ..addMultiOption('targets', abbr: 't');
+      ..addMultiOption('targets', abbr: 't')
+      // Global pretty-logging flags (only included in options when explicitly passed)
+      ..addFlag('color', defaultsTo: true, negatable: true)
+      ..addFlag('icons', defaultsTo: true, negatable: true)
+      ..addFlag('timestamp', defaultsTo: false, negatable: true);
 
     final results = parser.parse(rest);
 
@@ -53,6 +57,17 @@ class ArgsCliParser implements CliParser {
     if (results['dry-run'] == true) put('dry-run', 'true');
     if (results['check'] == true) put('check', 'true');
     put('targets', results['targets']);
+
+    // Only include pretty-logging flags when explicitly provided on CLI
+    if (results.wasParsed('color')) {
+      put('color', results['color'] == true ? 'true' : 'false');
+    }
+    if (results.wasParsed('icons')) {
+      put('icons', results['icons'] == true ? 'true' : 'false');
+    }
+    if (results.wasParsed('timestamp')) {
+      put('timestamp', results['timestamp'] == true ? 'true' : 'false');
+    }
 
     final targets = <TargetExpr>[];
     for (final token in positionals.expand((p) => p.split(','))) {
