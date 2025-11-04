@@ -41,6 +41,7 @@ const _plugins = PluginRegistry({
 
 // Built-in commands index created in main CLI wiring
 const List<Command> _builtInCommands = <Command>[
+  HelpCommand(),
   VersionCommand(),
   SetupCommand(),
   ScanCommand(),
