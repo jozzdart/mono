@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// PackageInspector – explore package dependencies and info.
 ///
@@ -29,10 +29,8 @@ class PackageInspector {
     final style = theme.style;
 
     final title = _title();
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(title, theme)
-        : FrameRenderer.plainTitle(title, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(title, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     _section('Overview');
     _line(_metric('Package', packageName, color: theme.accent));
@@ -58,7 +56,7 @@ class PackageInspector {
     }
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(title, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 

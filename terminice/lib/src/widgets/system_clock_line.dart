@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// Describes an upcoming cron-style task/event.
 class CronEvent {
@@ -53,10 +53,8 @@ class SystemClockLine {
       ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
 
     // Header
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(label, theme)
-        : FrameRenderer.plainTitle(label, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(label, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     // Legend + connector
     final nowStr = _fmtTime(now);
@@ -64,7 +62,7 @@ class SystemClockLine {
         '${theme.gray}Window:${theme.reset} ${theme.selection}${_fmtWindow(window)}${theme.reset}  '
         '${theme.gray}Events:${theme.reset} ${theme.accent}${upcoming.length}${theme.reset}  '
         '${theme.gray}Now:${theme.reset} ${theme.accent}$nowStr${theme.reset}');
-    stdout.writeln(FrameRenderer.connectorLine(label, theme));
+    stdout.writeln(frame.connector());
 
     if (upcoming.isEmpty) {
       stdout.writeln(
@@ -72,7 +70,7 @@ class SystemClockLine {
         '${theme.dim}No upcoming tasks in next ${_fmtWindow(window)}${theme.reset}',
       );
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
       return;
     }
@@ -122,7 +120,7 @@ class SystemClockLine {
     }
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(label, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 

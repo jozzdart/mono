@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
@@ -56,9 +56,8 @@ class SnippetEditor {
       Terminal.clearAndHome();
 
       // Header
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(_titleWithLang(title), theme)
-          : FrameRenderer.plainTitle(_titleWithLang(title), theme);
+      final frame = FramedLayout(_titleWithLang(title), theme: theme);
+      final top = frame.top();
       stdout.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       // Visible viewport
@@ -98,7 +97,7 @@ class SnippetEditor {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(_titleWithLang(title), theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.bullets([

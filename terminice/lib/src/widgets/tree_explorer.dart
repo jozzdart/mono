@@ -3,7 +3,7 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 class TreeNode {
@@ -103,13 +103,12 @@ class TreeExplorer {
     void render() {
       Terminal.clearAndHome();
 
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(title, theme)
-          : FrameRenderer.plainTitle(title, theme);
+      final frame = FramedLayout(title, theme: theme);
+      final top = frame.top();
       stdout.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(title, theme));
+        stdout.writeln(frame.connector());
       }
 
       final list = visible();
@@ -158,7 +157,7 @@ class TreeExplorer {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(title, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.grid([

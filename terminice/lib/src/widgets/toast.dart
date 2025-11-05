@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
 import '../system/hints.dart';
 import '../system/terminal.dart';
+import '../system/framed_layout.dart';
 
 /// Toast — a transient, theme-aware popup message that gently fades away.
 ///
@@ -70,9 +70,8 @@ class Toast {
     void render(double opacity) {
       Terminal.clearAndHome();
 
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
+      final frame = FramedLayout(label, theme: theme);
+      final top = frame.top();
 
       // Fade styling: blend dim/gray as opacity decreases.
       final bool dimPhase = opacity < 0.85;
@@ -95,7 +94,7 @@ class Toast {
       stdout.writeln(line.toString());
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.bullets([

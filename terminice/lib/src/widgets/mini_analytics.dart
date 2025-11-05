@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// MiniAnalytics – compact trend with growth percent and arrow.
 ///
@@ -37,10 +37,8 @@ class MiniAnalytics {
     final style = theme.style;
     final headerLabel = (title == null || title!.isEmpty) ? 'Mini Analytics' : title!;
 
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(headerLabel, theme)
-        : FrameRenderer.plainTitle(headerLabel, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(headerLabel, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final growth = _computeGrowthPercent(series);
     final growthText = _formatPercent(growth);
@@ -63,7 +61,7 @@ class MiniAnalytics {
     stdout.writeln(line.toString());
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(headerLabel, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 

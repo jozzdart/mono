@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -88,9 +88,8 @@ class ConfigEditor {
 
       final lang = resolveLang();
       final header = '$title · ${lang.toUpperCase()}';
-      final topLine = style.showBorder
-          ? FrameRenderer.titleWithBorders(header, theme)
-          : FrameRenderer.plainTitle(header, theme);
+      final frame = FramedLayout(header, theme: theme);
+      final topLine = frame.top();
       stdout.writeln(style.boldPrompt ? '${theme.bold}$topLine${theme.reset}' : topLine);
 
       final start = scrollOffset;
@@ -123,7 +122,7 @@ class ConfigEditor {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(header, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.bullets([

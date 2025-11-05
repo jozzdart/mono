@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/terminal.dart';
 import '../system/hints.dart';
 
@@ -45,10 +45,8 @@ class Banner {
       Terminal.clearAndHome();
 
       final label = 'Banner';
-      final top = s.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
-      if (s.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
+      final frame = FramedLayout(label, theme: theme);
+      if (s.boldPrompt) stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
       // Content left border for alignment with other widgets
       final borderLeft = '${theme.gray}${s.borderVertical}${theme.reset} ';
@@ -78,7 +76,7 @@ class Banner {
       }
 
       if (s.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.bullets([

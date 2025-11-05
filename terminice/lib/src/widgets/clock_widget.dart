@@ -3,7 +3,7 @@ import 'dart:math';
 import 'dart:async';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/terminal.dart';
 
@@ -60,10 +60,8 @@ class ClockWidget {
     }
 
     String topTitle() {
-      final style = currentTheme.style;
-      return style.showBorder
-          ? FrameRenderer.titleWithBorders('$title · ${modeLabel()}', currentTheme)
-          : FrameRenderer.plainTitle('$title · ${modeLabel()}', currentTheme);
+      final frame = FramedLayout('$title · ${modeLabel()}', theme: currentTheme);
+      return frame.top();
     }
 
     String formatTime(DateTime t) {
@@ -211,7 +209,10 @@ class ClockWidget {
       final top = topTitle();
       stdout.writeln('${currentTheme.bold}$top${currentTheme.reset}');
 
-      if (style.showBorder) stdout.writeln(FrameRenderer.connectorLine(title, currentTheme));
+      if (style.showBorder) {
+        final frame = FramedLayout(title, theme: currentTheme);
+        stdout.writeln(frame.connector());
+      }
 
       final left = '${currentTheme.gray}${style.borderVertical}${currentTheme.reset} ';
       final now = DateTime.now();
@@ -244,7 +245,10 @@ class ClockWidget {
         }
       }
 
-      if (style.showBorder) stdout.writeln(FrameRenderer.bottomLine(title, currentTheme));
+      if (style.showBorder) {
+        final frame = FramedLayout(title, theme: currentTheme);
+        stdout.writeln(frame.bottom());
+      }
 
       stdout.writeln(Hints.grid([
         [Hints.key('A', currentTheme), 'toggle analog'],

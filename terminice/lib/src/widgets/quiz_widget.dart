@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -49,10 +49,8 @@ class QuizWidget {
           Terminal.clearAndHome();
 
           final label = _title(qi);
-          final top = style.showBorder
-              ? FrameRenderer.titleWithBorders(label, theme)
-              : FrameRenderer.plainTitle(label, theme);
-          stdout.writeln('${theme.bold}$top${theme.reset}');
+          final frame = FramedLayout(label, theme: theme);
+          stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
           // Question
           stdout.writeln(
@@ -81,7 +79,7 @@ class QuizWidget {
 
           // Bottom border
           if (style.showBorder) {
-            stdout.writeln(FrameRenderer.bottomLine(_title(qi), theme));
+            stdout.writeln(frame.bottom());
           }
 
           // Hints
@@ -184,7 +182,8 @@ class QuizWidget {
     }
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(title, theme));
+      final frame = FramedLayout(title, theme: theme);
+      stdout.writeln(frame.bottom());
     }
 
     stdout.writeln(Hints.comma([
@@ -203,10 +202,8 @@ class QuizWidget {
   void _renderSummary(int correct) {
     final style = theme.style;
     final t = 'Quiz Summary';
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(t, theme)
-        : FrameRenderer.plainTitle(t, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(t, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final total = questions.length;
     final percent = ((correct / total) * 100).clamp(0, 100).toStringAsFixed(0);
@@ -214,7 +211,7 @@ class QuizWidget {
         '${theme.gray}${style.borderVertical}${theme.reset} Score: ${theme.accent}$correct${theme.reset}/${theme.bold}$total${theme.reset} (${theme.highlight}$percent%${theme.reset})');
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(t, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 

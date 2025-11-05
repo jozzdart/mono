@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 /// RangePrompt – select a numeric or percent range with two handles.
@@ -92,9 +92,8 @@ class RangePrompt {
     Terminal.clearAndHome();
 
     // Header
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(label, theme)
-        : FrameRenderer.plainTitle(label, theme);
+    final frame = FramedLayout(label, theme: theme);
+    final top = frame.top();
     final title = style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top;
     stdout.writeln(title);
 
@@ -168,7 +167,7 @@ class RangePrompt {
 
     // Bottom border
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(label, theme));
+      stdout.writeln(frame.bottom());
     }
 
     // Hints

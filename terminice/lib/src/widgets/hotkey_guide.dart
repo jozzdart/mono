@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -34,8 +34,8 @@ class HotkeyGuide {
   void show() {
     final style = theme.style;
 
-    final top = FrameRenderer.titleWithBorders(title, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(title, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final body = Hints.grid(shortcuts, theme).split('\n');
     for (final line in body) {
@@ -48,7 +48,7 @@ class HotkeyGuide {
           '${theme.gray}${style.borderVertical}${theme.reset} ${Hints.comma(footerHints, theme)}');
     }
 
-    final bottom = FrameRenderer.bottomLine(title, theme);
+    final bottom = frame.bottom();
     stdout.writeln(bottom);
   }
 

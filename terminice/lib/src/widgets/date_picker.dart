@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 /// ─────────────────────────────────────────────────────────────
@@ -57,7 +57,8 @@ class DatePickerPrompt {
       final title = label;
       final paddedTitle = '  $title  ';
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.titleWithBorders(paddedTitle, theme));
+        final frame = FramedLayout(paddedTitle, theme: theme);
+        stdout.writeln(frame.top());
       } else {
         stdout.writeln('${theme.accent}$paddedTitle${theme.reset}');
       }
@@ -133,7 +134,8 @@ class DatePickerPrompt {
 
       // Bottom border
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(paddedTitle, theme));
+        final frame = FramedLayout(paddedTitle, theme: theme);
+        stdout.writeln(frame.bottom());
       }
 
       // Footer hints

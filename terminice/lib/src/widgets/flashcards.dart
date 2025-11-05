@@ -2,10 +2,10 @@ import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
+import '../system/framed_layout.dart';
 
 /// Flashcards – spaced repetition deck in terminal.
 ///
@@ -46,7 +46,8 @@ class Flashcards {
           _line('${theme.info}Session complete. No due cards.${theme.reset}');
           _line(_summaryLine());
           if (theme.style.showBorder) {
-            stdout.writeln(FrameRenderer.bottomLine(title, theme));
+            final frame = FramedLayout(title, theme: theme);
+            stdout.writeln(frame.bottom());
           }
           break;
         }
@@ -63,7 +64,8 @@ class Flashcards {
           _line('${theme.warn}Session ended by user.${theme.reset}');
           _line(_summaryLine());
           if (theme.style.showBorder) {
-            stdout.writeln(FrameRenderer.bottomLine(title, theme));
+            final frame = FramedLayout(title, theme: theme);
+            stdout.writeln(frame.bottom());
           }
           break;
         }
@@ -106,10 +108,8 @@ class Flashcards {
   }
 
   void _renderHeader() {
-    final style = theme.style;
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(title, theme)
-        : FrameRenderer.plainTitle(title, theme);
+    final frame = FramedLayout(title, theme: theme);
+    final top = frame.top();
     stdout.writeln('${theme.bold}$top${theme.reset}');
     _line(_summaryLine());
   }
@@ -160,7 +160,8 @@ class Flashcards {
       _line(line);
     }
     if (theme.style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(title, theme));
+      final frame = FramedLayout(title, theme: theme);
+      stdout.writeln(frame.bottom());
     }
   }
 

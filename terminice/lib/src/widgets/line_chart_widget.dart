@@ -3,9 +3,9 @@ import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
 import '../system/hints.dart';
 import '../system/terminal.dart';
+import '../system/framed_layout.dart';
 
 /// LineChartWidget – ASCII-based real-time line plot.
 ///
@@ -138,9 +138,8 @@ class LineChartWidget {
       final style = currentTheme.style;
       Terminal.clearAndHome();
 
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(title, currentTheme)
-          : FrameRenderer.plainTitle(title, currentTheme);
+      final frame = FramedLayout(title, theme: currentTheme);
+      final top = frame.top();
       stdout.writeln('${currentTheme.bold}$top${currentTheme.reset}');
 
       // Determine range and zero line
@@ -251,11 +250,12 @@ class LineChartWidget {
       stdout.writeln(
           '${currentTheme.gray}${style.borderVertical}${currentTheme.reset} $info');
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(title, currentTheme));
+        stdout.writeln(frame.bottom());
       }
 
       // Hints
-      stdout.writeln(Hints.grid([
+      final frame2 = frame;
+      frame2.printHintsGrid([
         [Hints.key('A', currentTheme), 'toggle autoscale'],
         [Hints.key('G', currentTheme), 'toggle grid'],
         [Hints.key('Z', currentTheme), 'toggle zero-line'],
@@ -263,7 +263,7 @@ class LineChartWidget {
         [Hints.key('←/→', currentTheme), 'width ±2'],
         [Hints.key('T', currentTheme), 'cycle theme'],
         [Hints.key('Ctrl+C / Esc', currentTheme), 'exit'],
-      ], currentTheme));
+      ]);
     }
 
     PromptTheme nextTheme(PromptTheme t) {

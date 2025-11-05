@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -249,14 +249,13 @@ class SurveyForm {
     void render() {
       Terminal.clearAndHome();
 
-      final baseTitle = style.showBorder
-          ? FrameRenderer.titleWithBorders(title, theme)
-          : FrameRenderer.plainTitle(title, theme);
+      final frame = FramedLayout(title, theme: theme);
+      final baseTitle = frame.top();
       final header = style.boldPrompt ? '${theme.bold}$baseTitle${theme.reset}' : baseTitle;
       stdout.writeln(header);
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(title, theme));
+        stdout.writeln(frame.connector());
       }
 
       for (var i = 0; i < questions.length; i++) {
@@ -281,7 +280,7 @@ class SurveyForm {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(title, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.grid([

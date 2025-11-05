@@ -2,8 +2,8 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/terminal.dart';
-import '../system/frame_renderer.dart';
 import '../system/hints.dart';
+import '../system/framed_layout.dart';
 
 /// Theme-aware loading spinner with multiple visual styles.
 ///
@@ -59,9 +59,8 @@ class LoadingSpinner {
     void render(int frameIndex) {
       Terminal.clearAndHome();
 
-      final top = styleCfg.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
+      final frame = FramedLayout(label, theme: theme);
+      final top = frame.top();
       stdout.writeln('${theme.bold}$top${theme.reset}');
 
       final spin = frames[frameIndex % frames.length];
@@ -74,7 +73,7 @@ class LoadingSpinner {
       stdout.writeln(line.toString());
 
       if (styleCfg.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.bullets([

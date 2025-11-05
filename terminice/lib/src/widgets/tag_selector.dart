@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -105,9 +105,8 @@ class TagSelector {
     void render() {
       Terminal.clearAndHome();
 
-      final title = style.showBorder
-          ? FrameRenderer.titleWithBorders(prompt, theme)
-          : FrameRenderer.plainTitle(prompt, theme);
+      final frame = FramedLayout(prompt, theme: theme);
+      final title = frame.top();
       stdout.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
       // Selected summary
@@ -119,7 +118,7 @@ class TagSelector {
           '${theme.gray}${style.borderVertical}${theme.reset} ${Hints.comma(['Space to toggle', 'Enter to confirm', 'Esc to cancel'], theme)}  $summary');
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(prompt, theme));
+        stdout.writeln(frame.connector());
       }
 
       final l = layout();
@@ -136,7 +135,7 @@ class TagSelector {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(prompt, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.bullets([

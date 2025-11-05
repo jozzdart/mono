@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// Breadcrumbs – file path navigation line.
 ///
@@ -28,16 +28,14 @@ class Breadcrumbs {
     final style = theme.style;
     final titleText = label ?? 'Breadcrumbs';
 
-    final title = style.showBorder
-        ? FrameRenderer.titleWithBorders(titleText, theme)
-        : FrameRenderer.plainTitle(titleText, theme);
-    stdout.writeln('${theme.bold}$title${theme.reset}');
+    final frame = FramedLayout(titleText, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final rendered = _renderBreadcrumbLine();
     stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset} $rendered');
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(titleText, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
 import '../system/hints.dart';
@@ -75,10 +75,8 @@ class EnvManager {
     void render() {
       Terminal.clearAndHome();
       final heading = 'Env · $currentName';
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(heading, theme)
-          : FrameRenderer.plainTitle(heading, theme);
-      stdout.writeln('${theme.bold}$top${theme.reset}');
+      final frame = FramedLayout(heading, theme: theme);
+      stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
       final entry = entries.firstWhere(
         (e) => e.name == currentName,
@@ -94,7 +92,7 @@ class EnvManager {
           '${theme.dim}Value:${theme.reset} $value');
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(heading, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.grid([

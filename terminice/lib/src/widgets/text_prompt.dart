@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 /// A text input prompt with blinking cursor, placeholder, and validation.
@@ -57,9 +57,8 @@ class TextPrompt {
       Terminal.clearAndHome();
 
       // Title
-      final baseTitle = style.showBorder
-          ? FrameRenderer.titleWithBorders(prompt, theme)
-          : FrameRenderer.plainTitle(prompt, theme);
+      final frame = FramedLayout(prompt, theme: theme);
+      final baseTitle = frame.top();
       final title = style.boldPrompt
           ? '${theme.bold}$baseTitle${theme.reset}'
           : baseTitle;
@@ -89,7 +88,7 @@ class TextPrompt {
 
       // Bottom border
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(prompt, theme));
+        stdout.writeln(frame.bottom());
       }
     }
 

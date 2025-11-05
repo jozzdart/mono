@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -102,9 +102,8 @@ class Form {
     void render() {
       Terminal.clearAndHome();
 
-      final baseTitle = style.showBorder
-          ? FrameRenderer.titleWithBorders(title, theme)
-          : FrameRenderer.plainTitle(title, theme);
+      final frame = FramedLayout(title, theme: theme);
+      final baseTitle = frame.top();
       final header = style.boldPrompt
           ? '${theme.bold}$baseTitle${theme.reset}'
           : baseTitle;
@@ -112,7 +111,7 @@ class Form {
 
       // Optional connector line for separation
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(title, theme));
+        stdout.writeln(frame.connector());
       }
 
       // Render each field line
@@ -142,7 +141,7 @@ class Form {
 
       // Bottom border
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(title, theme));
+        stdout.writeln(frame.bottom());
       }
 
       // Hints footer

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
@@ -37,9 +37,8 @@ class UnitConverter {
   void show() {
     final style = theme.style;
 
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(title, theme)
-        : FrameRenderer.plainTitle(title, theme);
+    final frame = FramedLayout(title, theme: theme);
+    final top = frame.top();
     stdout.writeln('${theme.bold}$top${theme.reset}');
 
     // Length section
@@ -80,7 +79,7 @@ class UnitConverter {
     ));
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(title, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 
@@ -122,9 +121,8 @@ class UnitConverter {
       final style = theme.style;
       final conv = converters[mode];
 
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(title, theme)
-          : FrameRenderer.plainTitle(title, theme);
+      final frame = FramedLayout(title, theme: theme);
+      final top = frame.top();
       stdout.writeln('${theme.bold}$top${theme.reset}');
 
       // Section
@@ -164,7 +162,7 @@ class UnitConverter {
       ));
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(title, theme));
+        stdout.writeln(frame.bottom());
       }
 
       // Hints

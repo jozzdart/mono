@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 /// Wizard – orchestrates a sequence of prompts with auto state passing.
@@ -80,10 +80,8 @@ class Wizard {
 
   void _renderProgress(int index, Map<String, dynamic> state) {
     final s = theme.style;
-    final titleLine = s.showBorder
-        ? FrameRenderer.titleWithBorders(title, theme)
-        : FrameRenderer.plainTitle(title, theme);
-    stdout.writeln('${theme.bold}$titleLine${theme.reset}');
+    final frame = FramedLayout(title, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     // Step header
     final stepNum = '${index + 1}/${steps.length}';
@@ -92,7 +90,7 @@ class Wizard {
 
     // Optional connector
     if (s.showBorder) {
-      stdout.writeln(FrameRenderer.connectorLine(title, theme));
+      stdout.writeln(frame.connector());
     }
 
     // Steps listing
@@ -120,7 +118,7 @@ class Wizard {
     }
 
     if (s.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(title, theme));
+      stdout.writeln(frame.bottom());
     }
 
     stdout.writeln(Hints.bullets([

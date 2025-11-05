@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import '../style/theme.dart';
 import '../system/terminal.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 /// Animated, colorful progress bar aligned with ThemeDemo styling.
@@ -52,9 +52,8 @@ class ProgressBar {
       Terminal.clearAndHome();
 
       // Top line
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
+      final frame = FramedLayout(label, theme: theme);
+      final top = frame.top();
       if (style.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
 
       // Compute
@@ -113,7 +112,7 @@ class ProgressBar {
 
       // Bottom border
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
       // Hints (non-interactive, just informational)

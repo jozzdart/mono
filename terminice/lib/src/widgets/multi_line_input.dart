@@ -3,7 +3,7 @@ import 'dart:math';
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 /// MultiLineInputPrompt – editable pseudo text area for multi-line input.
@@ -50,9 +50,8 @@ class MultiLineInputPrompt {
       Terminal.clearAndHome();
 
       // Header
-      final topLine = style.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
+      final frame = FramedLayout(label, theme: theme);
+      final topLine = frame.top();
       stdout.writeln(
           style.boldPrompt ? '${theme.bold}$topLine${theme.reset}' : topLine);
 
@@ -84,7 +83,7 @@ class MultiLineInputPrompt {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.bullets([

@@ -2,7 +2,7 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 /// ConfirmPrompt – elegant instant confirmation dialog (no timers or delays).
@@ -44,9 +44,8 @@ class ConfirmPrompt {
       Terminal.clearAndHome();
 
       // Header
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
+      final frame = FramedLayout(label, theme: theme);
+      final top = frame.top();
       stdout.writeln(
         style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top,
       );
@@ -71,7 +70,7 @@ class ConfirmPrompt {
 
       // Optional bottom line
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
       // Hints

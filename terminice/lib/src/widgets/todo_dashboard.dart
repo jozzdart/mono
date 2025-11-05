@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -100,8 +100,9 @@ class TodoDashboard {
       final sym = done ? style.checkboxOnSymbol : style.checkboxOffSymbol;
       final color = done ? theme.checkboxOn : theme.checkboxOff;
       final out = '$color$sym${theme.reset}';
-      if (highlight && style.useInverseHighlight)
+      if (highlight && style.useInverseHighlight) {
         return '${theme.inverse}$out${theme.reset}';
+      }
       return out;
     }
 
@@ -145,8 +146,9 @@ class TodoDashboard {
     }
 
     String renderTags(List<String> tags, int tagWidth) {
-      if (tags.isEmpty)
+      if (tags.isEmpty) {
         return '${theme.dim}(no tags)${theme.reset}'.padRight(tagWidth);
+      }
       final chips = tags.map((t) => '[$t]').join(' ');
       final truncated = truncate(chips, tagWidth);
       // lightly accent the brackets but keep content bright
@@ -159,14 +161,13 @@ class TodoDashboard {
     void render() {
       Terminal.clearAndHome();
 
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(title, theme)
-          : FrameRenderer.plainTitle(title, theme);
+      final frame = FramedLayout(title, theme: theme);
+      final top = frame.top();
       stdout
           .writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(title, theme));
+        stdout.writeln(frame.connector());
       }
 
       final leftPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
@@ -209,17 +210,18 @@ class TodoDashboard {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(title, theme));
+        stdout.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.grid([
+      final frame2 = frame; // reuse to print hints below
+      frame2.printHintsGrid([
         [Hints.key('↑/↓', theme), 'navigate'],
         [Hints.key('Space', theme), 'toggle done'],
         [Hints.key('←/→ or [ / ]', theme), 'priority'],
         [Hints.key('T', theme), 'edit tags'],
         [Hints.key('Enter', theme), 'confirm'],
         [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
+      ]);
 
       Terminal.hideCursor();
     }

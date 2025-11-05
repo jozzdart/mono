@@ -4,7 +4,7 @@ import '../style/theme.dart';
 import 'search_select.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 /// A simple interactive demo to iterate through themes
@@ -44,8 +44,8 @@ class ThemeDemo {
       final style = theme.style;
       Terminal.clearAndHome();
 
-      final title = FrameRenderer.titleWithBorders('Theme Preview', theme);
-      stdout.writeln('${theme.bold}$title${theme.reset}');
+      final frame = FramedLayout('Theme Preview', theme: theme);
+      stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
       stdout.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} Theme: ${theme.accent}$name${theme.reset}');
       stdout.writeln(

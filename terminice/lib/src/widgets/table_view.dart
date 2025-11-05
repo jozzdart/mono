@@ -4,7 +4,7 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/hints.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// Colorful table rendering with alignment and borders, aligned with ThemeDemo styling.
 ///
@@ -36,9 +36,8 @@ class TableView {
     final style = theme.style;
 
     // Title
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(title, theme)
-        : FrameRenderer.plainTitle(title, theme);
+    final frame = FramedLayout(title, theme: theme);
+    final top = frame.top();
     stdout.writeln('${theme.bold}$top${theme.reset}');
 
     // Compute column widths based on visible (ANSI-stripped) content
@@ -112,7 +111,7 @@ class TableView {
 
     // Bottom border line to balance the title
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(title, theme));
+      stdout.writeln(frame.bottom());
     }
 
     // Hints

@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
 import '../system/hints.dart';
+import '../system/framed_layout.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
 import 'markdown_viewer.dart';
@@ -135,9 +135,8 @@ class DocNavigator {
     void render() {
       Terminal.clearAndHome();
 
-      final titleLine = style.showBorder
-          ? FrameRenderer.titleWithBorders(title, theme)
-          : FrameRenderer.plainTitle(title, theme);
+      final frame = FramedLayout(title, theme: theme);
+      final titleLine = frame.top();
       stdout.writeln(style.boldPrompt
           ? '${theme.bold}$titleLine${theme.reset}'
           : titleLine);
@@ -153,7 +152,7 @@ class DocNavigator {
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Selected:${theme.reset} ${relSel.isEmpty ? '.' : relSel}');
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(title, theme));
+        stdout.writeln(frame.connector());
       }
 
       // Keep selection within viewport
@@ -209,7 +208,7 @@ class DocNavigator {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(title, theme));
+        stdout.writeln(frame.bottom());
       }
 
       // Bottom controls and (optional) quick preview of first heading for files
@@ -219,14 +218,14 @@ class DocNavigator {
         stdout.writeln('${theme.dim}Preview:${theme.reset} $heading');
       }
 
-      stdout.writeln(Hints.grid([
+      frame.printHintsGrid([
         [Hints.key('↑/↓', theme), 'Navigate'],
         [Hints.key('→ / Enter', theme), 'Expand dir / Open file'],
         [Hints.key('←', theme), 'Collapse / Parent'],
         [Hints.key('Space', theme), 'Toggle'],
         [Hints.key('Ctrl+D', theme), 'Select file'],
         [Hints.key('Esc', theme), 'Exit'],
-      ], theme));
+      ]);
 
       Terminal.hideCursor();
     }

@@ -3,8 +3,8 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
 import '../system/hints.dart';
+import '../system/framed_layout.dart';
 
 /// Star rating prompt (1–5) with theme-aware, colored stars (no emojis).
 ///
@@ -72,13 +72,12 @@ class RatingPrompt {
       Terminal.clearAndHome();
 
       // Title
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(prompt, theme)
-          : FrameRenderer.plainTitle(prompt, theme);
+      final frame = FramedLayout(prompt, theme: theme);
+      final top = frame.top();
       if (style.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(prompt, theme));
+        stdout.writeln(frame.connector());
       }
 
       // Stars line
@@ -101,16 +100,16 @@ class RatingPrompt {
 
       // Bottom border
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(prompt, theme));
+        stdout.writeln(frame.bottom());
       }
 
       // Hints (grid layout for clarity)
-      stdout.writeln(Hints.grid([
-        ['←/→', 'adjust'],
+      frame.printHintsGrid([
+        [Hints.key('←/→', theme), 'adjust'],
         ['1–$maxStars', 'set exact'],
-        ['Enter', 'confirm'],
-        ['Esc', 'cancel'],
-      ], theme));
+        [Hints.key('Enter', theme), 'confirm'],
+        [Hints.key('Esc', theme), 'cancel'],
+      ]);
     }
 
     render();

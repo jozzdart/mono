@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/terminal.dart';
 
 /// ResourceGrid – tabular boxes with CPU/Memory/IO graphs.
@@ -41,16 +41,14 @@ class ResourceGrid {
     final style = theme.style;
 
     // Title
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(title, theme)
-        : FrameRenderer.plainTitle(title, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(title, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     if (resources.isEmpty) {
       stdout.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(no resources)${theme.reset}');
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(title, theme));
+        stdout.writeln(frame.bottom());
       }
       return;
     }
@@ -102,7 +100,7 @@ class ResourceGrid {
 
     // Bottom border line to balance the title
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(title, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 

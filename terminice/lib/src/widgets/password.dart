@@ -3,8 +3,8 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
 import '../system/hints.dart';
+import '../system/framed_layout.dart';
 
 /// PasswordPrompt – secure masked input with toggle visibility (Ctrl+R)
 class PasswordPrompt {
@@ -41,9 +41,8 @@ class PasswordPrompt {
       Terminal.clearAndHome();
 
       // Top border
-      final topLine = style.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
+      final frame = FramedLayout(label, theme: theme);
+      final topLine = frame.top();
       if (style.boldPrompt) {
         stdout.writeln('${theme.bold}$topLine${theme.reset}');
       } else {
@@ -62,7 +61,7 @@ class PasswordPrompt {
 
       // Bottom line
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
       // Hints

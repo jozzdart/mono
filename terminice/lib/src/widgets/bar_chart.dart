@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// BarChartWidget – colored horizontal bar chart in the terminal.
 ///
@@ -32,21 +32,21 @@ class BarChartWidget {
     final style = theme.style;
     final label = (title == null || title!.isEmpty) ? 'Bar Chart' : title!;
 
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(label, theme)
-        : FrameRenderer.plainTitle(label, theme);
+    final frame = FramedLayout(label, theme: theme);
+    final top = frame.top();
     stdout.writeln('${theme.bold}$top${theme.reset}');
 
     if (items.isEmpty) {
       _line('${theme.dim}(no data)${theme.reset}');
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
       return;
     }
 
     final nameW = _cap(_maxLen(items.map((e) => e.label.length)), 6, 24);
-    final maxVal = items.map((e) => e.value).fold<double>(0, (a, b) => a > b ? a : b);
+    final maxVal =
+        items.map((e) => e.value).fold<double>(0, (a, b) => a > b ? a : b);
 
     for (var i = 0; i < items.length; i++) {
       final it = items[i];
@@ -61,11 +61,12 @@ class BarChartWidget {
           ? '  ${theme.selection}${_formatValue(it.value)}${theme.reset}'
           : '';
 
-      _line('${theme.bold}${theme.accent}$labelStr${theme.reset}  $bar$valueStr');
+      _line(
+          '${theme.bold}${theme.accent}$labelStr${theme.reset}  $bar$valueStr');
     }
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(label, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 
@@ -131,7 +132,9 @@ class BarChartWidget {
     for (int x = 0; x < width; x++) {
       if (x < filled) {
         final t = width <= 1 ? 1.0 : (x / (width - 1));
-        final idx = (t * (shades.length - 1)).clamp(0, (shades.length - 1).toDouble()).round();
+        final idx = (t * (shades.length - 1))
+            .clamp(0, (shades.length - 1).toDouble())
+            .round();
         b.write('$color${shades[idx]}${theme.reset}');
       } else {
         b.write('${theme.dim}▁${theme.reset}');
@@ -228,5 +231,3 @@ void barChart(
     valueFormatter: valueFormatter,
   ).show();
 }
-
-

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// ChangeLogViewer – parse and display a Markdown CHANGELOG nicely.
 ///
@@ -29,10 +30,8 @@ class ChangeLogViewer {
   void show() {
     final style = theme.style;
     final label = title;
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(label, theme)
-        : FrameRenderer.plainTitle(label, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(label, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final raw = content ?? _readFile(filePath!);
     final releases = _parse(raw);

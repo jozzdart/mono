@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// StatCards – big numeric highlights (e.g., "✔ Tests: 98%")
 ///
@@ -24,10 +24,8 @@ class StatCards {
     final style = theme.style;
 
     final label = title == null || title!.isEmpty ? 'Stats' : title!;
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(label, theme)
-        : FrameRenderer.plainTitle(label, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(label, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     for (final item in items) {
       final toneColor = _colorFor(item.tone, theme);
@@ -43,7 +41,7 @@ class StatCards {
     }
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(label, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 }

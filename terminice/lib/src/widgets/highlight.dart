@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// Pretty-prints text with simple syntax and color rules.
 ///
@@ -29,9 +29,8 @@ class Highlight {
     final style = theme.style;
     final label = title ?? _defaultTitle(language);
 
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(label, theme)
-        : FrameRenderer.plainTitle(label, theme);
+    final frame = FramedLayout(label, theme: theme);
+    final top = frame.top();
     if (color) {
       stdout.writeln('${theme.bold}$top${theme.reset}');
     } else {
@@ -55,7 +54,7 @@ class Highlight {
     }
 
     if (style.showBorder) {
-      final bottom = FrameRenderer.bottomLine(label, theme);
+      final bottom = FramedLayout(label, theme: theme).bottom();
       stdout.writeln(color ? bottom : _stripAnsi(bottom));
     }
   }

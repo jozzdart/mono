@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:async';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 class ServiceEndpoint {
   final String name;
@@ -37,10 +37,8 @@ class ServiceMonitor {
     final style = theme.style;
     final label = title ?? 'Service Monitor';
 
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(label, theme)
-        : FrameRenderer.plainTitle(label, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(label, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final results = await _runPings();
 
@@ -106,7 +104,7 @@ class ServiceMonitor {
           '${theme.warn}timeout $timeoutCount${theme.reset}';
       stdout.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} $summary');
-      stdout.writeln(FrameRenderer.bottomLine(label, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 

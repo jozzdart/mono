@@ -4,8 +4,8 @@ import 'dart:math' as math;
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
 import '../system/hints.dart';
+import '../system/framed_layout.dart';
 // no import for TextPrompt; hex input handled synchronously
 
 /// Interactive color picker with ANSI preview and hex output.
@@ -80,14 +80,16 @@ class ColorPickerPrompt {
       _renderTitle();
       _renderSubtitle();
       if (_style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(label, theme));
+        final frame = FramedLayout(label, theme: theme);
+        stdout.writeln(frame.connector());
       }
       _renderCaretLine();
       _renderGrid();
       _renderPresets();
       _renderSwatchAndHex();
       if (_style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        final frame = FramedLayout(label, theme: theme);
+        stdout.writeln(frame.bottom());
       }
       _renderHints();
     }
@@ -116,9 +118,8 @@ class ColorPickerPrompt {
 
   // ───────── Rendering ─────────
   void _renderTitle() {
-    final top = _style.showBorder
-        ? FrameRenderer.titleWithBorders(label, theme)
-        : FrameRenderer.plainTitle(label, theme);
+    final frame = FramedLayout(label, theme: theme);
+    final top = frame.top();
     if (_style.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
   }
 

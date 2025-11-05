@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/terminal.dart';
 
@@ -44,9 +44,8 @@ class ProgressDots {
     void render() {
       Terminal.clearAndHome();
 
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
+      final frame = FramedLayout(label, theme: theme);
+      final top = frame.top();
       stdout.writeln('${theme.bold}$top${theme.reset}');
 
       final dots = '.' * ((phase % (maxDots + 1)));
@@ -57,7 +56,7 @@ class ProgressDots {
       stdout.writeln(line.toString());
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.bullets([

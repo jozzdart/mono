@@ -4,8 +4,8 @@ import 'dart:math';
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
 import '../system/hints.dart';
+import '../system/framed_layout.dart';
 
 /// 2D grid selection with arrow-key navigation.
 ///
@@ -119,9 +119,8 @@ List<String> _gridSelect(
   void render() {
     Terminal.clearAndHome();
 
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(prompt, theme)
-        : FrameRenderer.plainTitle(prompt, theme);
+    final frame = FramedLayout(prompt, theme: theme);
+    final top = frame.top();
     if (style.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
 
     for (int r = 0; r < rows; r++) {
@@ -154,7 +153,7 @@ List<String> _gridSelect(
     }
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(prompt, theme));
+      stdout.writeln(frame.bottom());
     }
 
     final rowsHints = <List<String>>[
@@ -163,7 +162,7 @@ List<String> _gridSelect(
       [Hints.key('Enter', theme), 'confirm'],
       [Hints.key('Esc', theme), 'cancel'],
     ];
-    stdout.writeln(Hints.grid(rowsHints, theme));
+    frame.printHintsGrid(rowsHints);
     Terminal.hideCursor();
   }
 

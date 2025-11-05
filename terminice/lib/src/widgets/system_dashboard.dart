@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import '../style/theme.dart';
 import '../system/terminal.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 /// SystemDashboard – themed, real-time CPU / Memory / Disk bars.
@@ -31,13 +31,14 @@ class SystemDashboard {
 
     final term = Terminal.enterRaw();
     Terminal.hideCursor();
+    final frame = FramedLayout('System Dashboard', theme: theme);
 
     void cleanup() {
       term.restore();
       Terminal.showCursor();
     }
 
-    int frame = 0;
+    int frameIdx = 0;
     bool firstFrame = true;
 
     try {
@@ -47,9 +48,7 @@ class SystemDashboard {
         final lines = <String>[];
 
         // Top line
-        final top = style.showBorder
-            ? FrameRenderer.titleWithBorders('System Dashboard', theme)
-            : FrameRenderer.plainTitle('System Dashboard', theme);
+        final top = frame.top();
         lines.add('${theme.bold}$top${theme.reset}');
 
         // CPU
@@ -57,7 +56,7 @@ class SystemDashboard {
           label: 'CPU',
           percent: stats.cpuPercent,
           extra: stats.cpuDetail,
-          shimmerPhase: frame,
+          shimmerPhase: frameIdx,
         ));
 
         // Memory
@@ -65,7 +64,7 @@ class SystemDashboard {
           label: 'Memory',
           percent: stats.memPercent,
           extra: stats.memDetail,
-          shimmerPhase: frame + 2,
+          shimmerPhase: frameIdx + 2,
         ));
 
         // Disk
@@ -73,12 +72,12 @@ class SystemDashboard {
           label: 'Disk',
           percent: stats.diskPercent,
           extra: stats.diskDetail,
-          shimmerPhase: frame + 4,
+          shimmerPhase: frameIdx + 4,
         ));
 
         // Bottom border
         if (style.showBorder) {
-          lines.add(FrameRenderer.bottomLine('System Dashboard', theme));
+          lines.add(frame.bottom());
         }
 
         // Hints
@@ -101,7 +100,7 @@ class SystemDashboard {
         }
         stdout.write(buffer.toString());
 
-        frame = (frame + 1) % 10000;
+        frameIdx = (frameIdx + 1) % 10000;
         sleep(refresh);
       }
     } finally {

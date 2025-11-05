@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -135,11 +135,10 @@ List<String> _choiceMap(
   void render() {
     Terminal.clearAndHome();
 
-    final header = style.showBorder
-        ? FrameRenderer.titleWithBorders(prompt, theme)
-        : FrameRenderer.plainTitle(prompt, theme);
-    stdout.writeln(
-        style.boldPrompt ? '${theme.bold}$header${theme.reset}' : header);
+  final frame = FramedLayout(prompt, theme: theme);
+  final header = frame.top();
+  stdout.writeln(
+      style.boldPrompt ? '${theme.bold}$header${theme.reset}' : header);
 
     final colSep = '${theme.gray}│${theme.reset}';
     for (int r = 0; r < rows; r++) {
@@ -182,9 +181,9 @@ List<String> _choiceMap(
       }
     }
 
-    if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(prompt, theme));
-    }
+  if (style.showBorder) {
+    stdout.writeln(frame.bottom());
+  }
 
     final rowsHints = <List<String>>[
       [Hints.key('↑/↓/←/→', theme), 'navigate'],
@@ -192,7 +191,7 @@ List<String> _choiceMap(
       [Hints.key('Enter', theme), 'confirm'],
       [Hints.key('Esc', theme), 'cancel'],
     ];
-    stdout.writeln(Hints.grid(rowsHints, theme));
+  frame.printHintsGrid(rowsHints);
     Terminal.hideCursor();
   }
 

@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
+import '../system/framed_layout.dart';
 
 /// CheckboxMenu – vertical multi-select checklist with live summary counter.
 ///
@@ -120,9 +120,8 @@ class CheckboxMenu {
       final lines = termLines();
       visibleRows = (lines - 7).clamp(5, maxVisible);
 
-      final title = style.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
+      final frame = FramedLayout(label, theme: theme);
+      final title = frame.top();
       stdout.writeln(
           style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
@@ -131,7 +130,7 @@ class CheckboxMenu {
       stdout.writeln(prefix + summaryLine());
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(label, theme));
+        stdout.writeln(frame.connector());
       }
 
       // Compute viewport
@@ -180,17 +179,17 @@ class CheckboxMenu {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
       // Hints (aligned grid)
-      stdout.writeln(Hints.grid([
+      frame.printHintsGrid([
         [Hints.key('↑/↓', theme), 'navigate'],
         [Hints.key('Space', theme), 'toggle'],
         [Hints.key('A', theme), 'select all / clear'],
         [Hints.key('Enter', theme), 'confirm'],
         [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
+      ]);
 
       Terminal.hideCursor();
     }

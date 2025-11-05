@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/terminal.dart';
 
 /// CheatSheet – command list with shortcuts and usage.
@@ -36,8 +36,8 @@ class CheatSheet {
     }
 
     // Header
-    final top = FrameRenderer.titleWithBorders(title, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(title, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     // Table body: Command | Shortcut | Usage (custom, inline rendering)
     final style = theme.style;
@@ -107,7 +107,7 @@ class CheatSheet {
     }
 
     // Bottom border to balance the header line
-    stdout.writeln(FrameRenderer.bottomLine(title, theme));
+    stdout.writeln(frame.bottom());
   }
 
   /// Convenience: alias to [show].

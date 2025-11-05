@@ -4,6 +4,7 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// Temperature units supported by the widget.
 enum TemperatureUnit { celsius, fahrenheit }
@@ -46,11 +47,8 @@ class WeatherWidget {
       final unitSymbol = unit == TemperatureUnit.celsius ? '°C' : '°F';
       final iconDesc = _iconAndDescription(weather.weatherCode);
 
-      final header = FrameRenderer.titleWithBorders(
-        '$title – ${loc.displayName}',
-        theme,
-      );
-      stdout.writeln('${theme.bold}$header${theme.reset}');
+      final frame = FramedLayout('$title – ${loc.displayName}', theme: theme);
+      stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
       stdout.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.info}Now${theme.reset}: ${iconDesc.icon} ${iconDesc.description}');
@@ -60,7 +58,7 @@ class WeatherWidget {
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}lat ${loc.latitude.toStringAsFixed(2)}, lon ${loc.longitude.toStringAsFixed(2)}${theme.reset}');
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine('$title – ${loc.displayName}', theme));
+        stdout.writeln(frame.bottom());
       }
     } catch (e) {
       final label = '$title – Error';

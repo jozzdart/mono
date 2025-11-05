@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -98,9 +98,8 @@ class CommandPalette {
       // Reserve: 1 title + 1 query + 1 connector + 1 mode line + 1 bottom + 4 hints ≈ 8
       visibleRows = (lines - 8).clamp(5, maxVisible);
 
-      final title = style.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
+      final frame = FramedLayout(label, theme: theme);
+      final title = frame.top();
       stdout.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
       // Query line
@@ -109,7 +108,7 @@ class CommandPalette {
           '$framePrefix${theme.accent}Command:${theme.reset} $query');
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(label, theme));
+        stdout.writeln(frame.connector());
       }
 
       // Mode and counts line
@@ -164,7 +163,7 @@ class CommandPalette {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
       stdout.writeln(Hints.grid([

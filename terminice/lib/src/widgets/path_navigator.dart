@@ -3,8 +3,8 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
 import '../system/hints.dart';
+import '../system/framed_layout.dart';
 
 /// PathNavigator – interactive directory (and optional file) navigation.
 ///
@@ -86,9 +86,8 @@ class PathNavigator {
     void render() {
       Terminal.clearAndHome();
 
-      final title = style.showBorder
-          ? FrameRenderer.titleWithBorders(label, theme)
-          : FrameRenderer.plainTitle(label, theme);
+      final frame = FramedLayout(label, theme: theme);
+      final title = frame.top();
       stdout.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
       // Current path line
@@ -96,7 +95,7 @@ class PathNavigator {
       stdout.writeln(pathLine);
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(label, theme));
+        stdout.writeln(frame.connector());
       }
 
       final entries = readEntries(current);
@@ -138,15 +137,15 @@ class PathNavigator {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(label, theme));
+        stdout.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.grid([
+      frame.printHintsGrid([
         [Hints.key('↑/↓', theme), 'Navigate'],
         [Hints.key('→ / Enter', theme), 'Enter directory / Select'],
         [Hints.key('←', theme), 'Parent directory'],
         [Hints.key('Esc', theme), 'Cancel'],
-      ], theme));
+      ]);
 
       Terminal.hideCursor();
     }

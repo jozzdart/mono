@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// MarkdownViewer – renders markdown with colors and headers
 ///
@@ -25,11 +25,8 @@ class MarkdownViewer {
   void show() {
     final style = theme.style;
     final label = title ?? 'Markdown';
-
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(label, theme)
-        : FrameRenderer.plainTitle(label, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(label, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final lines = markdown.split('\n');
     bool inCode = false;
@@ -46,7 +43,8 @@ class MarkdownViewer {
       if (m != null) {
         if (!inCode) {
           inCode = true;
-          codeLang = (m.group(1) ?? '').trim().isEmpty ? null : m.group(1)!.trim();
+          codeLang =
+              (m.group(1) ?? '').trim().isEmpty ? null : m.group(1)!.trim();
           _gutter(_codeFenceTop(codeLang));
         } else {
           inCode = false;
@@ -100,7 +98,8 @@ class MarkdownViewer {
       }
 
       // Task list: - [ ] item / - [x] item
-      final task = RegExp(r'^(\s*)[-*+]\s+\[( |x|X)\]\s+(.*)$').firstMatch(line);
+      final task =
+          RegExp(r'^(\s*)[-*+]\s+\[( |x|X)\]\s+(.*)$').firstMatch(line);
       if (task != null) {
         final indent = task.group(1) ?? '';
         final checked = (task.group(2) ?? ' ').toLowerCase() == 'x';
@@ -140,8 +139,7 @@ class MarkdownViewer {
     }
 
     if (style.showBorder) {
-      final bottom = FrameRenderer.bottomLine(label, theme);
-      stdout.writeln(bottom);
+      stdout.writeln(frame.bottom());
     }
   }
 
@@ -198,7 +196,8 @@ class MarkdownViewer {
       1 => '◦',
       _ => '▹',
     };
-    final color = ((indentSpaces ~/ 2) % 2 == 0) ? theme.accent : theme.highlight;
+    final color =
+        ((indentSpaces ~/ 2) % 2 == 0) ? theme.accent : theme.highlight;
     return '$indent$color$bullet${theme.reset} $text';
   }
 
@@ -222,12 +221,16 @@ class MarkdownViewer {
     final hi = theme.highlight;
     var out = line;
     // Strings
-    out = out.replaceAllMapped(RegExp(r'"[^"]*"'), (m) => '$hi${m[0]}${theme.reset}');
-    out = out.replaceAllMapped(RegExp(r"'[^']*'"), (m) => '$hi${m[0]}${theme.reset}');
+    out = out.replaceAllMapped(
+        RegExp(r'"[^"]*"'), (m) => '$hi${m[0]}${theme.reset}');
+    out = out.replaceAllMapped(
+        RegExp(r"'[^']*'"), (m) => '$hi${m[0]}${theme.reset}');
     // Numbers
-    out = out.replaceAllMapped(RegExp(r'\b\d+(?:\.\d+)?\b'), (m) => '$sel${m[0]}${theme.reset}');
+    out = out.replaceAllMapped(
+        RegExp(r'\b\d+(?:\.\d+)?\b'), (m) => '$sel${m[0]}${theme.reset}');
     // Punctuation (light dim)
-    out = out.replaceAllMapped(RegExp(r'[\{\}\[\]\(\)\,\;\:]'), (m) => '$dim${m[0]}${theme.reset}');
+    out = out.replaceAllMapped(
+        RegExp(r'[\{\}\[\]\(\)\,\;\:]'), (m) => '$dim${m[0]}${theme.reset}');
     return '${theme.dim}│${theme.reset} $out';
   }
 
@@ -235,12 +238,12 @@ class MarkdownViewer {
     var out = text;
 
     // Inline code `code`
-    out = out.replaceAllMapped(
-        RegExp(r'`([^`]+)`'), (m) => '${theme.selection}${theme.bold}${m[1]}${theme.reset}');
+    out = out.replaceAllMapped(RegExp(r'`([^`]+)`'),
+        (m) => '${theme.selection}${theme.bold}${m[1]}${theme.reset}');
 
     // Bold **text** or __text__
-    out = out.replaceAllMapped(
-        RegExp(r'\*\*([^*]+)\*\*'), (m) => '${theme.bold}${m[1]}${theme.reset}');
+    out = out.replaceAllMapped(RegExp(r'\*\*([^*]+)\*\*'),
+        (m) => '${theme.bold}${m[1]}${theme.reset}');
     out = out.replaceAllMapped(
         RegExp(r'__([^_]+)__'), (m) => '${theme.bold}${m[1]}${theme.reset}');
 
@@ -253,14 +256,16 @@ class MarkdownViewer {
     // Links [text](url)
     out = out.replaceAllMapped(
         RegExp(r'\[([^\]]+)\]\(([^\)]+)\)'),
-        (m) => '${theme.accent}${theme.bold}${m[1]}${theme.reset} ${theme.gray}⟨${m[2]}⟩${theme.reset}');
+        (m) =>
+            '${theme.accent}${theme.bold}${m[1]}${theme.reset} ${theme.gray}⟨${m[2]}⟩${theme.reset}');
 
     return out;
   }
 
   String _task(int indentSpaces, bool checked, String text) {
     final indent = ' ' * indentSpaces;
-    final sym = checked ? theme.style.checkboxOnSymbol : theme.style.checkboxOffSymbol;
+    final sym =
+        checked ? theme.style.checkboxOnSymbol : theme.style.checkboxOffSymbol;
     final col = checked ? theme.checkboxOn : theme.checkboxOff;
     final t = checked ? '${theme.dim}$text${theme.reset}' : text;
     return '$indent$col$sym${theme.reset} $t';
@@ -280,15 +285,12 @@ class MarkdownViewer {
     if (lines.isEmpty) return const [];
 
     // Split into rows of cells (trim outer pipes)
-    List<List<String>> rows = lines
-        .where((l) => l.trim().isNotEmpty)
-        .map((l) {
-          var t = l.trim();
-          if (t.startsWith('|')) t = t.substring(1);
-          if (t.endsWith('|')) t = t.substring(0, t.length - 1);
-          return t.split('|').map((c) => c.trim()).toList();
-        })
-        .toList();
+    List<List<String>> rows = lines.where((l) => l.trim().isNotEmpty).map((l) {
+      var t = l.trim();
+      if (t.startsWith('|')) t = t.substring(1);
+      if (t.endsWith('|')) t = t.substring(0, t.length - 1);
+      return t.split('|').map((c) => c.trim()).toList();
+    }).toList();
 
     if (rows.length < 2) {
       // Not a real table, just echo
@@ -305,8 +307,11 @@ class MarkdownViewer {
       final ends = cell.endsWith(':');
       if (starts && ends) {
         align[i] = 'center';
-      } else if (ends) align[i] = 'right';
-      else align[i] = 'left';
+      } else if (ends) {
+        align[i] = 'right';
+      } else {
+        align[i] = 'left';
+      }
     }
 
     // Compute widths from header + body (excluding separator row)
@@ -345,7 +350,8 @@ class MarkdownViewer {
     final header = <String>[];
     for (var i = 0; i < colCount; i++) {
       final cell = i < rows[0].length ? _inline(rows[0][i]) : '';
-      header.add('${theme.bold}${pad(cell, widths[i], align[i])}${theme.reset}');
+      header
+          .add('${theme.bold}${pad(cell, widths[i], align[i])}${theme.reset}');
     }
     out.add(header.join(' ${theme.gray}│${theme.reset} '));
     out.add(sepLine());
@@ -385,5 +391,3 @@ String _stripAnsi(String input) {
   final ansi = RegExp(r'\x1B\[[0-9;]*m');
   return input.replaceAll(ansi, '');
 }
-
-

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -74,13 +74,12 @@ class ToggleGroup {
     void render() {
       Terminal.clearAndHome();
 
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(title, theme)
-          : FrameRenderer.plainTitle(title, theme);
+      final frame = FramedLayout(title, theme: theme);
+      final top = frame.top();
       if (style.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.connectorLine(title, theme));
+        stdout.writeln(frame.connector());
       }
 
       final leftPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
@@ -106,16 +105,16 @@ class ToggleGroup {
       }
 
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(title, theme));
+        stdout.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.grid([
+      frame.printHintsGrid([
         [Hints.key('↑/↓', theme), 'navigate'],
         [Hints.key('←/→ / Space', theme), 'toggle'],
         [Hints.key('A', theme), 'toggle all'],
         [Hints.key('Enter', theme), 'confirm'],
         [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
+      ]);
 
       Terminal.hideCursor();
     }

@@ -5,7 +5,7 @@ import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/highlighter.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 class SearchSelectPrompt {
@@ -81,10 +81,8 @@ List<String> _searchSelect(
   void render() {
     Terminal.clearAndHome();
 
-    final topBorder = style.showBorder
-        ? FrameRenderer.titleWithBorders(prompt, theme)
-        : FrameRenderer.plainTitle(prompt, theme);
-
+    final frame = FramedLayout(prompt, theme: theme);
+    final topBorder = frame.top();
     if (style.boldPrompt) {
       stdout.writeln('${theme.bold}$topBorder${theme.reset}');
     } else {
@@ -100,7 +98,7 @@ List<String> _searchSelect(
     }
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.connectorLine(prompt, theme));
+      stdout.writeln(frame.connector());
     }
 
     final end = min(scrollOffset + maxVisible, filtered.length);
@@ -134,7 +132,7 @@ List<String> _searchSelect(
     }
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(prompt, theme));
+      stdout.writeln(frame.bottom());
     }
 
     final hints = <String>[Hints.hint('↑/↓', 'navigate', theme)];

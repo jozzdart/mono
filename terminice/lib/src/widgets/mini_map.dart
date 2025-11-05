@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// MiniMap – ASCII representation of document position.
 ///
@@ -47,10 +47,8 @@ class MiniMap {
     final style = theme.style;
     final title = (label == null || label!.isEmpty) ? 'Mini Map' : label!;
 
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(title, theme)
-        : FrameRenderer.plainTitle(title, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(title, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     // Render the map area
     for (int row = 0; row < height; row++) {
@@ -75,7 +73,7 @@ class MiniMap {
     stdout.writeln(metrics.toString());
 
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(title, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 
 /// ProjectDashboard – comprehensive project stats (builds, tests, coverage)
 ///
@@ -68,10 +68,8 @@ class ProjectDashboard {
     final style = theme.style;
 
     final title = _title();
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(title, theme)
-        : FrameRenderer.plainTitle(title, theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    final frame = FramedLayout(title, theme: theme);
+    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     // Overview
     _section('Overview');
@@ -151,7 +149,7 @@ class ProjectDashboard {
 
     // Bottom
     if (style.showBorder) {
-      stdout.writeln(FrameRenderer.bottomLine(title, theme));
+      stdout.writeln(frame.bottom());
     }
   }
 

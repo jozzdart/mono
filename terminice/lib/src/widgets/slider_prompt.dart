@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 
 /// ⚡ Ultra-fast slider with left border and percent above the head.
@@ -63,9 +63,8 @@ num _sliderPrompt(
     Terminal.clearAndHome();
 
     // ─ Top line
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBorders(label, theme)
-        : FrameRenderer.plainTitle(label, theme);
+    final frame = FramedLayout(label, theme: theme);
+    final top = frame.top();
     if (style.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
 
     // Calculate bar state

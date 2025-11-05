@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
+import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/terminal.dart';
@@ -71,9 +71,8 @@ class LaunchPad {
       Terminal.clearAndHome();
 
       // Title
-      final top = style.showBorder
-          ? FrameRenderer.titleWithBorders(title, theme)
-          : FrameRenderer.plainTitle(title, theme);
+      final frame = FramedLayout(title, theme: theme);
+      final top = frame.top();
       stdout.writeln('${theme.bold}$top${theme.reset}');
 
       // Render row-by-row; each tile expands to the same number of lines
@@ -122,7 +121,7 @@ class LaunchPad {
 
       // Bottom border line
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLine(title, theme));
+        stdout.writeln(frame.bottom());
       }
 
       // Hints
@@ -131,7 +130,7 @@ class LaunchPad {
         [Hints.key('Enter', theme), executeOnEnter ? 'launch' : 'select'],
         [Hints.key('Esc', theme), 'cancel'],
       ];
-      stdout.writeln(Hints.grid(rowsHints, theme));
+      frame.printHintsGrid(rowsHints);
       Terminal.hideCursor();
     }
 
