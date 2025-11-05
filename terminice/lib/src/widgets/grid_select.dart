@@ -95,7 +95,7 @@ List<String> _gridSelect(
     stdout.write('\x1B[?25h');
   }
 
-  String _renderCell(String label,
+  String renderCell(String label,
       {required bool highlighted, required bool checked}) {
     // ASCII-only checkbox to avoid emoji/unicode shapes
     final check = multiSelect ? (checked ? '[x] ' : '[ ] ') : '';
@@ -135,7 +135,7 @@ List<String> _gridSelect(
         } else {
           final highlighted = idx == selected;
           final checked = selectedSet.contains(idx);
-          buffer.write(_renderCell(options[idx],
+          buffer.write(renderCell(options[idx],
               highlighted: highlighted, checked: checked));
         }
         if (c != cols - 1) buffer.write(colSep);
@@ -167,7 +167,7 @@ List<String> _gridSelect(
     Terminal.hideCursor();
   }
 
-  int _moveUp(int idx) {
+  int moveUp(int idx) {
     final col = idx % cols;
     var row = idx ~/ cols;
     for (int i = 0; i < rows; i++) {
@@ -178,7 +178,7 @@ List<String> _gridSelect(
     return idx;
   }
 
-  int _moveDown(int idx) {
+  int moveDown(int idx) {
     final col = idx % cols;
     var row = idx ~/ cols;
     for (int i = 0; i < rows; i++) {
@@ -189,12 +189,12 @@ List<String> _gridSelect(
     return idx;
   }
 
-  int _moveLeft(int idx) {
+  int moveLeft(int idx) {
     if (idx == 0) return total - 1;
     return idx - 1;
   }
 
-  int _moveRight(int idx) {
+  int moveRight(int idx) {
     if (idx == total - 1) return 0;
     return idx + 1;
   }
@@ -218,13 +218,13 @@ List<String> _gridSelect(
           selectedSet.add(selected);
         }
       } else if (ev.type == KeyEventType.arrowUp) {
-        selected = _moveUp(selected);
+        selected = moveUp(selected);
       } else if (ev.type == KeyEventType.arrowDown) {
-        selected = _moveDown(selected);
+        selected = moveDown(selected);
       } else if (ev.type == KeyEventType.arrowLeft) {
-        selected = _moveLeft(selected);
+        selected = moveLeft(selected);
       } else if (ev.type == KeyEventType.arrowRight) {
-        selected = _moveRight(selected);
+        selected = moveRight(selected);
       }
 
       render();

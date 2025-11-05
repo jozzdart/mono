@@ -190,7 +190,7 @@ class SurveyForm {
       return firstInvalid == null;
     }
 
-    String _renderValue(int index) {
+    String renderValue(int index) {
       final q = questions[index];
       switch (q.type) {
         case SurveyQuestionType.text:
@@ -264,7 +264,7 @@ class SurveyForm {
         final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
         final arrow = isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
         final label = '${theme.selection}${questions[i].prompt}${theme.reset}';
-        final value = _renderValue(i);
+        final value = renderValue(i);
         var line = '$arrow $label: $value';
 
         if (isFocused && style.useInverseHighlight) {

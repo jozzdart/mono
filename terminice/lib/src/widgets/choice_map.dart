@@ -97,15 +97,15 @@ List<String> _choiceMap(
     stdout.write('\x1B[?25h');
   }
 
-  String _pad(String text, int width) {
+  String pad(String text, int width) {
     if (text.length > width) {
       if (width <= 1) return text.substring(0, 1);
-      return text.substring(0, width - 1) + '…';
+      return '${text.substring(0, width - 1)}…';
     }
     return text.padRight(width);
   }
 
-  ({String top, String bottom}) _renderCard(
+  ({String top, String bottom}) renderCard(
     ChoiceMapItem item, {
     required bool highlighted,
     required bool checked,
@@ -113,13 +113,14 @@ List<String> _choiceMap(
     final boxWidth = computedCardWidth;
     final check = multiSelect ? (checked ? '[x] ' : '[ ] ') : '';
     final titleMax = boxWidth - (multiSelect ? 4 : 0);
-    final title = _pad(check + item.label, titleMax);
-    final subtitle = _pad((item.subtitle ?? ''), boxWidth).trimRight();
+    final title = pad(check + item.label, titleMax);
+    final subtitle = pad((item.subtitle ?? ''), boxWidth).trimRight();
 
     String paint(String s) {
       if (highlighted) {
-        if (style.useInverseHighlight)
+        if (style.useInverseHighlight) {
           return '${theme.inverse}$s${theme.reset}';
+        }
         return '${theme.selection}$s${theme.reset}';
       }
       return s;
@@ -154,7 +155,7 @@ List<String> _choiceMap(
           line1.write(''.padRight(computedCardWidth));
           line2.write(''.padRight(computedCardWidth));
         } else {
-          final card = _renderCard(
+          final card = renderCard(
             items[idx],
             highlighted: idx == focused,
             checked: selected.contains(idx),
@@ -195,15 +196,16 @@ List<String> _choiceMap(
     Terminal.hideCursor();
   }
 
-  int _moveUp(int idx) {
+  int moveUp(int idx) {
     final col = idx % cols;
     final row = idx ~/ cols;
     var r = row - 1;
     for (int i = 0; i < rows; i++) {
-      if (r < 0)
+      if (r < 0) {
         r = rows - 1;
-      else
+      } else {
         r -= 0; // normalize
+      }
       final cand = r * cols + col;
       if (cand < total) return cand;
       r -= 1;
@@ -211,7 +213,7 @@ List<String> _choiceMap(
     return idx;
   }
 
-  int _moveDown(int idx) {
+  int moveDown(int idx) {
     final col = idx % cols;
     var r = idx ~/ cols;
     for (int i = 0; i < rows; i++) {
@@ -222,8 +224,8 @@ List<String> _choiceMap(
     return idx;
   }
 
-  int _moveLeft(int idx) => idx == 0 ? total - 1 : idx - 1;
-  int _moveRight(int idx) => idx == total - 1 ? 0 : idx + 1;
+  int moveLeft(int idx) => idx == 0 ? total - 1 : idx - 1;
+  int moveRight(int idx) => idx == total - 1 ? 0 : idx + 1;
 
   render();
 
@@ -244,13 +246,13 @@ List<String> _choiceMap(
           selected.add(focused);
         }
       } else if (ev.type == KeyEventType.arrowUp) {
-        focused = _moveUp(focused);
+        focused = moveUp(focused);
       } else if (ev.type == KeyEventType.arrowDown) {
-        focused = _moveDown(focused);
+        focused = moveDown(focused);
       } else if (ev.type == KeyEventType.arrowLeft) {
-        focused = _moveLeft(focused);
+        focused = moveLeft(focused);
       } else if (ev.type == KeyEventType.arrowRight) {
-        focused = _moveRight(focused);
+        focused = moveRight(focused);
       }
 
       render();

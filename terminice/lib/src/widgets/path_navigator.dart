@@ -71,9 +71,9 @@ class PathNavigator {
 
       for (final e in filtered) {
         if (e is Directory) {
-          list.add(_Entry('▸ ' + _basename(e.path), e.path, _EntryType.directory));
+          list.add(_Entry('▸ ${_basename(e.path)}', e.path, _EntryType.directory));
         } else if (allowFiles && e is File) {
-          list.add(_Entry('· ' + _basename(e.path), e.path, _EntryType.file));
+          list.add(_Entry('· ${_basename(e.path)}', e.path, _EntryType.file));
         }
       }
       return list;
@@ -92,8 +92,7 @@ class PathNavigator {
       stdout.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
       // Current path line
-      final pathLine = '${theme.gray}${style.borderVertical}${theme.reset} '
-          '${theme.accent}Path:${theme.reset} ' + shortPath(current.path);
+      final pathLine = '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Path:${theme.reset} ${shortPath(current.path)}';
       stdout.writeln(pathLine);
 
       if (style.showBorder) {

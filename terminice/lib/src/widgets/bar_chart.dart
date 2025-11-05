@@ -195,7 +195,7 @@ class BarChartWidget {
   String _truncate(String text, int width) {
     if (text.length <= width) return text;
     if (width <= 1) return text.substring(0, width);
-    return text.substring(0, width - 1) + '…';
+    return '${text.substring(0, width - 1)}…';
   }
 }
 

@@ -43,14 +43,14 @@ class CheckboxMenu {
     };
     bool cancelled = false;
 
-    int _termCols() {
+    int termCols() {
       try {
         if (stdout.hasTerminal) return stdout.terminalColumns;
       } catch (_) {}
       return 100;
     }
 
-    int _termLines() {
+    int termLines() {
       try {
         if (stdout.hasTerminal) return stdout.terminalLines;
       } catch (_) {}
@@ -88,13 +88,13 @@ class CheckboxMenu {
       }
     }
 
-    String _checkbox(bool isOn) {
+    String checkbox(bool isOn) {
       final sym = isOn ? style.checkboxOnSymbol : style.checkboxOffSymbol;
       final col = isOn ? theme.checkboxOn : theme.checkboxOff;
       return '$col$sym${theme.reset}';
     }
 
-    String _summaryLine() {
+    String summaryLine() {
       final total = options.length;
       final count = selected.length;
       if (count == 0) {
@@ -117,7 +117,7 @@ class CheckboxMenu {
       Terminal.clearAndHome();
 
       // Responsive rows from terminal lines: reserve around 7 for chrome/hints
-      final lines = _termLines();
+      final lines = termLines();
       visibleRows = (lines - 7).clamp(5, maxVisible);
 
       final title = style.showBorder
@@ -128,7 +128,7 @@ class CheckboxMenu {
 
       // Summary line
       final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      stdout.writeln(prefix + _summaryLine());
+      stdout.writeln(prefix + summaryLine());
 
       if (style.showBorder) {
         stdout.writeln(FrameRenderer.connectorLine(label, theme));
@@ -145,13 +145,13 @@ class CheckboxMenu {
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
-      final cols = _termCols();
+      final cols = termCols();
       for (var i = 0; i < visible.length; i++) {
         final idx = scroll + i;
         final isFocused = idx == focused;
         final isChecked = selected.contains(idx);
 
-        final check = _checkbox(isChecked);
+        final check = checkbox(isChecked);
         final arrow =
             isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
         final framePrefix =
@@ -163,7 +163,7 @@ class CheckboxMenu {
         final maxLabel =
             (cols - framePrefix.length - 1 - reserve).clamp(8, cols);
         if (core.length > maxLabel) {
-          core = core.substring(0, maxLabel - 3) + '...';
+          core = '${core.substring(0, maxLabel - 3)}...';
         }
 
         if (isFocused && style.useInverseHighlight) {

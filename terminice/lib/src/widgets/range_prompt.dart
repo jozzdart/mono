@@ -86,7 +86,7 @@ class RangePrompt {
 
   // (previous tooltip helper removed; inline formatting is used for clarity)
 
-  String _handleGlyph(bool active) => active ? '█' : '█';
+  String handleGlyph(bool active) => active ? '█' : '█';
 
   void render({bool pulse = false}) {
     Terminal.clearAndHome();
@@ -136,8 +136,8 @@ class RangePrompt {
     stdout.writeln('$border${' ' * (2 + leftPad)}$rangeTxt');
 
     // Bar with handles
-    final startHandle = _handleGlyph(editingStart);
-    final endHandle = _handleGlyph(!editingStart);
+    final startHandle = handleGlyph(editingStart);
+    final endHandle = handleGlyph(!editingStart);
 
     final barLine = StringBuffer();
     barLine.write('$border ');

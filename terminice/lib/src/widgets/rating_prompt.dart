@@ -96,7 +96,7 @@ class RatingPrompt {
         // Numeric scale and current value
         final scale = scaleLine(value);
         stdout.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} $scale   ${theme.dim}(${theme.reset}${theme.accent}$value${theme.reset}${theme.dim}/${maxStars}${theme.reset}${theme.dim})${theme.reset}');
+            '${theme.gray}${style.borderVertical}${theme.reset} $scale   ${theme.dim}(${theme.reset}${theme.accent}$value${theme.reset}${theme.dim}/$maxStars${theme.reset}${theme.dim})${theme.reset}');
       }
 
       // Bottom border

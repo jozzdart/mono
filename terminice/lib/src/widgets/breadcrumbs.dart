@@ -85,7 +85,7 @@ class Breadcrumbs {
 
     // Try to keep as many trailing segments as possible.
     while (idx >= 0) {
-      final candidate = '${coloredParts[idx]}$sep' + (kept.isEmpty ? '' : ' ') + kept.join(' $sep ');
+      final candidate = '${coloredParts[idx]}$sep${kept.isEmpty ? '' : ' '}${kept.join(' $sep ')}';
       final full = '$ellipsis $sep $candidate';
       if (_visibleLength(full) <= width) {
         kept.insert(0, coloredParts[idx]);

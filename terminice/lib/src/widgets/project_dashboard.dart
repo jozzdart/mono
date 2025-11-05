@@ -180,10 +180,12 @@ class ProjectDashboard {
   String _latestColor() {
     final label = (latestBuildLabel ?? '').toLowerCase();
     if (label.contains('fail') || label.contains('error')) return theme.error;
-    if (label.contains('success') || label.contains('passed'))
+    if (label.contains('success') || label.contains('passed')) {
       return theme.info;
-    if (label.contains('running') || label.contains('in progress'))
+    }
+    if (label.contains('running') || label.contains('in progress')) {
       return theme.highlight;
+    }
     return theme.accent;
   }
 

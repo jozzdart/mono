@@ -64,7 +64,7 @@ class TableEditor {
       stdout.write('\x1B[?25h');
     }
 
-    List<int> _computeWidths() {
+    List<int> computeWidths() {
       final widths = List<int>.generate(columns.length, (i) => _visible(columns[i]).length);
       for (final row in data) {
         for (var i = 0; i < columns.length; i++) {
@@ -79,7 +79,7 @@ class TableEditor {
       return widths;
     }
 
-    String _renderCell(String text, int width, bool isSelected, bool isEditing) {
+    String renderCell(String text, int width, bool isSelected, bool isEditing) {
       // Truncate with ellipsis if needed
       final maxText = max(0, width - 1);
       String visible = _visible(text);
@@ -104,25 +104,25 @@ class TableEditor {
       return padded;
     }
 
-    void _ensureInBounds() {
+    void ensureInBounds() {
       if (selectedRow < 0) selectedRow = 0;
       if (selectedRow >= data.length) selectedRow = data.length - 1;
       if (selectedCol < 0) selectedCol = 0;
       if (selectedCol >= columns.length) selectedCol = columns.length - 1;
     }
 
-    void _startEditing({bool overwrite = true, String? firstChar}) {
+    void startEditing({bool overwrite = true, String? firstChar}) {
       final row = data[selectedRow];
       final current = (selectedCol < row.length) ? row[selectedCol] : '';
       if (overwrite) {
-        editBuffer = firstChar == null ? current : firstChar;
+        editBuffer = firstChar ?? current;
       } else {
         editBuffer = current + (firstChar ?? '');
       }
       editing = true;
     }
 
-    void _commitEdit() {
+    void commitEdit() {
       if (!editing) return;
       final row = data[selectedRow];
       if (selectedCol >= row.length) {
@@ -134,19 +134,19 @@ class TableEditor {
       editBuffer = '';
     }
 
-    void _cancelEdit() {
+    void cancelEdit() {
       editing = false;
       editBuffer = '';
     }
 
-    void _addRowBelow() {
+    void addRowBelow() {
       final newRow = List<String>.filled(columns.length, '');
       data.insert(selectedRow + 1, newRow);
       selectedRow += 1;
       selectedCol = min(selectedCol, columns.length - 1);
     }
 
-    void _deleteRow() {
+    void deleteRow() {
       if (data.length <= 1) return;
       data.removeAt(selectedRow);
       if (selectedRow >= data.length) selectedRow = data.length - 1;
@@ -160,7 +160,7 @@ class TableEditor {
           : FrameRenderer.plainTitle(title, theme);
       stdout.writeln('${theme.bold}$top${theme.reset}');
 
-      final widths = _computeWidths();
+      final widths = computeWidths();
 
       // Header
       final header = StringBuffer();
@@ -173,7 +173,7 @@ class TableEditor {
             ? '${colName.substring(0, max(0, widths[i] - 1))}…'
             : colName;
         header.write(colText.padRight(widths[i]));
-        header.write('${theme.reset}');
+        header.write(theme.reset);
       }
       stdout.writeln(header.toString());
 
@@ -199,7 +199,7 @@ class TableEditor {
           final cell = (c < row.length) ? row[c] : '';
           final isSel = r == selectedRow && c == selectedCol;
           final isEdit = isSel && editing;
-          final rendered = _renderCell(isEdit ? editBuffer : cell, widths[c], isSel, isEdit);
+          final rendered = renderCell(isEdit ? editBuffer : cell, widths[c], isSel, isEdit);
           rowBuf.write(prefix);
           rowBuf.write(rendered);
           rowBuf.write(suffix);
@@ -260,36 +260,36 @@ class TableEditor {
           } else if (ev.type == KeyEventType.char) {
             final ch = ev.char ?? '';
             if (ch == 'a') {
-              _addRowBelow();
+              addRowBelow();
             } else if (ch == 'd') {
-              _deleteRow();
+              deleteRow();
             } else if (ch == 'e') {
-              _startEditing(overwrite: true);
+              startEditing(overwrite: true);
             } else if (ch == 's') {
               // Save/finish
               break;
             } else {
               // Begin editing with first typed char overwriting existing content
-              _startEditing(overwrite: true, firstChar: ch);
+              startEditing(overwrite: true, firstChar: ch);
             }
           }
         } else {
           // Editing mode
           if (ev.type == KeyEventType.enter) {
-            _commitEdit();
+            commitEdit();
             // Move to next cell for quick data entry
             selectedCol = (selectedCol + 1) % columns.length;
             if (selectedCol == 0) {
               selectedRow = (selectedRow + 1) % data.length;
             }
           } else if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-            _cancelEdit();
+            cancelEdit();
           } else if (ev.type == KeyEventType.backspace) {
             if (editBuffer.isNotEmpty) {
               editBuffer = editBuffer.substring(0, editBuffer.length - 1);
             }
           } else if (ev.type == KeyEventType.tab) {
-            _commitEdit();
+            commitEdit();
             selectedCol = (selectedCol + 1) % columns.length;
             if (selectedCol == 0) {
               selectedRow = (selectedRow + 1) % data.length;
@@ -298,21 +298,21 @@ class TableEditor {
             editBuffer += ev.char!;
           } else if (ev.type == KeyEventType.arrowLeft) {
             // Optional: left/right within cell could be supported; for simplicity, move cell
-            _commitEdit();
+            commitEdit();
             selectedCol = (selectedCol - 1 + columns.length) % columns.length;
           } else if (ev.type == KeyEventType.arrowRight) {
-            _commitEdit();
+            commitEdit();
             selectedCol = (selectedCol + 1) % columns.length;
           } else if (ev.type == KeyEventType.arrowUp) {
-            _commitEdit();
+            commitEdit();
             selectedRow = (selectedRow - 1 + data.length) % data.length;
           } else if (ev.type == KeyEventType.arrowDown) {
-            _commitEdit();
+            commitEdit();
             selectedRow = (selectedRow + 1) % data.length;
           }
         }
 
-        _ensureInBounds();
+        ensureInBounds();
         render();
       }
     } finally {
@@ -325,7 +325,7 @@ class TableEditor {
     if (cancelled) return original;
     // Commit pending edit if any when finishing
     if (editing) {
-      _commitEdit();
+      commitEdit();
     }
     return data;
   }

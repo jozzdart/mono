@@ -303,8 +303,9 @@ class MarkdownViewer {
       final cell = (i < sep.length ? sep[i] : '').trim();
       final starts = cell.startsWith(':');
       final ends = cell.endsWith(':');
-      if (starts && ends) align[i] = 'center';
-      else if (ends) align[i] = 'right';
+      if (starts && ends) {
+        align[i] = 'center';
+      } else if (ends) align[i] = 'right';
       else align[i] = 'left';
     }
 

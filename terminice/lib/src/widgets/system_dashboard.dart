@@ -150,7 +150,8 @@ class SystemDashboard {
 
     // Percent and small detail at right
     final pctText = '${pct.toStringAsFixed(0)}%';
-    line.write('  ${theme.accent}$pctText${theme.reset}  ${theme.dim}$extra${theme.reset}');
+    line.write(
+        '  ${theme.accent}$pctText${theme.reset}  ${theme.dim}$extra${theme.reset}');
 
     return line.toString();
   }
@@ -191,19 +192,23 @@ class _SystemStats {
     double cpuPct = 0;
     String cpuDetail = '—';
     try {
-      final out = Process.runSync('top', ['-l', '1', '-n', '0']).stdout.toString();
+      final out =
+          Process.runSync('top', ['-l', '1', '-n', '0']).stdout.toString();
       final line = out.split('\n').firstWhere(
-        (l) => l.toLowerCase().contains('cpu usage'),
-        orElse: () => '',
-      );
-      final re = RegExp(r'(\d+[\.,]?\d*)%\s*user.*?(\d+[\.,]?\d*)%\s*sys.*?(\d+[\.,]?\d*)%\s*idle', caseSensitive: false);
+            (l) => l.toLowerCase().contains('cpu usage'),
+            orElse: () => '',
+          );
+      final re = RegExp(
+          r'(\d+[\.,]?\d*)%\s*user.*?(\d+[\.,]?\d*)%\s*sys.*?(\d+[\.,]?\d*)%\s*idle',
+          caseSensitive: false);
       final m = re.firstMatch(line);
       if (m != null) {
         final user = _parseNum(m.group(1));
         final sys = _parseNum(m.group(2));
         final idle = _parseNum(m.group(3));
         cpuPct = (user + sys).clamp(0, 100);
-        cpuDetail = 'user ${user.toStringAsFixed(1)}%, sys ${sys.toStringAsFixed(1)}%, idle ${idle.toStringAsFixed(1)}%';
+        cpuDetail =
+            'user ${user.toStringAsFixed(1)}%, sys ${sys.toStringAsFixed(1)}%, idle ${idle.toStringAsFixed(1)}%';
       }
     } catch (_) {}
 
@@ -214,15 +219,16 @@ class _SystemStats {
       final out = Process.runSync('vm_stat', const []).stdout.toString();
       // Page size
       int pageSize = 4096;
-      final sizeMatch = RegExp(r'page size of\s+(\d+) bytes', caseSensitive: false)
-          .firstMatch(out);
+      final sizeMatch =
+          RegExp(r'page size of\s+(\d+) bytes', caseSensitive: false)
+              .firstMatch(out);
       if (sizeMatch != null) pageSize = int.parse(sizeMatch.group(1)!);
 
       int pages(String key) {
         // Match lines like: "Pages free:               12345."
-        final m = RegExp('^' + RegExp.escape(key) + r':\s+(\d+)\.?',
-                multiLine: true)
-            .firstMatch(out);
+        final m =
+            RegExp('^${RegExp.escape(key)}:\\s+(\\d+)\\.?', multiLine: true)
+                .firstMatch(out);
         return m != null ? int.parse(m.group(1)!) : 0;
       }
 
@@ -236,7 +242,8 @@ class _SystemStats {
       // Prefer total from sysctl for robustness
       int totalBytes = 0;
       try {
-        final sysOut = Process.runSync('sysctl', ['-n', 'hw.memsize']).stdout
+        final sysOut = Process.runSync('sysctl', ['-n', 'hw.memsize'])
+            .stdout
             .toString()
             .trim();
         totalBytes = int.tryParse(sysOut) ?? 0;
@@ -245,15 +252,17 @@ class _SystemStats {
       int usedBytes;
       if (totalBytes > 0) {
         // Estimate used as non-free pages
-        usedBytes = (active + inactive + wired + purgeable + compressed) * pageSize;
+        usedBytes =
+            (active + inactive + wired + purgeable + compressed) * pageSize;
       } else {
-        final totalPages = free + active + inactive + wired + purgeable + compressed;
+        final totalPages =
+            free + active + inactive + wired + purgeable + compressed;
         totalBytes = totalPages * pageSize;
         usedBytes = (totalPages - free) * pageSize;
       }
 
       memPct = totalBytes > 0 ? (usedBytes * 100 / totalBytes) : 0;
-      memDetail = _fmtBytes(usedBytes) + '/' + _fmtBytes(totalBytes);
+      memDetail = '${_fmtBytes(usedBytes)}/${_fmtBytes(totalBytes)}';
     } catch (_) {}
 
     // Disk via `df -k <mount>`
@@ -263,18 +272,22 @@ class _SystemStats {
       final out = Process.runSync('df', ['-k', diskMount]).stdout.toString();
       final lines = out.split('\n');
       if (lines.length >= 2) {
-        final cols = lines[1].split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+        final cols =
+            lines[1].split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
         if (cols.length >= 6) {
           final usedK = int.tryParse(cols[2]) ?? 0;
           final totalK = (int.tryParse(cols[1]) ?? 0);
           final usePctStr = cols[4].replaceAll('%', '');
-          diskPct = double.tryParse(usePctStr) ?? (totalK > 0 ? usedK * 100 / totalK : 0);
-          diskDetail = _fmtBytes(usedK * 1024) + '/' + _fmtBytes(totalK * 1024) + ' on $diskMount';
+          diskPct = double.tryParse(usePctStr) ??
+              (totalK > 0 ? usedK * 100 / totalK : 0);
+          diskDetail =
+              '${_fmtBytes(usedK * 1024)}/${_fmtBytes(totalK * 1024)} on $diskMount';
         }
       }
     } catch (_) {}
 
-    return _SystemStats(cpuPct, memPct, diskPct, cpuDetail, memDetail, diskDetail);
+    return _SystemStats(
+        cpuPct, memPct, diskPct, cpuDetail, memDetail, diskDetail);
   }
 
   static _SystemStats _fetchLinux(String diskMount) {
@@ -282,18 +295,26 @@ class _SystemStats {
     double cpuPct = 0;
     String cpuDetail = '—';
     try {
-      final stat1 = File('/proc/stat').readAsLinesSync().firstWhere((l) => l.startsWith('cpu '));
+      final stat1 = File('/proc/stat')
+          .readAsLinesSync()
+          .firstWhere((l) => l.startsWith('cpu '));
       sleep(const Duration(milliseconds: 120));
-      final stat2 = File('/proc/stat').readAsLinesSync().firstWhere((l) => l.startsWith('cpu '));
+      final stat2 = File('/proc/stat')
+          .readAsLinesSync()
+          .firstWhere((l) => l.startsWith('cpu '));
       double parseTotals(String line) {
-        final parts = line.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+        final parts =
+            line.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
         final nums = parts.skip(1).map((e) => double.tryParse(e) ?? 0).toList();
         return nums.fold(0, (a, b) => a + b);
       }
+
       double parseIdle(String line) {
-        final parts = line.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+        final parts =
+            line.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
         return double.tryParse(parts[4]) ?? 0; // idle
       }
+
       final total1 = parseTotals(stat1);
       final idle1 = parseIdle(stat1);
       final total2 = parseTotals(stat2);
@@ -302,7 +323,8 @@ class _SystemStats {
       final di = (idle2 - idle1).abs();
       final busy = dt > 0 ? (1 - (di / dt)) : 0;
       cpuPct = ((busy * 100).clamp(0, 100)).toDouble();
-      cpuDetail = 'busy ${(cpuPct).toStringAsFixed(1)}%, idle ${(100 - cpuPct).toStringAsFixed(1)}%';
+      cpuDetail =
+          'busy ${(cpuPct).toStringAsFixed(1)}%, idle ${(100 - cpuPct).toStringAsFixed(1)}%';
     } catch (_) {}
 
     // Memory via /proc/meminfo
@@ -315,14 +337,17 @@ class _SystemStats {
         final m = RegExp(r'\d+').firstMatch(l);
         return m != null ? int.parse(m.group(0)!) : 0; // in kB
       }
+
       final total = val('MemTotal');
       final free = val('MemFree');
       final buffers = val('Buffers');
       final cached = val('Cached');
       final available = val('MemAvailable');
-      final used = (available > 0) ? (total - available) : (total - free - buffers - cached);
+      final used = (available > 0)
+          ? (total - available)
+          : (total - free - buffers - cached);
       memPct = total > 0 ? used * 100 / total : 0;
-      memDetail = _fmtBytes(used * 1024) + '/' + _fmtBytes(total * 1024);
+      memDetail = '${_fmtBytes(used * 1024)}/${_fmtBytes(total * 1024)}';
     } catch (_) {}
 
     // Disk via df -k
@@ -332,18 +357,22 @@ class _SystemStats {
       final out = Process.runSync('df', ['-k', diskMount]).stdout.toString();
       final lines = out.split('\n');
       if (lines.length >= 2) {
-        final cols = lines[1].split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+        final cols =
+            lines[1].split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
         if (cols.length >= 6) {
           final usedK = int.tryParse(cols[2]) ?? 0;
           final totalK = (int.tryParse(cols[1]) ?? 0);
           final usePctStr = cols[4].replaceAll('%', '');
-          diskPct = double.tryParse(usePctStr) ?? (totalK > 0 ? usedK * 100 / totalK : 0);
-          diskDetail = _fmtBytes(usedK * 1024) + '/' + _fmtBytes(totalK * 1024) + ' on $diskMount';
+          diskPct = double.tryParse(usePctStr) ??
+              (totalK > 0 ? usedK * 100 / totalK : 0);
+          diskDetail =
+              '${_fmtBytes(usedK * 1024)}/${_fmtBytes(totalK * 1024)} on $diskMount';
         }
       }
     } catch (_) {}
 
-    return _SystemStats(cpuPct, memPct, diskPct, cpuDetail, memDetail, diskDetail);
+    return _SystemStats(
+        cpuPct, memPct, diskPct, cpuDetail, memDetail, diskDetail);
   }
 }
 
@@ -362,5 +391,3 @@ String _fmtBytes(int bytes) {
   }
   return '${v.toStringAsFixed(v >= 10 || v >= 1 ? 1 : 2)} ${units[idx]}';
 }
-
-

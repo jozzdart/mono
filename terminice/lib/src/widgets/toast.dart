@@ -41,7 +41,7 @@ class Toast {
 
     int frameMs = (1000 / fps).clamp(12, 200).round();
 
-    String _iconForVariant() {
+    String iconForVariant() {
       switch (variant) {
         case ToastVariant.success:
           return '✔';
@@ -54,7 +54,7 @@ class Toast {
       }
     }
 
-    String _colorForVariant() {
+    String colorForVariant() {
       switch (variant) {
         case ToastVariant.success:
           return theme.checkboxOn; // green-ish
@@ -77,8 +77,8 @@ class Toast {
       // Fade styling: blend dim/gray as opacity decreases.
       final bool dimPhase = opacity < 0.85;
       final bool grayPhase = opacity < 0.55;
-      final color = _colorForVariant();
-      final icon = _iconForVariant();
+      final color = colorForVariant();
+      final icon = iconForVariant();
 
       String applyFade(String s) {
         if (grayPhase) return '${theme.gray}$s${theme.reset}';

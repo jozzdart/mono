@@ -74,10 +74,10 @@ class CLIManual {
     List<ManualPage> filtered = List.from(pages);
 
     // Fixed-size: do not expand to the full terminal
-    int _cols() => width;
-    int _lines() => height;
+    int cols0() => width;
+    int lines0() => height;
 
-    void _updateFilter() {
+    void updateFilter() {
       if (query.trim().isEmpty) {
         filtered = List.from(pages);
       } else {
@@ -108,20 +108,20 @@ class CLIManual {
       pageScroll = 0;
     }
 
-    String _truncate(String text, int max) {
+    String truncate(String text, int max) {
       if (text.length <= max) return text;
       if (max <= 3) return text.substring(0, max);
-      return text.substring(0, max - 3) + '...';
+      return '${text.substring(0, max - 3)}...';
     }
 
-    List<String> _wrap(String text, int width) {
+    List<String> wrap(String text, int width) {
       if (width <= 0) return [text];
       final words = text.split(RegExp(r"\s+"));
       final lines = <String>[];
       var current = StringBuffer();
       int visibleLen(String s) => s.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '').length;
       for (final w in words) {
-        final candidate = current.isEmpty ? w : current.toString() + ' ' + w;
+        final candidate = current.isEmpty ? w : '$current $w';
         if (visibleLen(candidate) <= width) {
           if (current.isEmpty) {
             current.write(w);
@@ -139,7 +139,7 @@ class CLIManual {
       return lines.isEmpty ? [''] : lines;
     }
 
-    List<String> _buildManualLines(ManualPage page, int width) {
+    List<String> buildManualLines(ManualPage page, int width) {
       final lines = <String>[];
 
       String header(String h) => '${theme.bold}${theme.accent}$h${theme.reset}';
@@ -148,15 +148,15 @@ class CLIManual {
       lines.add(header('NAME'));
       final shortDesc = (page.description ?? '').split('\n').first;
       final nameLine = page.section == null || page.section!.isEmpty
-          ? '${page.name} — ${shortDesc}'.trim()
-          : '${page.name}(${page.section}) — ${shortDesc}'.trim();
-      lines.addAll(_wrap(nameLine, width));
+          ? '${page.name} — $shortDesc'.trim()
+          : '${page.name}(${page.section}) — $shortDesc'.trim();
+      lines.addAll(wrap(nameLine, width));
       lines.add('');
 
       // SYNOPSIS
       if ((page.synopsis ?? '').trim().isNotEmpty) {
         lines.add(header('SYNOPSIS'));
-        lines.addAll(_wrap(page.synopsis!.trim(), width));
+        lines.addAll(wrap(page.synopsis!.trim(), width));
         lines.add('');
       }
 
@@ -167,7 +167,7 @@ class CLIManual {
           if (para.trim().isEmpty) {
             lines.add('');
           } else {
-            lines.addAll(_wrap(para.trim(), width));
+            lines.addAll(wrap(para.trim(), width));
           }
         }
         lines.add('');
@@ -180,7 +180,7 @@ class CLIManual {
             (w, o) => max(w, o.flag.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '').length));
         for (final opt in page.options) {
           final left = opt.flag.padRight(leftWidth + 2);
-          final wrapped = _wrap(opt.description, max(10, width - (leftWidth + 2)));
+          final wrapped = wrap(opt.description, max(10, width - (leftWidth + 2)));
           if (wrapped.isEmpty) {
             lines.add(left);
           } else {
@@ -197,7 +197,7 @@ class CLIManual {
       if (page.examples.isNotEmpty) {
         lines.add(header('EXAMPLES'));
         for (final ex in page.examples) {
-          lines.addAll(_wrap(ex, width));
+          lines.addAll(wrap(ex, width));
         }
         lines.add('');
       }
@@ -205,7 +205,7 @@ class CLIManual {
       // SEE ALSO
       if (page.seeAlso.isNotEmpty) {
         lines.add(header('SEE ALSO'));
-        lines.addAll(_wrap(page.seeAlso.join(', '), width));
+        lines.addAll(wrap(page.seeAlso.join(', '), width));
       }
 
       return lines;
@@ -214,8 +214,8 @@ class CLIManual {
     void render() {
       Terminal.clearAndHome();
 
-      final cols = _cols();
-      final linesCount = _lines();
+      final cols = cols0();
+      final linesCount = lines0();
 
       final top = style.showBorder
           ? FrameRenderer.titleWithBorders(title, theme)
@@ -280,19 +280,19 @@ class CLIManual {
       // Preview content
       if (selected == null) {
         for (var i = 0; i < previewRows; i++) {
-          stdout.writeln('$framePrefix');
+          stdout.writeln(framePrefix);
         }
       } else {
         final contentWidth = max(10, cols - 4);
-        final all = _buildManualLines(selected, contentWidth);
+        final all = buildManualLines(selected, contentWidth);
         final startLine = min(pageScroll, max(0, all.length - 1));
         final endLine = min(startLine + previewRows, all.length);
         for (var i = startLine; i < endLine; i++) {
-          final ln = _truncate(all[i], contentWidth);
+          final ln = truncate(all[i], contentWidth);
           stdout.writeln('$framePrefix$ln');
         }
         for (var i = endLine; i < startLine + previewRows; i++) {
-          stdout.writeln('$framePrefix');
+          stdout.writeln(framePrefix);
         }
       }
 
@@ -323,7 +323,7 @@ class CLIManual {
       Terminal.hideCursor();
     }
 
-    void _moveSelection(int delta) {
+    void moveSelection(int delta) {
       if (filtered.isEmpty) return;
       final len = filtered.length;
       selectedIndex = (selectedIndex + delta + len) % len;
@@ -341,7 +341,7 @@ class CLIManual {
       Terminal.showCursor();
     }
 
-    _updateFilter();
+    updateFilter();
     render();
 
     ManualPage? result;
@@ -360,9 +360,9 @@ class CLIManual {
         }
 
         if (ev.type == KeyEventType.arrowUp) {
-          _moveSelection(-1);
+          moveSelection(-1);
         } else if (ev.type == KeyEventType.arrowDown) {
-          _moveSelection(1);
+          moveSelection(1);
         } else if (ev.type == KeyEventType.arrowLeft) {
           pageScroll = max(0, pageScroll - 1);
         } else if (ev.type == KeyEventType.arrowRight) {
@@ -370,11 +370,11 @@ class CLIManual {
         } else if (ev.type == KeyEventType.backspace) {
           if (query.isNotEmpty) {
             query = query.substring(0, query.length - 1);
-            _updateFilter();
+            updateFilter();
           }
         } else if (ev.type == KeyEventType.char && ev.char != null) {
           query += ev.char!;
-          _updateFilter();
+          updateFilter();
         }
 
         render();

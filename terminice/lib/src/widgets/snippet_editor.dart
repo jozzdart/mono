@@ -236,7 +236,9 @@ class SnippetEditor {
         trimmed.contains(' void ') ||
         trimmed.contains(' class ') ||
         trimmed.contains(' final ') ||
-        trimmed.contains(' const ')) return 'dart';
+        trimmed.contains(' const ')) {
+      return 'dart';
+    }
     return 'plain';
   }
 

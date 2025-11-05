@@ -89,7 +89,7 @@ class Form {
       return firstInvalid == null;
     }
 
-    String _renderValue(String value, FormFieldSpec spec) {
+    String renderValue(String value, FormFieldSpec spec) {
       if (value.isEmpty && (spec.placeholder?.isNotEmpty ?? false)) {
         return '${theme.dim}${spec.placeholder}${theme.reset}';
       }
@@ -124,7 +124,7 @@ class Form {
             isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
 
         final labelPart = '${theme.selection}${spec.label}${theme.reset}';
-        final valuePart = _renderValue(values[i], spec);
+        final valuePart = renderValue(values[i], spec);
         var line = '$arrow $labelPart: $valuePart';
 
         if (isFocused && style.useInverseHighlight) {

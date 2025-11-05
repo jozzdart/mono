@@ -386,7 +386,7 @@ List<double> _rgbToHsv(int r, int g, int b) {
   return [h, s, v];
 }
 
-String _bg(int r, int g, int b) => '\x1B[48;2;${r};${g};${b}m';
+String _bg(int r, int g, int b) => '\x1B[48;2;$r;$g;${b}m';
 
 List<double> _cellToHsv(int x, int y, int cols, int rows, double sat) {
   final hue = (x / (cols)) * 360.0;

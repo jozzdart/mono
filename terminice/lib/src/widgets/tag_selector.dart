@@ -52,7 +52,7 @@ class TagSelector {
       Terminal.showCursor();
     }
 
-    int _terminalColumns() {
+    int terminalColumns() {
       try {
         if (stdout.hasTerminal) return stdout.terminalColumns;
       } catch (_) {}
@@ -64,7 +64,7 @@ class TagSelector {
       // Rough left frame prefix width: border + space
       const framePrefix = 2; // visual columns ignoring color codes
 
-      final termCols = useTerminalWidth ? _terminalColumns() : 80;
+      final termCols = useTerminalWidth ? terminalColumns() : 80;
       final targetContent = (maxContentWidth != null)
           ? maxContentWidth!.clamp(minContentWidth, termCols - 4)
           : (termCols - 4).clamp(minContentWidth, termCols);

@@ -54,7 +54,7 @@ class ServiceMonitor {
       ..write('${_pad('Name', nameW)}  ')
       ..write('${_pad('URL', urlW)}  ')
       ..write('${_pad('Code', 4)}  ')
-      ..write('${_pad('Latency', 8)}');
+      ..write(_pad('Latency', 8));
     stdout.writeln(
         '${theme.gray}${style.borderVertical}${theme.reset} '
         '${theme.bold}${theme.gray}$header${theme.reset}');
@@ -211,7 +211,7 @@ class ServiceMonitor {
   String _truncate(String text, int width) {
     if (text.length <= width) return _pad(text, width);
     if (width <= 1) return text.substring(0, width);
-    return text.substring(0, width - 1) + '…';
+    return '${text.substring(0, width - 1)}…';
   }
 
   int _cap(int value, int min, int max) {

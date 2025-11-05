@@ -25,7 +25,7 @@ class StepperPrompt {
     this.theme = PromptTheme.dark,
     this.startIndex = 0,
     this.showStepNumbers = true,
-  }) : assert(steps.length > 0),
+  }) : assert(steps.isNotEmpty),
        assert(startIndex >= 0);
 
   /// Runs the wizard. Returns the last confirmed step index (0-based),
@@ -44,7 +44,7 @@ class StepperPrompt {
       Terminal.showCursor();
     }
 
-    String _progressBar(int current, int total, {int width = 24}) {
+    String progressBar(int current, int total, {int width = 24}) {
       if (total <= 1) return '${theme.accent}${'█' * width}${theme.reset}';
       final ratio = current / (total - 1);
       final filled = (ratio * width).clamp(0, width).round();
@@ -73,7 +73,7 @@ class StepperPrompt {
 
       // Progress bar
       stdout.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${_progressBar(index, steps.length, width: 28)}');
+          '${theme.gray}${style.borderVertical}${theme.reset} ${progressBar(index, steps.length, width: 28)}');
 
       // Steps list
       for (int i = 0; i < steps.length; i++) {

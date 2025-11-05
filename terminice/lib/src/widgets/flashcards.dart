@@ -133,7 +133,7 @@ class Flashcards {
     final face = flipped ? card.back : card.front;
     final label = flipped ? 'Answer' : 'Question';
     final color = flipped ? theme.accent : theme.highlight;
-    _section('${label}');
+    _section(label);
     for (final line in face.split('\n')) {
       _line('$color$line${theme.reset}');
     }

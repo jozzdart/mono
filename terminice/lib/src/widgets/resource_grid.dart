@@ -162,7 +162,7 @@ class ResourceGrid {
     // We approximate by clipping the visible content, which is sufficient
     // for our short strings here.
     final plain = visible;
-    final clipped = plain.substring(0, math.max(0, width - 1)) + '…';
+    final clipped = '${plain.substring(0, math.max(0, width - 1))}…';
     return clipped;
   }
 

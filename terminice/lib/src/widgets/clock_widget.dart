@@ -49,7 +49,7 @@ class ClockWidget {
       Terminal.showCursor();
     }
 
-    String _modeLabel() {
+    String modeLabel() {
       final s = showAnalog && showDigital
           ? 'Analog + Digital'
           : showAnalog
@@ -59,30 +59,30 @@ class ClockWidget {
       return '$s · $l';
     }
 
-    String _topTitle() {
+    String topTitle() {
       final style = currentTheme.style;
       return style.showBorder
-          ? FrameRenderer.titleWithBorders('$title · ${_modeLabel()}', currentTheme)
-          : FrameRenderer.plainTitle('$title · ${_modeLabel()}', currentTheme);
+          ? FrameRenderer.titleWithBorders('$title · ${modeLabel()}', currentTheme)
+          : FrameRenderer.plainTitle('$title · ${modeLabel()}', currentTheme);
     }
 
-    String _formatTime(DateTime t) {
-      final two = (int n) => n.toString().padLeft(2, '0');
+    String formatTime(DateTime t) {
+      two(int n) => n.toString().padLeft(2, '0');
       final hh = two(t.hour);
       final mm = two(t.minute);
       final ss = two(t.second);
-      if (!withSeconds) return '$hh:${mm}';
-      return '$hh:${mm}:${ss}';
+      if (!withSeconds) return '$hh:$mm';
+      return '$hh:$mm:$ss';
     }
 
-    List<String> _renderAnalog(DateTime now) {
+    List<String> renderAnalog(DateTime now) {
       final d = r * 2 + 1;
       final cx = r;
       final cy = r;
 
       final grid = List.generate(d, (_) => List.generate(d, (_) => ' '));
 
-      bool _onCircle(int x, int y) {
+      bool onCircle(int x, int y) {
         final dx = x - cx;
         final dy = y - cy;
         final dist2 = dx * dx + dy * dy;
@@ -90,7 +90,7 @@ class ClockWidget {
         return (dist2 >= (rr * rr) && dist2 <= ((r + 0.2) * (r + 0.2)));
       }
 
-      void _plot(int x, int y, String ch) {
+      void plot(int x, int y, String ch) {
         if (x >= 0 && x < d && y >= 0 && y < d) {
           grid[y][x] = ch;
         }
@@ -99,7 +99,7 @@ class ClockWidget {
       // Circle outline
       for (var y = 0; y < d; y++) {
         for (var x = 0; x < d; x++) {
-          if (_onCircle(x, y)) _plot(x, y, '${currentTheme.gray}·${currentTheme.reset}');
+          if (onCircle(x, y)) plot(x, y, '${currentTheme.gray}·${currentTheme.reset}');
         }
       }
 
@@ -113,11 +113,11 @@ class ClockWidget {
         final ch = isCardinal
             ? '${currentTheme.accent}•${currentTheme.reset}'
             : '${currentTheme.dim}•${currentTheme.reset}';
-        _plot(tx, ty, ch);
+        plot(tx, ty, ch);
         if (isCardinal) {
           final ix = cx + ((rr - 1) * cos(a)).round();
           final iy = cy + ((rr - 1) * sin(a)).round();
-          _plot(ix, iy, '${currentTheme.dim}·${currentTheme.reset}');
+          plot(ix, iy, '${currentTheme.dim}·${currentTheme.reset}');
         }
       }
 
@@ -126,15 +126,15 @@ class ClockWidget {
       final minute = now.minute + second / 60.0;
       final hour = (now.hour % 12) + minute / 60.0;
 
-      double _angleFromUnits(double units, double perRound) {
+      double angleFromUnits(double units, double perRound) {
         return (2 * pi * (units / perRound)) - pi / 2;
       }
 
-      final aHour = _angleFromUnits(hour, 12);
-      final aMin = _angleFromUnits(minute, 60);
-      final aSec = _angleFromUnits(second, 60);
+      final aHour = angleFromUnits(hour, 12);
+      final aMin = angleFromUnits(minute, 60);
+      final aSec = angleFromUnits(second, 60);
 
-      void _line(double ax, double ay, double bx, double by, String ch) {
+      void line0(double ax, double ay, double bx, double by, String ch) {
         int x0 = ax.round();
         int y0 = ay.round();
         final x1 = bx.round();
@@ -145,7 +145,7 @@ class ClockWidget {
         final sy = y0 < y1 ? 1 : -1;
         var err = dx + dy;
         while (true) {
-          _plot(x0, y0, ch);
+          plot(x0, y0, ch);
           if (x0 == x1 && y0 == y1) break;
           final e2 = 2 * err;
           if (e2 >= dy) {
@@ -168,24 +168,24 @@ class ClockWidget {
       final sy = cy + ((r - 1) * sin(aSec));
 
       // Draw hands (order: hour, minute, second)
-      _line(cx.toDouble(), cy.toDouble(), hx, hy,
+      line0(cx.toDouble(), cy.toDouble(), hx, hy,
           '${currentTheme.accent}${currentTheme.bold}·${currentTheme.reset}');
-      _line(cx.toDouble(), cy.toDouble(), mx, my,
+      line0(cx.toDouble(), cy.toDouble(), mx, my,
           '${currentTheme.highlight}${currentTheme.bold}·${currentTheme.reset}');
       if (withSeconds) {
-        _line(cx.toDouble(), cy.toDouble(), sx, sy,
+        line0(cx.toDouble(), cy.toDouble(), sx, sy,
             '${currentTheme.selection}·${currentTheme.reset}');
       }
 
       // Center cap
-      _plot(cx, cy, '${currentTheme.bold}${currentTheme.accent}•${currentTheme.reset}');
+      plot(cx, cy, '${currentTheme.bold}${currentTheme.accent}•${currentTheme.reset}');
 
       return grid.map((row) => row.join()).toList();
     }
 
-    List<String> _renderDigital(DateTime now) {
+    List<String> renderDigital(DateTime now) {
       final date = now.toIso8601String().substring(0, 10);
-      final t = _formatTime(now);
+      final t = formatTime(now);
       final parts = t.split(':');
       final hh = parts[0];
       final mm = parts.length > 1 ? parts[1] : '';
@@ -208,7 +208,7 @@ class ClockWidget {
     void render() {
       final style = currentTheme.style;
       Terminal.clearAndHome();
-      final top = _topTitle();
+      final top = topTitle();
       stdout.writeln('${currentTheme.bold}$top${currentTheme.reset}');
 
       if (style.showBorder) stdout.writeln(FrameRenderer.connectorLine(title, currentTheme));
@@ -217,8 +217,8 @@ class ClockWidget {
       final now = DateTime.now();
 
       if (showAnalog && showDigital && mode == ClockLayout.sideBySide) {
-        final analogLines = _renderAnalog(now);
-        final digitalLines = _renderDigital(now);
+        final analogLines = renderAnalog(now);
+        final digitalLines = renderDigital(now);
         final analogWidth = analogLines.isEmpty ? 0 : analogLines.first.length;
         final gap = 4;
         final height = analogLines.length;
@@ -230,14 +230,14 @@ class ClockWidget {
         }
       } else {
         if (showAnalog) {
-          final lines = _renderAnalog(now);
+          final lines = renderAnalog(now);
           for (final l in lines) {
             stdout.writeln('$left$l');
           }
         }
         if (showDigital) {
-          if (showAnalog) stdout.writeln('$left');
-          final lines = _renderDigital(now);
+          if (showAnalog) stdout.writeln(left);
+          final lines = renderDigital(now);
           for (final l in lines) {
             stdout.writeln('$left$l');
           }
@@ -263,14 +263,14 @@ class ClockWidget {
     bool running = true;
     final done = Completer<void>();
 
-    PromptTheme _nextTheme(PromptTheme t) {
+    PromptTheme nextTheme(PromptTheme t) {
       if (identical(t, PromptTheme.dark)) return PromptTheme.matrix;
       if (identical(t, PromptTheme.matrix)) return PromptTheme.fire;
       if (identical(t, PromptTheme.fire)) return PromptTheme.pastel;
       return PromptTheme.dark;
     }
 
-    void _onKey(int byte) {
+    void onKey(int byte) {
       // Ctrl+C or ESC
       if (byte == 3 || byte == 27) {
         running = false;
@@ -292,7 +292,7 @@ class ClockWidget {
         showDigital = true;
       }
       if (ch == 's') withSeconds = !withSeconds;
-      if (ch == 't') currentTheme = _nextTheme(currentTheme);
+      if (ch == 't') currentTheme = nextTheme(currentTheme);
       if (ch == 'l') {
         mode = mode == ClockLayout.stacked
             ? ClockLayout.sideBySide
@@ -315,7 +315,7 @@ class ClockWidget {
 
       sub = stdin.listen((data) {
         for (final b in data) {
-          _onKey(b);
+          onKey(b);
         }
         if (running) render();
         if (!running && !done.isCompleted) done.complete();

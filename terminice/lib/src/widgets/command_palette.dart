@@ -53,14 +53,14 @@ class CommandPalette {
 
     List<_RankedCommand> ranked = _rank(commands, query, useFuzzy);
 
-    int _termCols() {
+    int termCols() {
       try {
         if (stdout.hasTerminal) return stdout.terminalColumns;
       } catch (_) {}
       return 100;
     }
 
-    int _termLines() {
+    int termLines() {
       try {
         if (stdout.hasTerminal) return stdout.terminalLines;
       } catch (_) {}
@@ -93,8 +93,8 @@ class CommandPalette {
       Terminal.clearAndHome();
 
       // Responsive rows based on current terminal size
-      final cols = _termCols();
-      final lines = _termLines();
+      final cols = termCols();
+      final lines = termLines();
       // Reserve: 1 title + 1 query + 1 connector + 1 mode line + 1 bottom + 4 hints ≈ 8
       visibleRows = (lines - 8).clamp(5, maxVisible);
 
@@ -358,7 +358,7 @@ String _highlightSpans(String text, List<int> indices, PromptTheme theme) {
 String _truncate(String text, int max) {
   if (text.length <= max) return text;
   if (max <= 3) return text.substring(0, max);
-  return text.substring(0, max - 3) + '...';
+  return '${text.substring(0, max - 3)}...';
 }
 
 

@@ -30,7 +30,7 @@ class TutorialRunner {
     required this.steps,
     this.theme = PromptTheme.dark,
     this.useTerminalWidth = true,
-  }) : assert(steps.length > 0);
+  }) : assert(steps.isNotEmpty);
 
   /// Runs the tutorial. Returns the final list of steps (possibly updated).
   /// If cancelled, returns the original list unchanged.
@@ -43,15 +43,15 @@ class TutorialRunner {
     var current = List<TutorialStep>.from(steps);
     final initial = List<TutorialStep>.from(steps);
 
-    int _terminalColumns() {
+    int terminalColumns() {
       try {
         if (stdout.hasTerminal) return stdout.terminalColumns;
       } catch (_) {}
       return 80;
     }
 
-    ({int content, int titleWidth, int descWidth}) _layout() {
-      final termCols = useTerminalWidth ? _terminalColumns() : 80;
+    ({int content, int titleWidth, int descWidth}) layout() {
+      final termCols = useTerminalWidth ? terminalColumns() : 80;
       final content = (termCols - 4).clamp(48, 200);
       // Columns: [arrow][checkbox] [title]
       final titleWidth = (content - 6).clamp(16, content);
@@ -60,7 +60,7 @@ class TutorialRunner {
       return (content: content, titleWidth: titleWidth, descWidth: descWidth);
     }
 
-    String _checkbox(bool done, {bool highlight = false}) {
+    String checkbox(bool done, {bool highlight = false}) {
       final sym = done ? style.checkboxOnSymbol : style.checkboxOffSymbol;
       final color = done ? theme.checkboxOn : theme.checkboxOff;
       final out = '$color$sym${theme.reset}';
@@ -68,9 +68,9 @@ class TutorialRunner {
       return out;
     }
 
-    int _doneCount() => current.where((s) => s.done).length;
+    int doneCount() => current.where((s) => s.done).length;
 
-    String _progressBar(int done, int total, {int width = 28}) {
+    String progressBar(int done, int total, {int width = 28}) {
       if (total <= 0) return '';
       final ratio = (done / total).clamp(0, 1.0);
       final filled = (ratio * width).round();
@@ -78,13 +78,13 @@ class TutorialRunner {
       return '${theme.accent}$bar${theme.reset}';
     }
 
-    String _truncate(String text, int max) {
+    String truncate(String text, int max) {
       if (text.length <= max) return text;
       if (max <= 1) return text.substring(0, max);
-      return text.substring(0, max - 1) + '…';
+      return '${text.substring(0, max - 1)}…';
     }
 
-    List<String> _wrap(String text, int width) {
+    List<String> wrap(String text, int width) {
       if (text.trim().isEmpty) return const [];
       final words = text.split(RegExp(r'\s+'));
       final lines = <String>[];
@@ -103,16 +103,16 @@ class TutorialRunner {
           line.write(w);
         }
       }
-      if (!line.isEmpty) lines.add(line.toString());
+      if (line.isNotEmpty) lines.add(line.toString());
       return lines;
     }
 
-    void _toggleDone(int i) {
+    void toggleDone(int i) {
       final s = current[i];
       current[i] = s.copyWith(done: !s.done);
     }
 
-    void _resetAll() {
+    void resetAll() {
       for (var i = 0; i < current.length; i++) {
         final s = current[i];
         if (s.done) current[i] = s.copyWith(done: false);
@@ -128,7 +128,7 @@ class TutorialRunner {
           : FrameRenderer.plainTitle(title, theme);
       stdout.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
-      final l = _layout();
+      final l = layout();
 
       // Optional connector
       if (style.showBorder) {
@@ -136,12 +136,12 @@ class TutorialRunner {
       }
 
       // Progress section
-      final done = _doneCount();
+      final done = doneCount();
       final total = current.length;
       final pct = total == 0 ? 0 : ((done / total) * 100).round();
       final leftPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
       stdout.writeln('$leftPrefix${theme.dim}Progress${theme.reset} ${theme.accent}$done${theme.reset}/${theme.accent}$total${theme.reset} (${theme.highlight}$pct%${theme.reset})');
-      stdout.writeln('$leftPrefix${_progressBar(done, total, width: 28)}');
+      stdout.writeln('$leftPrefix${progressBar(done, total, width: 28)}');
 
       // Underline-like connector sized to content
       stdout.writeln(
@@ -152,8 +152,8 @@ class TutorialRunner {
         final isFocused = i == focused;
         final s = current[i];
         final arrow = isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
-        final cb = _checkbox(s.done, highlight: isFocused);
-        final titleTxt = _truncate(s.title, l.titleWidth).padRight(l.titleWidth);
+        final cb = checkbox(s.done, highlight: isFocused);
+        final titleTxt = truncate(s.title, l.titleWidth).padRight(l.titleWidth);
 
         final line = StringBuffer();
         line.write(leftPrefix);
@@ -162,7 +162,7 @@ class TutorialRunner {
         stdout.writeln(line.toString());
 
         if (isFocused && s.description.trim().isNotEmpty) {
-          final wrapped = _wrap(s.description, l.descWidth);
+          final wrapped = wrap(s.description, l.descWidth);
           for (final w in wrapped) {
             stdout.writeln('$leftPrefix  ${theme.dim}$w${theme.reset}');
           }
@@ -186,8 +186,8 @@ class TutorialRunner {
       Terminal.hideCursor();
     }
 
-    int _moveUp(int i) => (i - 1 + current.length) % current.length;
-    int _moveDown(int i) => (i + 1) % current.length;
+    int moveUp(int i) => (i - 1 + current.length) % current.length;
+    int moveDown(int i) => (i + 1) % current.length;
 
     final term = Terminal.enterRaw();
     void cleanup() {
@@ -207,14 +207,14 @@ class TutorialRunner {
         }
 
         if (ev.type == KeyEventType.arrowUp) {
-          focused = _moveUp(focused);
+          focused = moveUp(focused);
         } else if (ev.type == KeyEventType.arrowDown) {
-          focused = _moveDown(focused);
+          focused = moveDown(focused);
         } else if (ev.type == KeyEventType.space) {
-          _toggleDone(focused);
+          toggleDone(focused);
         } else if (ev.type == KeyEventType.ctrlR ||
             (ev.type == KeyEventType.char && ev.char?.toLowerCase() == 'r')) {
-          _resetAll();
+          resetAll();
         }
 
         render();

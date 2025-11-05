@@ -38,7 +38,7 @@ class Hints {
     buffer.writeln('${theme.dim}────────────────────${theme.reset}');
     for (final entry in groups.entries) {
       buffer.writeln(
-          ' ${theme.bold}${entry.key}:${theme.reset}  ${color}${entry.value.join('   ')}${theme.reset}');
+          ' ${theme.bold}${entry.key}:${theme.reset}  $color${entry.value.join('   ')}${theme.reset}');
     }
     return buffer.toString();
   }

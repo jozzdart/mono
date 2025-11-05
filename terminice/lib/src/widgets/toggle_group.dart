@@ -47,7 +47,7 @@ class ToggleGroup {
     final states = List<bool>.generate(items.length, (i) => items[i].initialOn);
     final initialStates = List<bool>.from(states);
 
-    int _maxLabelWidth() {
+    int maxLabelWidth() {
       var w = 0;
       for (final it in items) {
         final len = it.label.length;
@@ -58,7 +58,7 @@ class ToggleGroup {
       return w;
     }
 
-    String _switch(bool on, {bool highlighted = false}) {
+    String switchControl(bool on, {bool highlighted = false}) {
       // Render a themed switch-like control using ASCII-only glyphs
       final left = on ? theme.checkboxOn : theme.checkboxOff;
       final sym = on ? style.checkboxOnSymbol : style.checkboxOffSymbol;
@@ -85,7 +85,7 @@ class ToggleGroup {
 
       final leftPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
       final gap = 2;
-      final labelWidth = _maxLabelWidth();
+      final labelWidth = maxLabelWidth();
 
       for (var i = 0; i < items.length; i++) {
         final isFocused = i == focused;
@@ -93,13 +93,13 @@ class ToggleGroup {
 
         var label = item.label;
         if (label.length > labelWidth) {
-          label = label.substring(0, labelWidth - 1) + '…';
+          label = '${label.substring(0, labelWidth - 1)}…';
         }
         final paddedLabel = label.padRight(labelWidth);
 
         final arrow =
             isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
-        final switchTxt = _switch(states[i], highlighted: isFocused);
+        final switchTxt = switchControl(states[i], highlighted: isFocused);
 
         final lineCore = '$arrow $paddedLabel';
         stdout.writeln('$leftPrefix$lineCore${' ' * gap}$switchTxt');
@@ -120,14 +120,14 @@ class ToggleGroup {
       Terminal.hideCursor();
     }
 
-    int _moveUp(int i) => (i - 1 + items.length) % items.length;
-    int _moveDown(int i) => (i + 1) % items.length;
+    int moveUp(int i) => (i - 1 + items.length) % items.length;
+    int moveDown(int i) => (i + 1) % items.length;
 
-    void _toggle(int i) {
+    void toggle(int i) {
       states[i] = !states[i];
     }
 
-    void _toggleAll() {
+    void toggleAll() {
       final anyOff = states.any((s) => s == false);
       for (var i = 0; i < states.length; i++) {
         states[i] = anyOff; // if any off, turn all on; else turn all off
@@ -152,16 +152,16 @@ class ToggleGroup {
         }
 
         if (ev.type == KeyEventType.arrowUp) {
-          focused = _moveUp(focused);
+          focused = moveUp(focused);
         } else if (ev.type == KeyEventType.arrowDown) {
-          focused = _moveDown(focused);
+          focused = moveDown(focused);
         } else if (ev.type == KeyEventType.arrowLeft ||
             ev.type == KeyEventType.arrowRight ||
             ev.type == KeyEventType.space) {
-          _toggle(focused);
+          toggle(focused);
         } else if (ev.type == KeyEventType.char && ev.char != null) {
           final ch = ev.char!;
-          if (ch.toLowerCase() == 'a') _toggleAll();
+          if (ch.toLowerCase() == 'a') toggleAll();
         }
 
         render();

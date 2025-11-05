@@ -79,7 +79,7 @@ class TableView {
       if (i > 0) header.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
       header.write('${theme.bold}${theme.accent}');
       header.write(pad(columns[i], widths[i], alignmentFor(i)));
-      header.write('${theme.reset}');
+      header.write(theme.reset);
     }
     stdout.writeln(header.toString());
 

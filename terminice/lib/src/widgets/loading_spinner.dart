@@ -51,7 +51,7 @@ class LoadingSpinner {
 
     final sw = Stopwatch()..start();
 
-    String _colorForPhase(int i) {
+    String colorForPhase(int i) {
       // Alternate between accent and highlight for gentle pulse
       return (i % 2 == 0) ? theme.accent : theme.highlight;
     }
@@ -65,7 +65,7 @@ class LoadingSpinner {
       stdout.writeln('${theme.bold}$top${theme.reset}');
 
       final spin = frames[frameIndex % frames.length];
-      final color = _colorForPhase(frameIndex);
+      final color = colorForPhase(frameIndex);
 
       final line = StringBuffer();
       line.write('${theme.gray}${styleCfg.borderVertical}${theme.reset} ');

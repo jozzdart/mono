@@ -46,14 +46,14 @@ class PackageInspector {
     if (dependencies.isNotEmpty) {
       _section('Dependencies');
       for (final entry in _sorted(dependencies)) {
-        _line(_dep('${entry.key}', entry.value));
+        _line(_dep(entry.key, entry.value));
       }
     }
 
     if (devDependencies.isNotEmpty) {
       _section('Dev Dependencies');
       for (final entry in _sorted(devDependencies)) {
-        _line(_dep('${entry.key}', entry.value, dev: true));
+        _line(_dep(entry.key, entry.value, dev: true));
       }
     }
 
@@ -122,7 +122,9 @@ class PackageInspector {
       String trimmed(String s) => s.trimRight();
       int indentOf(String s) {
         int i = 0;
-        while (i < s.length && s[i] == ' ') i++;
+        while (i < s.length && s[i] == ' ') {
+          i++;
+        }
         return i;
       }
 

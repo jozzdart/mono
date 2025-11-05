@@ -266,7 +266,7 @@ class LineChartWidget {
       ], currentTheme));
     }
 
-    PromptTheme _nextTheme(PromptTheme t) {
+    PromptTheme nextTheme(PromptTheme t) {
       if (identical(t, PromptTheme.dark)) return PromptTheme.matrix;
       if (identical(t, PromptTheme.matrix)) return PromptTheme.fire;
       if (identical(t, PromptTheme.fire)) return PromptTheme.pastel;
@@ -346,7 +346,7 @@ class LineChartWidget {
             : (gridMode == ChartGrid.dots ? ChartGrid.lines : ChartGrid.none);
       }
       if (ch == 'z') showZero = !showZero;
-      if (ch == 't') currentTheme = _nextTheme(currentTheme);
+      if (ch == 't') currentTheme = nextTheme(currentTheme);
       if (ch == 'w') chartHeight = (chartHeight + 1).clamp(6, 24);
       if (ch == 's') chartHeight = (chartHeight - 1).clamp(6, 24);
     }

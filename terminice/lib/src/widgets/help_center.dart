@@ -58,7 +58,7 @@ class HelpCenter {
 
     List<HelpDoc> filtered = List.from(docs);
 
-    int _termCols() {
+    int termCols() {
       try {
         if (stdout.hasTerminal) return stdout.terminalColumns;
       } catch (_) {}
@@ -67,7 +67,7 @@ class HelpCenter {
 
     // Note: compact mode ignores terminal height to avoid expansion
 
-    void _updateFilter() {
+    void updateFilter() {
       if (query.trim().isEmpty) {
         filtered = List.from(docs);
       } else {
@@ -91,13 +91,13 @@ class HelpCenter {
       previewScroll = 0;
     }
 
-    String _truncate(String text, int max) {
+    String truncate(String text, int max) {
       if (text.length <= max) return text;
       if (max <= 3) return text.substring(0, max);
-      return text.substring(0, max - 3) + '...';
+      return '${text.substring(0, max - 3)}...';
     }
 
-    String _labelFor(HelpDoc d) {
+    String labelFor(HelpDoc d) {
       if (d.category == null || d.category!.isEmpty) return d.title;
       return '${d.title}  ${theme.dim}(${d.category})${theme.reset}';
     }
@@ -105,7 +105,7 @@ class HelpCenter {
     void render() {
       Terminal.clearAndHome();
 
-      final cols = _termCols();
+      final cols = termCols();
 
       final top = style.showBorder
           ? FrameRenderer.titleWithBorders(title, theme)
@@ -157,7 +157,7 @@ class HelpCenter {
         for (var idx = start; idx < end && printed < listRows - (showBottomEllipsis ? 1 : 0); idx++) {
           final isSel = idx == selectedIndex;
           final prefix = isSel ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
-          final label = _labelFor(filtered[idx]);
+          final label = labelFor(filtered[idx]);
           final line = '$prefix ${highlightSubstring(label, query, theme)}';
           if (isSel && style.useInverseHighlight) {
             stdout.writeln('$framePrefix${theme.inverse}$line${theme.reset}');
@@ -198,7 +198,7 @@ class HelpCenter {
 
         for (var i = viewportStart; i < viewportEnd; i++) {
           final ln = rawLines[i];
-          final out = highlightSubstring(_truncate(ln, contentWidth), query, theme);
+          final out = highlightSubstring(truncate(ln, contentWidth), query, theme);
           stdout.writeln('$framePrefix$out');
         }
         // Compact: no filler beyond content
@@ -220,7 +220,7 @@ class HelpCenter {
       Terminal.hideCursor();
     }
 
-    void _moveSelection(int delta) {
+    void moveSelection(int delta) {
       if (filtered.isEmpty) return;
       final len = filtered.length;
       selectedIndex = (selectedIndex + delta + len) % len;
@@ -238,7 +238,7 @@ class HelpCenter {
       Terminal.showCursor();
     }
 
-    _updateFilter();
+    updateFilter();
     render();
 
     HelpDoc? result;
@@ -257,9 +257,9 @@ class HelpCenter {
         }
 
         if (ev.type == KeyEventType.arrowUp) {
-          _moveSelection(-1);
+          moveSelection(-1);
         } else if (ev.type == KeyEventType.arrowDown) {
-          _moveSelection(1);
+          moveSelection(1);
         } else if (ev.type == KeyEventType.arrowLeft) {
           previewScroll = max(0, previewScroll - 1);
         } else if (ev.type == KeyEventType.arrowRight) {
@@ -270,11 +270,11 @@ class HelpCenter {
         } else if (ev.type == KeyEventType.backspace) {
           if (query.isNotEmpty) {
             query = query.substring(0, query.length - 1);
-            _updateFilter();
+            updateFilter();
           }
         } else if (ev.type == KeyEventType.char && ev.char != null) {
           query += ev.char!;
-          _updateFilter();
+          updateFilter();
         }
 
         render();

@@ -69,7 +69,7 @@ class ChangeLogViewer {
       }
 
       // Spacing and subtle connector
-      stdout.writeln('$gutter');
+      stdout.writeln(gutter);
       stdout.writeln(FrameRenderer.bottomLine(r.version, theme));
     }
   }
@@ -163,7 +163,7 @@ class ChangeLogViewer {
           if (curSec!.items.isEmpty) {
             curSec!.items.add(line);
           } else {
-            curSec!.items[curSec!.items.length - 1] += ' ' + line.trim();
+            curSec!.items[curSec!.items.length - 1] += ' ${line.trim()}';
           }
         }
       }
@@ -175,13 +175,13 @@ class ChangeLogViewer {
 
   static String? _extractVersion(String h) {
     final m = RegExp(r'(\[)?v?([0-9]+\.[0-9]+(?:\.[0-9]+)?)').firstMatch(h);
-    return m != null ? 'v' + m.group(2)! : null;
+    return m != null ? 'v${m.group(2)!}' : null;
   }
 
   static String? _extractDate(String h) {
     // (2025-01-01) or - 2025-01-01
     final m = RegExp(r'(\(|-)\s*(\d{4}-\d{2}-\d{2})').firstMatch(h);
-    return m != null ? m.group(2) : null;
+    return m?.group(2);
   }
 
   List<String> _wrap(String text, int width) {

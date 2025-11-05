@@ -332,7 +332,7 @@ String _clip(String text, int width) {
   final plain = _visible(text);
   if (plain.length <= width) return plain;
   if (width <= 0) return '';
-  return plain.substring(0, math.max(0, width - 1)) + '…';
+  return '${plain.substring(0, math.max(0, width - 1))}…';
 }
 
 String _center(String text, int width) {

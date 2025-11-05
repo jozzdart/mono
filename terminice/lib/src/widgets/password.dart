@@ -104,8 +104,9 @@ class PasswordPrompt {
         } else if (ev.type == KeyEventType.ctrlR) {
           showPlain = !showPlain;
         } else if (ev.type == KeyEventType.backspace) {
-          if (buffer.isNotEmpty)
+          if (buffer.isNotEmpty) {
             buffer = buffer.substring(0, buffer.length - 1);
+          }
         } else if (ev.type == KeyEventType.char && ev.char != null) {
           buffer += ev.char!;
         }

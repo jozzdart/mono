@@ -40,7 +40,7 @@ class FilePickerPrompt {
       // Use shared search/select prompt
       final select = SearchSelectPrompt(
         names,
-        prompt: '${label} (${_shortPath(current.path)})',
+        prompt: '$label (${_shortPath(current.path)})',
         showSearch: true,
         multiSelect: false,
         maxVisible: 15,

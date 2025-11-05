@@ -1,6 +1,5 @@
 name: terminice
 description: "Beautiful CLI menus"
-resolution: workspace
 version: 0.0.1
 homepage: https://github.com/jozzdart/terminice
 repository: https://github.com/jozzdart/terminice/tree/main/terminice

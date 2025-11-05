@@ -23,7 +23,9 @@ class TodoTask {
   final bool done;
 
   const TodoTask(this.title,
-      {this.tags = const [], this.priority = TodoPriority.medium, this.done = false});
+      {this.tags = const [],
+      this.priority = TodoPriority.medium,
+      this.done = false});
 
   TodoTask copyWith({
     String? title,
@@ -69,7 +71,7 @@ class TodoDashboard {
     var current = List<TodoTask>.from(tasks);
     final initial = List<TodoTask>.from(tasks);
 
-    int _terminalColumns() {
+    int terminalColumns() {
       try {
         if (stdout.hasTerminal) return stdout.terminalColumns;
       } catch (_) {}
@@ -77,26 +79,33 @@ class TodoDashboard {
     }
 
     ({int content, int titleWidth, int tagWidth, int prioWidth}) layout() {
-      final termCols = useTerminalWidth ? _terminalColumns() : 80;
+      final termCols = useTerminalWidth ? terminalColumns() : 80;
       final content = (termCols - 4).clamp(48, 200);
 
       // Columns: [arrow][checkbox] [title] [priority] [tags]
       const prioWidth = 9; // e.g. [HIGH]
       final tagWidth = (content / 3).round().clamp(14, 48);
-      final titleWidth = (content - 6 /*arrow+cb+spaces*/ - prioWidth - tagWidth)
-          .clamp(10, content);
-      return (content: content, titleWidth: titleWidth, tagWidth: tagWidth, prioWidth: prioWidth);
+      final titleWidth =
+          (content - 6 /*arrow+cb+spaces*/ - prioWidth - tagWidth)
+              .clamp(10, content);
+      return (
+        content: content,
+        titleWidth: titleWidth,
+        tagWidth: tagWidth,
+        prioWidth: prioWidth
+      );
     }
 
-    String _checkbox(bool done, {bool highlight = false}) {
+    String checkbox(bool done, {bool highlight = false}) {
       final sym = done ? style.checkboxOnSymbol : style.checkboxOffSymbol;
       final color = done ? theme.checkboxOn : theme.checkboxOff;
       final out = '$color$sym${theme.reset}';
-      if (highlight && style.useInverseHighlight) return '${theme.inverse}$out${theme.reset}';
+      if (highlight && style.useInverseHighlight)
+        return '${theme.inverse}$out${theme.reset}';
       return out;
     }
 
-    String _priorityBadge(TodoPriority p) {
+    String priorityBadge(TodoPriority p) {
       switch (p) {
         case TodoPriority.high:
           return '${theme.error}[HIGH]${theme.reset}';
@@ -107,7 +116,7 @@ class TodoDashboard {
       }
     }
 
-    TodoPriority _raise(TodoPriority p) {
+    TodoPriority raise(TodoPriority p) {
       switch (p) {
         case TodoPriority.low:
           return TodoPriority.medium;
@@ -118,7 +127,7 @@ class TodoDashboard {
       }
     }
 
-    TodoPriority _lower(TodoPriority p) {
+    TodoPriority lower(TodoPriority p) {
       switch (p) {
         case TodoPriority.high:
           return TodoPriority.medium;
@@ -129,16 +138,17 @@ class TodoDashboard {
       }
     }
 
-    String _truncate(String text, int max) {
+    String truncate(String text, int max) {
       if (text.length <= max) return text;
       if (max <= 1) return text.substring(0, max);
-      return text.substring(0, max - 1) + '…';
+      return '${text.substring(0, max - 1)}…';
     }
 
-    String _renderTags(List<String> tags, int tagWidth) {
-      if (tags.isEmpty) return '${theme.dim}(no tags)${theme.reset}'.padRight(tagWidth);
-      final chips = tags.map((t) => '[${t}]').join(' ');
-      final truncated = _truncate(chips, tagWidth);
+    String renderTags(List<String> tags, int tagWidth) {
+      if (tags.isEmpty)
+        return '${theme.dim}(no tags)${theme.reset}'.padRight(tagWidth);
+      final chips = tags.map((t) => '[$t]').join(' ');
+      final truncated = truncate(chips, tagWidth);
       // lightly accent the brackets but keep content bright
       return truncated
           .replaceAll('[', '${theme.dim}[')
@@ -152,7 +162,8 @@ class TodoDashboard {
       final top = style.showBorder
           ? FrameRenderer.titleWithBorders(title, theme)
           : FrameRenderer.plainTitle(title, theme);
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      stdout
+          .writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       if (style.showBorder) {
         stdout.writeln(FrameRenderer.connectorLine(title, theme));
@@ -179,11 +190,12 @@ class TodoDashboard {
         final isFocused = i == focused;
         final t = current[i];
 
-        final arrow = isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
-        final cb = _checkbox(t.done, highlight: isFocused);
-        final titleTxt = _truncate(t.title, l.titleWidth).padRight(l.titleWidth);
-        final prio = _priorityBadge(t.priority).padRight(l.prioWidth);
-        final tags = _renderTags(t.tags, l.tagWidth);
+        final arrow =
+            isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        final cb = checkbox(t.done, highlight: isFocused);
+        final titleTxt = truncate(t.title, l.titleWidth).padRight(l.titleWidth);
+        final prio = priorityBadge(t.priority).padRight(l.prioWidth);
+        final tags = renderTags(t.tags, l.tagWidth);
 
         final line = StringBuffer();
         line.write(leftPrefix);
@@ -212,24 +224,26 @@ class TodoDashboard {
       Terminal.hideCursor();
     }
 
-    int _moveUp(int i) => (i - 1 + current.length) % current.length;
-    int _moveDown(int i) => (i + 1) % current.length;
+    int moveUp(int i) => (i - 1 + current.length) % current.length;
+    int moveDown(int i) => (i + 1) % current.length;
 
-    void _toggleDone(int i) {
+    void toggleDone(int i) {
       final t = current[i];
       current[i] = t.copyWith(done: !t.done);
     }
 
-    void _adjustPriority(int i, bool raise) {
+    void adjustPriority(int i, bool raisePriority) {
       final t = current[i];
-      current[i] = t.copyWith(priority: raise ? _raise(t.priority) : _lower(t.priority));
+      current[i] = t.copyWith(
+          priority: raisePriority ? raise(t.priority) : lower(t.priority));
     }
 
-    void _editTags(int i) {
+    void editTags(int i) {
       if (availableTags.isEmpty) return;
 
       // Best-effort: use TagSelector (doesn't support initial preselect here)
-      final selector = TagSelector(availableTags, prompt: 'Select tags', theme: theme);
+      final selector =
+          TagSelector(availableTags, prompt: 'Select tags', theme: theme);
       final selected = selector.run();
       current[i] = current[i].copyWith(tags: selected);
     }
@@ -252,20 +266,20 @@ class TodoDashboard {
         }
 
         if (ev.type == KeyEventType.arrowUp) {
-          focused = _moveUp(focused);
+          focused = moveUp(focused);
         } else if (ev.type == KeyEventType.arrowDown) {
-          focused = _moveDown(focused);
+          focused = moveDown(focused);
         } else if (ev.type == KeyEventType.arrowLeft) {
-          _adjustPriority(focused, false);
+          adjustPriority(focused, false);
         } else if (ev.type == KeyEventType.arrowRight) {
-          _adjustPriority(focused, true);
+          adjustPriority(focused, true);
         } else if (ev.type == KeyEventType.space) {
-          _toggleDone(focused);
+          toggleDone(focused);
         } else if (ev.type == KeyEventType.char && ev.char != null) {
           final ch = ev.char!;
-          if (ch == ']') _adjustPriority(focused, true);
-          if (ch == '[') _adjustPriority(focused, false);
-          if (ch.toLowerCase() == 't') _editTags(focused);
+          if (ch == ']') adjustPriority(focused, true);
+          if (ch == '[') adjustPriority(focused, false);
+          if (ch.toLowerCase() == 't') editTags(focused);
         }
 
         render();
@@ -278,5 +292,3 @@ class TodoDashboard {
     return cancelled ? initial : current;
   }
 }
-
-

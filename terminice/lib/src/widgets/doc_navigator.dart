@@ -297,7 +297,7 @@ class DocNavigator {
 
   // --- helpers ---
   void _viewMarkdown(String path) {
-    final label = 'Doc · ' + _basename(path);
+    final label = 'Doc · ${_basename(path)}';
     final content = _readFileSafe(path);
 
     Terminal.clearAndHome();
