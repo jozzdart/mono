@@ -1,0 +1,23 @@
+name: terminice
+description: "Beautiful CLI menus"
+resolution: workspace
+version: 0.0.1
+homepage: https://github.com/jozzdart/terminice
+repository: https://github.com/jozzdart/terminice/tree/main/terminice
+issue_tracker: https://github.com/jozzdart/terminice/issues
+topics:
+  - terminice
+  - cli
+  - tool
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  meta: ^1.15.0
+  collection: ^1.18.0
+  intl: ^0.20.2
+
+dev_dependencies:
+  test:
+  lints:
