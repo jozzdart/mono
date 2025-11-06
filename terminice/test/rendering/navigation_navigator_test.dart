@@ -5,8 +5,10 @@ import 'test_utils.dart';
 NavigatorState? _grabbed;
 
 class _GrabNavigator extends StatelessWidget {
-  void build(BuildContext context) {
+  @override
+  Widget? buildWidget(BuildContext context) {
     _grabbed = Navigator.of(context);
+    return null;
   }
 }
 
