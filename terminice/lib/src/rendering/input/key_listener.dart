@@ -13,7 +13,7 @@ abstract class KeyListenerState<T extends KeyListenerWidget> extends State<T> {
   bool onKey(KeyEvent ev);
 
   @override
-  void build(BuildContext context) {
+  Widget? buildWidget(BuildContext context) {
     // Register handler for this element.
     if (context.parentElement != null) {
       FocusManager.instance.register(context.parentElement!, _handle);
@@ -21,11 +21,19 @@ abstract class KeyListenerState<T extends KeyListenerWidget> extends State<T> {
         FocusManager.instance.requestFocus(context.parentElement!);
       }
     }
-    context.widget(widget.child);
+    return widget.child;
   }
 
   bool _handle(KeyEvent ev) {
     final handled = onKey(ev);
     return handled;
+  }
+  @override
+  void dispose() {
+    final el = element;
+    if (el != null) {
+      FocusManager.instance.unregister(el);
+    }
+    super.dispose();
   }
 }

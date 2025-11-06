@@ -1,13 +1,14 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import 'engine.dart';
+// import 'engine.dart';
 import 'widget.dart';
 import 'context.dart';
 import 'core/element.dart';
 import 'input/key_events.dart';
 import 'input/focus.dart';
 import 'scheduler.dart';
+import 'render/buffer.dart';
 
 /// Minimal AppHost that can rebuild the entire tree when requested.
 class AppHost {
@@ -24,6 +25,7 @@ class AppHost {
       : out = out ?? stdout;
 
   void run() {
+    AppFramePump.instance.bind(_render);
     _render();
   }
 
@@ -37,14 +39,17 @@ class AppHost {
         RenderContext.fromTerminal(theme: theme, colorEnabled: colorEnabled);
     _owner ??= BuildOwner(ctx);
     _rootEl ??= _owner!.mountRoot(_root);
-    _owner!.buildDirty();
-    final buffer = ScreenBuffer();
-    final engine =
-        RenderEngine(context: ctx, write: (line) => buffer.add(line));
-    for (final p in _rootEl!.outputs) {
-      p.render(engine);
+    try {
+      _owner!.buildDirty();
+      final buffer = TerminalFrameBuffer();
+      _owner!.pipeline.flushFrame(buffer);
+      buffer.flushTo((line) => out.writeln(line), clearBefore: true);
+    } catch (e, st) {
+      final fb = TerminalFrameBuffer();
+      fb.addLine('Application error: $e');
+      fb.addLine(st.toString());
+      fb.flushTo((line) => out.writeln(line), clearBefore: true);
     }
-    buffer.flushTo((line) => out.writeln(line), clearBefore: true);
   }
 }
 
@@ -68,3 +73,5 @@ void runInteractive(Widget root,
     host.rebuild(() {});
   }
 }
+
+// No-op: rendering is handled by the render pipeline.

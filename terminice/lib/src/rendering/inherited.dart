@@ -7,19 +7,14 @@ abstract class InheritedWidget extends Widget {
   final Widget child;
   InheritedWidget(this.child);
 
-  /// Unique type key for storage/lookup; default to runtimeType.
-  Type get typeKey => runtimeType;
-
   /// The stored value. Subclasses should override with a typed value.
   Object get value;
 
+  /// Whether dependents should be notified when the value changes.
+  bool updateShouldNotify(Object? oldValue) => oldValue != value;
+
   @override
-  void build(BuildContext context) {
-    // Provide value to descendants and render child as a widget element so it
-    // participates in reconciliation.
-    context.provideInherited<Object>(value);
-    context.widget(child);
-  }
+  Widget? buildWidget(BuildContext context) => child;
 }
 
 /// Theme wrapper providing PromptTheme via inherited lookup.
@@ -54,8 +49,9 @@ class GutterScope extends Widget {
   GutterScope(this.child);
 
   @override
-  void build(BuildContext context) {
-    context.child(_GutterScopePrintable(child, context.snapshotInherited()));
+  Widget? buildWidget(BuildContext context) {
+    return PrintableWidget(
+        _GutterScopePrintable(child, context.snapshotInherited()));
   }
 }
 

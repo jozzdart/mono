@@ -1,4 +1,5 @@
 import '../widget.dart';
+import '../inherited.dart';
 
 /// A minimal navigation stack that renders only the top-most page.
 ///
@@ -19,10 +20,8 @@ class Navigator extends StatefulWidget {
   @override
   State createState() => NavigatorState();
 
-  // Satisfy the TerminalWidget API; actual building happens in the associated
-  // NavigatorState via StatefulWidget.render.
   @override
-  void build(BuildContext context) {}
+  Widget? buildWidget(BuildContext context) => null; // Built by state
 }
 
 class NavigatorState extends State<Navigator> {
@@ -72,11 +71,16 @@ class NavigatorState extends State<Navigator> {
   }
 
   @override
-  void build(BuildContext context) {
+  Widget? buildWidget(BuildContext context) {
     _ensureInit();
-    // Expose this state to descendants for Navigator.of(context).
-    context.provideInherited<NavigatorState>(this);
-    // Render only the top-most page.
-    context.widget(_stack.last);
+    return _NavigatorInherited(this, _stack.last);
   }
+}
+
+class _NavigatorInherited extends InheritedWidget {
+  final NavigatorState state;
+  _NavigatorInherited(this.state, Widget child) : super(child);
+
+  @override
+  Object get value => state;
 }

@@ -16,3 +16,21 @@ class Scheduler {
 }
 
 
+class AppFramePump {
+  static final AppFramePump instance = AppFramePump._();
+  AppFramePump._();
+
+  void Function()? _pump;
+
+  void bind(void Function() pump) {
+    _pump = pump;
+  }
+
+  void request() {
+    final p = _pump;
+    if (p != null) {
+      Scheduler.instance.requestFrame(p);
+    }
+  }
+}
+

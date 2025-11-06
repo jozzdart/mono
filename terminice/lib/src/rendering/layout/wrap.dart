@@ -6,9 +6,5 @@ class Wrap extends Widget {
   Wrap({required this.children, this.spacing = 1});
 
   @override
-  void build(BuildContext context) {
-    for (int i = 0; i < children.length; i++) {
-      context.widget(children[i]);
-    }
-  }
+  Widget? buildWidget(BuildContext context) => Fragment(children);
 }

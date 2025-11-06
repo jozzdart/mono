@@ -9,9 +9,6 @@ class TextInput extends KeyListenerWidget {
 
   @override
   State createState() => _TextInputState();
-
-  @override
-  void build(BuildContext context) {}
 }
 
 class _TextInputState extends KeyListenerState<TextInput> {
@@ -52,19 +49,19 @@ class _TextInputState extends KeyListenerState<TextInput> {
   bool _handle(KeyEvent ev) => onKey(ev);
 
   @override
-  void build(BuildContext context) {
+  Widget? buildWidget(BuildContext context) {
     if (context.parentElement != null) {
       FocusManager.instance.register(context.parentElement!, _handle);
       if (widget.autofocus) {
         FocusManager.instance.requestFocus(context.parentElement!);
       }
     }
-    context.widget(Text(_value));
+    return Text(_value);
   }
 }
 
 class _Empty extends StatelessWidget {
   _Empty();
   @override
-  void build(BuildContext context) {}
+  Widget? buildWidget(BuildContext context) => null;
 }

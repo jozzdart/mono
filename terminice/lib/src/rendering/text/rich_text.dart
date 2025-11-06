@@ -1,6 +1,7 @@
 import '../widget.dart';
-import '../engine.dart';
-import 'utils.dart' as txt;
+import '../render/widgets.dart' as ro;
+import '../render/box.dart' as rbox;
+import '../render/object.dart';
 
 class TextSpan {
   final String text;
@@ -11,23 +12,16 @@ class TextSpan {
       {this.color, this.bold = false, this.children = const []});
 }
 
-class RichText extends Widget {
+class RichText extends ro.LeafRenderObjectWidget {
   final TextSpan span;
   final bool withGutter;
   final int? maxWidth; // if null, no wrapping; else wrap to width
   const RichText(this.span, {this.withGutter = true, this.maxWidth});
 
   @override
-  Widget? buildWidget(BuildContext context) {
+  RenderObject createRenderObject(BuildContext context) {
     final line = _buildLine(context, span);
-    final width = maxWidth ?? context.terminalColumns;
-    final lines = width > 0 ? txt.wrapAnsi(line, width) : [line];
-    final printable = _MultiLinePrintable(lines);
-    if (withGutter) {
-      return PrintableWidget(_WithGutterPrintable(printable));
-    } else {
-      return PrintableWidget(printable);
-    }
+    return rbox.RenderParagraph(line);
   }
 
   String _buildLine(BuildContext context, TextSpan span) {
@@ -46,22 +40,4 @@ class RichText extends Widget {
   }
 }
 
-class _MultiLinePrintable implements Printable {
-  final List<String> lines;
-  const _MultiLinePrintable(this.lines);
-  @override
-  void render(RenderEngine engine) {
-    for (final l in lines) {
-      engine.writeLine(l);
-    }
-  }
-}
-
-class _WithGutterPrintable implements Printable {
-  final Printable inner;
-  const _WithGutterPrintable(this.inner);
-  @override
-  void render(RenderEngine engine) {
-    engine.withGutter(() => inner.render(engine));
-  }
-}
+// Removed legacy printable helpers; rendering handled by RenderParagraph

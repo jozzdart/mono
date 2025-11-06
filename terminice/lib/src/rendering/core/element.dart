@@ -1,12 +1,16 @@
 import '../widget.dart';
 import '../context.dart';
 import '../inherited.dart' show InheritedWidget;
+import '../render/widgets.dart' as ro_widgets;
+import '../render/pipeline.dart';
 
 class BuildOwner {
   final RenderContext renderContext;
   final List<Element> _dirty = [];
+  final Map<GlobalKey, Element> _globalElements = {};
+  final PipelineOwner pipeline;
 
-  BuildOwner(this.renderContext);
+  BuildOwner(this.renderContext) : pipeline = PipelineOwner(renderContext);
 
   Element mountRoot(Widget root) {
     final e = _inflate(root, const {});
@@ -28,6 +32,17 @@ class BuildOwner {
   }
 
   Element _inflate(Widget widget, Map<Type, Object> inherited) {
+    if (widget is ro_widgets.RenderObjectWidget) {
+      if (widget is ro_widgets.MultiChildRenderObjectWidget) {
+        return ro_widgets.MultiChildRenderObjectElement(widget, inherited);
+      }
+      if (widget is ro_widgets.LeafRenderObjectWidget) {
+        return ro_widgets.LeafRenderObjectElement(widget, inherited);
+      }
+      if (widget is ro_widgets.SingleChildRenderObjectWidget) {
+        return ro_widgets.SingleChildRenderObjectElement(widget, inherited);
+      }
+    }
     if (widget is InheritedWidget) {
       return InheritedElement(widget, inherited);
     }
@@ -39,13 +54,33 @@ class BuildOwner {
 
   Element inflateWidget(Widget widget, Map<Type, Object> inherited) =>
       _inflate(widget, inherited);
+
+  void registerGlobal(Element e) {
+    final k = e.widget.key;
+    if (k is GlobalKey) {
+      final existing = _globalElements[k];
+      if (existing != null && !identical(existing, e)) {
+        throw StateError('Duplicate GlobalKey detected: ${k.value}');
+      }
+      _globalElements[k] = e;
+    }
+  }
+
+  void unregisterGlobal(Element e) {
+    final k = e.widget.key;
+    if (k is GlobalKey) {
+      final existing = _globalElements[k];
+      if (identical(existing, e)) {
+        _globalElements.remove(k);
+      }
+    }
+  }
 }
 
 abstract class Element {
   Widget widget;
   final Map<Type, Object> inherited;
   late final BuildOwner owner;
-  List<Printable> _outputs = const [];
   // Ordered children maintained across rebuilds for unkeyed reconciliation.
   List<Element> _children = const [];
   Map<Key, Element> _childrenByKey = {};
@@ -54,23 +89,21 @@ abstract class Element {
   // Next-frame children during reconciliation.
   List<Element> _nextChildren = const [];
   int _childIndex = 0;
+  bool _depsChanged = false;
 
   Element(this.widget, this.inherited);
 
   void mount(BuildOwner owner, Map<Type, Object> map) {
     this.owner = owner;
     didMount();
+    owner.registerGlobal(this);
   }
 
   void didMount() {}
 
   void performRebuild();
 
-  List<Printable> get outputs => _outputs;
-
-  void setOutputs(List<Printable> out) {
-    _outputs = out;
-  }
+  Iterable<Element> get children => _children;
 
   void updateWidget(Widget newWidget) {
     widget = newWidget;
@@ -122,6 +155,14 @@ abstract class Element {
   }
 
   void endChildReconcile() {
+    // Unmount children that were not retained
+    final toRemove = <Element>[];
+    for (final c in _children) {
+      if (!_nextChildren.contains(c)) toRemove.add(c);
+    }
+    for (final r in toRemove) {
+      r.unmount();
+    }
     _childrenByKey = _nextChildrenByKey;
     _children = _nextChildren;
   }
@@ -132,9 +173,24 @@ abstract class Element {
 
   void notifyDependents() {
     for (final d in _dependents) {
+      d._markDependenciesChanged();
       owner.scheduleBuild(d);
     }
   }
+
+  void _markDependenciesChanged() {
+    _depsChanged = true;
+  }
+
+  void unmount() {
+    for (final c in _children) {
+      c.unmount();
+    }
+    owner.unregisterGlobal(this);
+    didUnmount();
+  }
+
+  void didUnmount() {}
 }
 
 class StatelessElement extends Element {
@@ -145,8 +201,16 @@ class StatelessElement extends Element {
     beginChildReconcile();
     final ctx = BuildContext.internal(owner.renderContext, inherited,
         owner: owner, parentElement: this);
-    widget.build(ctx);
-    setOutputs(ctx.children);
+    final built = widget.buildWidget(ctx);
+    if (built == null) {
+      // No children
+    } else if (built is Fragment) {
+      for (final w in built.children) {
+        reuseOrInflateChild(w, Map<Type, Object>.from(inherited));
+      }
+    } else {
+      reuseOrInflateChild(built, Map<Type, Object>.from(inherited));
+    }
     endChildReconcile();
   }
 }
@@ -161,6 +225,17 @@ class StatefulElement extends Element {
     final w = widget as StatefulWidget;
     state = w.createState();
     state.attach(w, owner, this);
+    try {
+      state.initState();
+    } catch (_) {}
+  }
+
+  @override
+  void didUnmount() {
+    // Allow state to clean up
+    try {
+      state.dispose();
+    } catch (_) {}
   }
 
   @override
@@ -168,9 +243,34 @@ class StatefulElement extends Element {
     beginChildReconcile();
     final ctx = BuildContext.internal(owner.renderContext, inherited,
         owner: owner, parentElement: this);
-    state.build(ctx);
-    setOutputs(ctx.children);
+    if (_depsChanged) {
+      _depsChanged = false;
+      try {
+        state.didChangeDependencies();
+      } catch (_) {}
+    }
+    final built = state.buildWidget(ctx);
+    if (built == null) {
+      // No children
+    } else if (built is Fragment) {
+      for (final w in built.children) {
+        reuseOrInflateChild(w, Map<Type, Object>.from(inherited));
+      }
+    } else {
+      reuseOrInflateChild(built, Map<Type, Object>.from(inherited));
+    }
     endChildReconcile();
+  }
+
+  @override
+  void updateWidget(Widget newWidget) {
+    final oldWidget = widget as StatefulWidget;
+    widget = newWidget;
+    try {
+      state.attach(newWidget as StatefulWidget, owner, this);
+      state.didUpdateWidget(oldWidget);
+    } catch (_) {}
+    owner.scheduleBuild(this);
   }
 }
 
@@ -187,14 +287,26 @@ class InheritedElement extends Element {
   @override
   void performRebuild() {
     beginChildReconcile();
-    final ctx = BuildContext.internal(owner.renderContext, inherited,
+    // Prepare inherited with provider entry for dependents
+    final inh = Map<Type, Object>.from(inherited);
+    final provided = (widget as InheritedWidget).value;
+    inh[provided.runtimeType] = InheritedEntry(provided, this);
+    final ctx = BuildContext.internal(owner.renderContext, inh,
         owner: owner, parentElement: this);
-    widget.build(ctx);
-    setOutputs(ctx.children);
+    final built = (widget as InheritedWidget).buildWidget(ctx);
+    if (built == null) {
+      // No children
+    } else if (built is Fragment) {
+      for (final w in built.children) {
+        reuseOrInflateChild(w, Map<Type, Object>.from(inh));
+      }
+    } else {
+      reuseOrInflateChild(built, Map<Type, Object>.from(inh));
+    }
     endChildReconcile();
 
     final current = (widget as InheritedWidget).value;
-    if (_lastValue != current) {
+    if ((widget as InheritedWidget).updateShouldNotify(_lastValue)) {
       _lastValue = current;
       notifyDependents();
     }

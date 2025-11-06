@@ -47,10 +47,23 @@ class ElementHarness {
     final engine =
         RenderEngine(context: _ctx, write: (line) => lines.add(line));
     _owner.buildDirty();
-    for (final p in _rootEl.outputs) {
+    final printables = <Printable>[];
+    _collectPrintables(_rootEl, printables);
+    for (final p in printables) {
       p.render(engine);
     }
     return lines;
+  }
+}
+
+void _collectPrintables(Element element, List<Printable> out) {
+  final w = element.widget;
+  if (w is PrintableWidget) {
+    out.add(w.printable);
+    return;
+  }
+  for (final c in element.children) {
+    _collectPrintables(c, out);
   }
 }
 

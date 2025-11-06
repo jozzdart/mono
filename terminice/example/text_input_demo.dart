@@ -6,22 +6,24 @@ class ResultsPage extends StatelessWidget {
   ResultsPage(this.value);
 
   @override
-  void build(BuildContext context) {
-    context.widget(Text(value));
+  Widget? buildWidget(BuildContext context) {
+    return Text(value);
   }
 }
 
 class InputTextPage extends StatelessWidget {
   @override
-  void build(BuildContext context) {
-    context.widget(Column([
-      Text('Type and press Enter'),
-      TextInput(
-        onSubmitted: (v) {
-          Navigator.of(context).push(ResultsPage(v));
-        },
-      ),
-    ]));
+  Widget? buildWidget(BuildContext context) {
+    return Column(
+      children: [
+        Text('Type and press Enter'),
+        TextInput(
+          onSubmitted: (v) {
+            Navigator.of(context).push(ResultsPage(v));
+          },
+        ),
+      ],
+    );
   }
 }
 

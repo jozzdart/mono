@@ -9,11 +9,8 @@ class PreviewTestWidget extends StatelessWidget {
   PreviewTestWidget(this.name, this.child);
 
   @override
-  void build(BuildContext context) {
-    context.widget(DividerLine());
-    context.widget(Text(name));
-    context.widget(child);
-  }
+  Widget? buildWidget(BuildContext context) =>
+      Column(children: [DividerLine(), Text(name), child]);
 }
 
 void main() {
@@ -21,27 +18,32 @@ void main() {
     final harness = RenderHarness();
 
     // Add widgets you want to preview here.
-    final previews = Column([
-      PreviewTestWidget('Text: hello world', Text('hello world')),
-      PreviewTestWidget(
-          'SectionHeaderLine: Overview', SectionHeaderLine('Overview')),
-      PreviewTestWidget(
-        'MetricLine: Status OK',
-        MetricLine('Status', 'OK'),
-      ),
-      PreviewTestWidget(
-        'Frame + Text',
-        Frame(
+    final previews = Column(
+      children: [
+        PreviewTestWidget('Text: hello world', Text('hello world')),
+        PreviewTestWidget(
+            'SectionHeaderLine: Overview', SectionHeaderLine('Overview')),
+        PreviewTestWidget(
+          'MetricLine: Status OK',
+          MetricLine('Status', 'OK'),
+        ),
+        PreviewTestWidget(
+          'Frame + Text',
+          Frame(
             'Demo',
-            Column([
-              Text('inside frame'),
-              Row(children: [
-                Text('left'),
-                Text('right'),
-              ])
-            ])),
-      ),
-    ]);
+            Column(
+              children: [
+                Text('inside frame'),
+                Row(children: [
+                  Text('left'),
+                  Text('right'),
+                ])
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
 
     final lines =
         harness.renderWidget(previews, columns: 80, colorEnabled: true);

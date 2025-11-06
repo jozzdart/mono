@@ -22,6 +22,12 @@ export 'input/focus.dart';
 export 'input/key_listener.dart';
 export 'navigation/navigator.dart';
 export 'scheduler.dart';
+export 'render/object.dart';
+export 'render/painting.dart';
+export 'render/buffer.dart';
+export 'render/pipeline.dart';
+
+export 'render/adapters.dart';
 
 /// Quick example (not executed):
 ///

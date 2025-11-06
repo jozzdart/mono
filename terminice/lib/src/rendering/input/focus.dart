@@ -46,10 +46,10 @@ class Focus extends StatelessWidget {
   Focus({required this.child, this.requestOnBuild = true});
 
   @override
-  void build(BuildContext context) {
+  Widget? buildWidget(BuildContext context) {
     if (requestOnBuild && context.parentElement != null) {
       FocusManager.instance.requestFocus(context.parentElement!);
     }
-    context.widget(child);
+    return child;
   }
 }

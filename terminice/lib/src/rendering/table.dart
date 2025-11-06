@@ -1,5 +1,6 @@
 import 'widget.dart';
 import 'engine.dart';
+import 'widgets.dart';
 
 class TableColumn {
   final int? width; // fixed width; null = auto
@@ -13,17 +14,18 @@ class TableView extends Widget {
   TableView({required this.columns, required this.rows});
 
   @override
-  void build(BuildContext context) {
-    // Minimal: render each row cells separated by a vertical bar glyph.
+  Widget? buildWidget(BuildContext context) {
     final sep = '${context.theme.gray}│${context.theme.reset}';
+    final widgets = <Widget>[];
     for (final r in rows) {
       for (int i = 0; i < r.length; i++) {
-        context.widget(r[i]);
+        widgets.add(r[i]);
         if (i < r.length - 1) {
-          context.child(_TextLinePrintable(sep));
+          widgets.add(PrintableWidget(_TextLinePrintable(sep)));
         }
       }
     }
+    return Column(children: widgets);
   }
 }
 

@@ -2,23 +2,21 @@ import '../system/rendering.dart' as style_helpers;
 import '../system/framed_layout.dart';
 import 'engine.dart';
 import 'widget.dart';
+import 'render/widgets.dart' as ro;
+import 'render/object.dart';
+import 'render/box.dart' as rbox;
 
 /// Single line of text (already styled if desired).
-class Text extends Widget {
+class Text extends ro.LeafRenderObjectWidget {
   final String text;
   final bool withGutter;
   final int? maxWidth;
   const Text(this.text, {this.withGutter = true, this.maxWidth});
 
   @override
-  Widget? buildWidget(BuildContext context) {
-    final width = maxWidth ?? context.terminalColumns;
-    final printable = _MultiLineWrapPrintable(text, width);
-    if (withGutter) {
-      return PrintableWidget(_WithGutterPrintable(printable));
-    } else {
-      return PrintableWidget(printable);
-    }
+  RenderObject createRenderObject(BuildContext context) {
+    // Width is handled by constraints; we pass raw ANSI string
+    return rbox.RenderParagraph(text);
   }
 }
 
@@ -28,26 +26,20 @@ class TextLine extends Text {
 }
 
 /// Vertical group of widgets rendered in order.
-class Column extends Widget {
-  final List<Widget> children;
-  const Column(this.children);
+class Column extends ro.MultiChildRenderObjectWidget {
+  const Column({required super.children});
 
   @override
-  void build(BuildContext context) {
-    for (final c in children) {
-      context.widget(c);
-    }
-  }
+  RenderObject createRenderObject(BuildContext context) =>
+      rbox.RenderFlex(rbox.Axis.vertical);
 }
 
 /// Applies the themed gutter prefix to every produced line from [child].
-class Gutter extends Widget {
-  final Widget child;
-  const Gutter(this.child);
+class Gutter extends ro.SingleChildRenderObjectWidget {
+  const Gutter({required super.child});
 
   @override
-  Widget? buildWidget(BuildContext context) =>
-      PrintableWidget(_GutterPrintable(child));
+  RenderObject createRenderObject(BuildContext context) => rbox.RenderGutter();
 }
 
 /// Section header line using shared styling.
@@ -100,22 +92,19 @@ class Frame extends Widget {
     if (context.theme.style.showBorder) {
       items.add(PrintableWidget(_LinePrintable(frame.bottom())));
     }
-    return Column(items);
+    return Column(children: items);
   }
 }
 
 /// Horizontal divider line.
-class DividerLine extends Widget {
+class DividerLine extends ro.LeafRenderObjectWidget {
   final int? width; // if null, use context.terminalColumns - minimal padding
   final bool withGutter;
   const DividerLine({this.width, this.withGutter = true});
 
   @override
-  Widget? buildWidget(BuildContext context) {
-    final w = (width ?? (context.terminalColumns - 4)).clamp(4, 2000);
-    final line = '${context.theme.gray}${'─' * w}${context.theme.reset}';
-    return PrintableWidget(_LinePrintable(line, gutter: withGutter));
-  }
+  RenderObject createRenderObject(BuildContext context) =>
+      rbox.RenderDivider(width: width);
 }
 
 /// Title line with bold accent, optionally underlined.
@@ -137,7 +126,7 @@ class TitleLine extends Widget {
           '${context.theme.gray}${'─' * (text.length + 2)}${context.theme.reset}';
       widgets.add(PrintableWidget(_LinePrintable(u, gutter: withGutter)));
     }
-    return Column(widgets);
+    return Column(children: widgets);
   }
 }
 
@@ -155,66 +144,4 @@ class _LinePrintable implements Printable {
   }
 }
 
-class _GutterPrintable implements Printable {
-  final Printable child;
-  const _GutterPrintable(this.child);
-  @override
-  void render(RenderEngine engine) {
-    engine.withGutter(() => child.render(engine));
-  }
-}
-
-class _WithGutterPrintable implements Printable {
-  final Printable inner;
-  const _WithGutterPrintable(this.inner);
-  @override
-  void render(RenderEngine engine) {
-    engine.withGutter(() => inner.render(engine));
-  }
-}
-
-class _MultiLineWrapPrintable implements Printable {
-  final String text;
-  final int width;
-  const _MultiLineWrapPrintable(this.text, this.width);
-  @override
-  void render(RenderEngine engine) {
-    // Simple wrap using engine context color setting.
-    final s = text;
-    int visibleLen = engine.context.colorEnabled
-        ? s.runes.length
-        : s.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '').runes.length;
-    if (visibleLen <= width) {
-      engine.writeLine(s);
-      return;
-    }
-    // Fallback naive wrap per width without breaking ANSI sequences.
-    final units = s.codeUnits;
-    var i = 0;
-    var col = 0;
-    var buf = StringBuffer();
-    while (i < units.length) {
-      final ch = units[i];
-      final isEsc = ch == 27; // ESC
-      if (isEsc) {
-        final start = i;
-        i++;
-        while (i < units.length && units[i] != 109) {
-          i++; // 'm'
-        }
-        if (i < units.length) i++;
-        buf.write(String.fromCharCodes(units.getRange(start, i)));
-        continue;
-      }
-      if (col >= width) {
-        engine.writeLine(buf.toString());
-        buf = StringBuffer();
-        col = 0;
-      }
-      buf.writeCharCode(ch);
-      col++;
-      i++;
-    }
-    if (buf.isNotEmpty) engine.writeLine(buf.toString());
-  }
-}
+// Gutter handled by RenderGutter above

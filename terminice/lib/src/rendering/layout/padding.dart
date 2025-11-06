@@ -1,6 +1,8 @@
 import '../widget.dart';
-import '../modifiers.dart';
-import '../engine.dart';
+// import '../engine.dart';
+import '../render/widgets.dart' as ro;
+import '../render/object.dart';
+import '../render/painting.dart';
 
 class EdgeInsets {
   final int left, top, right, bottom;
@@ -10,27 +12,50 @@ class EdgeInsets {
       : this._(horizontal, vertical, horizontal, vertical);
 }
 
-class Padding extends Widget {
+class Padding extends ro.SingleChildRenderObjectWidget {
   final EdgeInsets padding;
-  final Widget child;
-  Padding({required this.padding, required this.child});
+  const Padding({required this.padding, required super.child});
 
   @override
-  void build(BuildContext context) {
-    for (int i = 0; i < padding.top; i++) {
-      context.child(_BlankLine());
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderPadding(padding);
+}
+
+class _RenderPadding extends RenderContainerBox {
+  final EdgeInsets padding;
+  _RenderPadding(this.padding);
+
+  @override
+  void performLayout() {
+    for (final c in children) {
+      c.layout(BoxConstraints(maxWidth: constraints.maxWidth - padding.left));
     }
-    context.child(ModifierScopePrintable(
-        (e) => LeftPaddingModifier(padding.left),
-        child,
-        context.snapshotInherited()));
+  }
+
+  @override
+  void paint(dynamic context) {
+    if (context is! PaintContext) return;
+    for (int i = 0; i < padding.top; i++) {
+      context.writeLine('');
+    }
+    final leftPad = ' ' * padding.left;
+    final transformed =
+        _TransformPaintContext(context, (line) => '$leftPad$line');
+    for (final c in children) {
+      c.paint(transformed);
+    }
     for (int i = 0; i < padding.bottom; i++) {
-      context.child(_BlankLine());
+      context.writeLine('');
     }
   }
 }
 
-class _BlankLine implements Printable {
+class _TransformPaintContext extends PaintContext {
+  final String Function(String) transform;
+  _TransformPaintContext(PaintContext base, this.transform)
+      : super(base.renderContext, base.buffer);
   @override
-  void render(RenderEngine engine) => engine.writeLine('');
+  void writeLine(String line) {
+    super.writeLine(transform(line));
+  }
 }

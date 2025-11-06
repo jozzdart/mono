@@ -5,16 +5,17 @@ import 'test_utils.dart';
 NavigatorState? _grabbed;
 
 class _GrabNavigator extends StatelessWidget {
-  @override
   void build(BuildContext context) {
     _grabbed = Navigator.of(context);
   }
 }
 
-Widget _page(String label) => Column([
-      Text(label),
-      _GrabNavigator(),
-    ]);
+Widget _page(String label) => Column(
+      children: [
+        Text(label),
+        _GrabNavigator(),
+      ],
+    );
 
 void main() {
   test('Navigator renders only the top page', () {

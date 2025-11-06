@@ -27,7 +27,7 @@ class Flex extends Widget {
     // For terminal line rendering, both directions are rendered sequentially.
     // A future inline composer can replace this with true horizontal layout.
     if (children.isEmpty) return null;
-    return Column(children);
+    return Column(children: children);
   }
 }
 
@@ -62,7 +62,7 @@ class ColumnFlex extends Flex {
         }
       }
     }
-    return Column(items);
+    return Column(children: items);
   }
 }
 
