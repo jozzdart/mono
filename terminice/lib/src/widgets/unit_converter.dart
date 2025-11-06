@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/rendering.dart';
 import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
@@ -42,41 +43,41 @@ class UnitConverter {
     stdout.writeln('${theme.bold}$top${theme.reset}');
 
     // Length section
-    _section('Length · cm ↔ in');
+    stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Length · cm ↔ in')));
     final pairLen = _resolveLengthPair();
-    _line(_equation(
+    stdout.writeln(gutterLine(theme, _equation(
       leftLabel: 'cm',
       leftValue: pairLen.cm,
       rightLabel: 'in',
       rightValue: pairLen.in_,
       direction: '→',
-    ));
-    _line(_equation(
+    )));
+    stdout.writeln(gutterLine(theme, _equation(
       leftLabel: 'in',
       leftValue: pairLen.in_,
       rightLabel: 'cm',
       rightValue: pairLen.cm,
       direction: '→',
-    ));
+    )));
 
     // Currency section
-    _section('Currency · USD ↔ EUR');
+    stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Currency · USD ↔ EUR')));
     final pairCur = _resolveCurrencyPair();
-    _line(_rateLine());
-    _line(_equation(
+    stdout.writeln(gutterLine(theme, _rateLine()));
+    stdout.writeln(gutterLine(theme, _equation(
       leftLabel: 'USD',
       leftValue: pairCur.usd,
       rightLabel: 'EUR',
       rightValue: pairCur.eur,
       direction: '→',
-    ));
-    _line(_equation(
+    )));
+    stdout.writeln(gutterLine(theme, _equation(
       leftLabel: 'EUR',
       leftValue: pairCur.eur,
       rightLabel: 'USD',
       rightValue: pairCur.usd,
       direction: '→',
-    ));
+    )));
 
     if (style.showBorder) {
       stdout.writeln(frame.bottom());
@@ -126,9 +127,9 @@ class UnitConverter {
       stdout.writeln('${theme.bold}$top${theme.reset}');
 
       // Section
-      _section(conv.name);
+      stdout.writeln(gutterLine(theme, sectionHeader(theme, conv.name)));
       if (conv.details.isNotEmpty) {
-        _line('${theme.gray}${conv.details}${theme.reset}');
+        stdout.writeln(gutterLine(theme, '${theme.gray}${conv.details}${theme.reset}'));
       }
 
       // Compute values based on buffer and active side
@@ -144,22 +145,22 @@ class UnitConverter {
           ? '${theme.inverse}${theme.highlight}${conv.rightLabel}${theme.reset}'
           : '${theme.highlight}${conv.rightLabel}${theme.reset}';
 
-      _line(_equation(
+      stdout.writeln(gutterLine(theme, _equation(
         leftLabel: lLabel,
         leftValue: leftVal,
         rightLabel: rLabel,
         rightValue: rightVal,
         direction: '→',
-      ));
+      )));
 
       // Also show reverse for clarity
-      _line(_equation(
+      stdout.writeln(gutterLine(theme, _equation(
         leftLabel: rLabel,
         leftValue: rightVal,
         rightLabel: lLabel,
         rightValue: leftVal,
         direction: '→',
-      ));
+      )));
 
       if (style.showBorder) {
         stdout.writeln(frame.bottom());
@@ -214,17 +215,7 @@ class UnitConverter {
 
   // --- Rendering helpers -------------------------------------------------
 
-  void _line(String content) {
-    if (content.trim().isEmpty) return;
-    final s = theme.style;
-    stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset} $content');
-  }
 
-  void _section(String name) {
-    final s = theme.style;
-    final header = '${theme.bold}${theme.accent}$name${theme.reset}';
-    stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset} $header');
-  }
 
   String _equation({
     required String leftLabel,

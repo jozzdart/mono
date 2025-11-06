@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/rendering.dart';
 
 /// Breadcrumbs – file path navigation line.
 ///
@@ -32,7 +33,7 @@ class Breadcrumbs {
     stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final rendered = _renderBreadcrumbLine();
-    stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset} $rendered');
+    stdout.writeln(gutterLine(theme, rendered));
 
     if (style.showBorder) {
       stdout.writeln(frame.bottom());
@@ -127,12 +128,7 @@ class Breadcrumbs {
     return out;
   }
 
-  int _visibleLength(String s) => _stripAnsi(s).length;
-
-  String _stripAnsi(String input) {
-    final ansi = RegExp(r'\x1B\[[0-9;]*m');
-    return input.replaceAll(ansi, '');
-  }
+  int _visibleLength(String s) => stripAnsi(s).length;
 }
 
 /// Convenience function mirroring the class API.

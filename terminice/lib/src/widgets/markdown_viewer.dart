@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/rendering.dart';
 
 /// MarkdownViewer – renders markdown with colors and headers
 ///
@@ -144,13 +145,8 @@ class MarkdownViewer {
   }
 
   void _gutter(String content) {
-    final s = theme.style;
-    if (content.trim().isEmpty) {
-      stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset}');
-      return;
-    }
-    final out = color ? content : _stripAnsi(content);
-    stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset} $out');
+    final out = color ? content : stripAnsi(content);
+    stdout.writeln(gutterLine(theme, out));
   }
 
   String _heading(String text, int level) {
@@ -320,13 +316,13 @@ class MarkdownViewer {
     for (final r in contentRows) {
       for (var i = 0; i < colCount; i++) {
         final cell = i < r.length ? _inline(r[i]) : '';
-        final w = _visibleLength(cell);
+        final w = visibleLength(cell);
         if (w > widths[i]) widths[i] = w;
       }
     }
 
     String pad(String txt, int w, String a) {
-      final visible = _visibleLength(txt);
+      final visible = visibleLength(txt);
       final needed = (w - visible).clamp(0, 1000);
       if (a == 'right') return '${' ' * needed}$txt';
       if (a == 'center') {
@@ -366,10 +362,6 @@ class MarkdownViewer {
     }
     return out;
   }
-
-  int _visibleLength(String s) {
-    return _stripAnsi(s).runes.length;
-  }
 }
 
 /// Convenience function mirroring the widget API name.
@@ -385,9 +377,4 @@ void markdownViewer(
     title: title,
     color: color,
   ).show();
-}
-
-String _stripAnsi(String input) {
-  final ansi = RegExp(r'\x1B\[[0-9;]*m');
-  return input.replaceAll(ansi, '');
 }

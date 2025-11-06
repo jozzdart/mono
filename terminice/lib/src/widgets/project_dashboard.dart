@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/rendering.dart';
 
 /// ProjectDashboard – comprehensive project stats (builds, tests, coverage)
 ///
@@ -72,78 +73,82 @@ class ProjectDashboard {
     stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     // Overview
-    _section('Overview');
-    _line(_metric('Project', projectName, color: theme.accent));
+    stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Overview')));
+    stdout.writeln(gutterLine(theme, metric(theme, 'Project', projectName, color: theme.accent)));
     if (branch != null && branch!.isNotEmpty) {
-      _line(_metric('Branch', branch!, color: theme.highlight));
+      stdout.writeln(gutterLine(theme, metric(theme, 'Branch', branch!, color: theme.highlight)));
     }
     if (sdk != null && sdk!.isNotEmpty) {
-      _line(_metric('SDK', sdk!, color: theme.highlight));
+      stdout.writeln(gutterLine(theme, metric(theme, 'SDK', sdk!, color: theme.highlight)));
     }
     if (os != null && os!.isNotEmpty) {
-      _line(_metric('OS', os!, color: theme.highlight));
+      stdout.writeln(gutterLine(theme, metric(theme, 'OS', os!, color: theme.highlight)));
     }
 
     // CI Builds
-    _section('Builds');
+    stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Builds')));
     final totalTests = testsPassed + testsFailed + testsSkipped;
-    _line(_metric('Success', '$buildsSuccess', color: theme.info));
-    _line(_metric('Failed', '$buildsFailed', color: theme.error));
+    stdout.writeln(gutterLine(theme, metric(theme, 'Success', '$buildsSuccess', color: theme.info)));
+    stdout.writeln(gutterLine(theme, metric(theme, 'Failed', '$buildsFailed', color: theme.error)));
     if (latestBuildLabel != null && latestBuildLabel!.isNotEmpty) {
-      _line(_metric('Latest', latestBuildLabel!, color: _latestColor()));
+      stdout.writeln(gutterLine(theme, metric(theme, 'Latest', latestBuildLabel!, color: _latestColor())));
     }
     if (buildDuration != null && buildDuration!.isNotEmpty) {
-      _line(_metric('Duration', buildDuration!, color: theme.accent));
+      stdout.writeln(gutterLine(theme, metric(theme, 'Duration', buildDuration!, color: theme.accent)));
     }
     if (buildHistory != null && buildHistory!.isNotEmpty) {
-      _line(_metric('Recent', _buildHistoryLine(buildHistory!)));
+      stdout.writeln(gutterLine(theme, metric(theme, 'Recent', _buildHistoryLine(buildHistory!))));
     }
 
     // Tests
-    _section('Tests');
-    _line(_metric('Passed', '$testsPassed', color: theme.info));
-    _line(_metric('Failed', '$testsFailed', color: theme.error));
-    _line(_metric('Skipped', '$testsSkipped', color: theme.warn));
+    stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Tests')));
+    stdout.writeln(gutterLine(theme, metric(theme, 'Passed', '$testsPassed', color: theme.info)));
+    stdout.writeln(gutterLine(theme, metric(theme, 'Failed', '$testsFailed', color: theme.error)));
+    stdout.writeln(gutterLine(theme, metric(theme, 'Skipped', '$testsSkipped', color: theme.warn)));
     if (totalTests > 0) {
-      _line(_metric('Pass Rate',
+      stdout.writeln(gutterLine(theme, metric(
+          theme,
+          'Pass Rate',
           '${((testsPassed / totalTests) * 100).clamp(0, 100).round()}%',
-          color: theme.accent));
+          color: theme.accent)));
     }
     if (testDuration != null && testDuration!.isNotEmpty) {
-      _line(_metric('Duration', testDuration!, color: theme.accent));
+      stdout.writeln(gutterLine(theme, metric(theme, 'Duration', testDuration!, color: theme.accent)));
     }
 
     // Coverage
-    _section('Coverage');
-    _line(_coverageBar(width: 30));
-    _line(_metric('Percent', '${coveragePercent.toStringAsFixed(1)}%',
-        color: _coverageColor()));
+    stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Coverage')));
+    stdout.writeln(gutterLine(theme, _coverageBar(width: 30)));
+    stdout.writeln(gutterLine(theme, metric(theme, 'Percent', '${coveragePercent.toStringAsFixed(1)}%',
+        color: _coverageColor())));
     if (coverageTarget != null) {
-      _line(_metric(
+      stdout.writeln(gutterLine(theme, metric(
+          theme,
           'Quality', (coveragePercent >= coverageTarget!) ? '[PASS]' : '[FAIL]',
           color:
-              (coveragePercent >= coverageTarget!) ? theme.info : theme.error));
+              (coveragePercent >= coverageTarget!) ? theme.info : theme.error)));
     }
     if (coverageHistory != null && coverageHistory!.isNotEmpty) {
-      _line(_metric(
+      stdout.writeln(gutterLine(theme, metric(
+          theme,
           'History',
           _sparkline(coverageHistory!,
-              colorA: theme.accent, colorB: theme.highlight)));
+              colorA: theme.accent, colorB: theme.highlight))));
     }
 
     // Repository
     if ((lastCommit != null && lastCommit!.isNotEmpty) ||
         (author != null && author!.isNotEmpty) ||
         (committedAgo != null && committedAgo!.isNotEmpty)) {
-      _section('Repository');
+      stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Repository')));
       if (lastCommit != null && lastCommit!.isNotEmpty) {
-        _line(_metric('Commit', lastCommit!, color: theme.selection));
+        stdout.writeln(gutterLine(theme, metric(theme, 'Commit', lastCommit!, color: theme.selection)));
       }
       if (author != null && author!.isNotEmpty) {
-        _line(_metric('Author', author!, color: theme.highlight));
+        stdout.writeln(gutterLine(theme, metric(theme, 'Author', author!, color: theme.highlight)));
       }
       if (committedAgo != null && committedAgo!.isNotEmpty) {
-        _line(_metric('When', committedAgo!, color: theme.gray));
+        stdout.writeln(gutterLine(theme, metric(theme, 'When', committedAgo!, color: theme.gray)));
       }
     }
 
@@ -222,23 +227,7 @@ class ProjectDashboard {
     return out.toString();
   }
 
-  void _line(String content) {
-    if (content.trim().isEmpty) return;
-    final s = theme.style;
-    stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset} $content');
-  }
-
-  void _section(String name) {
-    final s = theme.style;
-    final header = '${theme.bold}${theme.accent}$name${theme.reset}';
-    stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset} $header');
-  }
-
-  String _metric(String label, String value, {String? color}) {
-    final c = color ?? '';
-    final end = color != null ? theme.reset : '';
-    return '${theme.dim}$label:${theme.reset} $c$value$end';
-  }
+  
 }
 
 /// Convenience function mirroring the requested API name.

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/rendering.dart';
 
 /// BarChartWidget – colored horizontal bar chart in the terminal.
 ///
@@ -37,7 +38,7 @@ class BarChartWidget {
     stdout.writeln('${theme.bold}$top${theme.reset}');
 
     if (items.isEmpty) {
-      _line('${theme.dim}(no data)${theme.reset}');
+      stdout.writeln(gutterLine(theme, '${theme.dim}(no data)${theme.reset}'));
       if (style.showBorder) {
         stdout.writeln(frame.bottom());
       }
@@ -61,8 +62,8 @@ class BarChartWidget {
           ? '  ${theme.selection}${_formatValue(it.value)}${theme.reset}'
           : '';
 
-      _line(
-          '${theme.bold}${theme.accent}$labelStr${theme.reset}  $bar$valueStr');
+      stdout.writeln(gutterLine(theme,
+          '${theme.bold}${theme.accent}$labelStr${theme.reset}  $bar$valueStr'));
     }
 
     if (style.showBorder) {
@@ -154,11 +155,6 @@ class BarChartWidget {
     }
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
     return v.toStringAsFixed(1);
-  }
-
-  void _line(String content) {
-    final s = theme.style;
-    stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset} $content');
   }
 
   String _palette(int index) {

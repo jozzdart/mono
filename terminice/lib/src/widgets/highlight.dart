@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/rendering.dart';
 
 /// Pretty-prints text with simple syntax and color rules.
 ///
@@ -34,7 +35,7 @@ class Highlight {
     if (color) {
       stdout.writeln('${theme.bold}$top${theme.reset}');
     } else {
-      stdout.writeln(_stripAnsi(top));
+      stdout.writeln(stripAnsi(top));
     }
 
     for (final line in text.split('\n')) {
@@ -55,7 +56,7 @@ class Highlight {
 
     if (style.showBorder) {
       final bottom = FramedLayout(label, theme: theme).bottom();
-      stdout.writeln(color ? bottom : _stripAnsi(bottom));
+      stdout.writeln(color ? bottom : stripAnsi(bottom));
     }
   }
 
@@ -279,11 +280,7 @@ String _defaultTitle(String lang) {
   }
 }
 
-String _stripAnsi(String input) {
-  // Matches ESC + [ + digits/semicolons + 'm'
-  final ansi = RegExp(r'\x1B\[[0-9;]*m');
-  return input.replaceAll(ansi, '');
-}
+ 
 
 /// Convenience function mirroring the requested API name.
 void highlight(

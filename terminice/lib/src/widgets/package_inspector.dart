@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/rendering.dart';
 
 /// PackageInspector – explore package dependencies and info.
 ///
@@ -32,26 +33,35 @@ class PackageInspector {
     final frame = FramedLayout(title, theme: theme);
     stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
-    _section('Overview');
-    _line(_metric('Package', packageName, color: theme.accent));
+    stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Overview')));
+    stdout.writeln(gutterLine(
+        theme, metric(theme, 'Package', packageName, color: theme.accent)));
     if ((sdkConstraint ?? '').trim().isNotEmpty) {
-      _line(_metric('SDK', sdkConstraint!.trim(), color: theme.highlight));
+      stdout.writeln(gutterLine(theme,
+          metric(theme, 'SDK', sdkConstraint!.trim(), color: theme.highlight)));
     }
-    _line(_metric('Dependencies', '${dependencies.length}', color: theme.info));
-    _line(
-        _metric('Dev Dependencies', '${devDependencies.length}', color: theme.gray));
+    stdout.writeln(gutterLine(
+        theme,
+        metric(theme, 'Dependencies', '${dependencies.length}',
+            color: theme.info)));
+    stdout.writeln(gutterLine(
+        theme,
+        metric(theme, 'Dev Dependencies', '${devDependencies.length}',
+            color: theme.gray)));
 
     if (dependencies.isNotEmpty) {
-      _section('Dependencies');
+      stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Dependencies')));
       for (final entry in _sorted(dependencies)) {
-        _line(_dep(entry.key, entry.value));
+        stdout.writeln(gutterLine(theme, _dep(entry.key, entry.value)));
       }
     }
 
     if (devDependencies.isNotEmpty) {
-      _section('Dev Dependencies');
+      stdout
+          .writeln(gutterLine(theme, sectionHeader(theme, 'Dev Dependencies')));
       for (final entry in _sorted(devDependencies)) {
-        _line(_dep(entry.key, entry.value, dev: true));
+        stdout.writeln(
+            gutterLine(theme, _dep(entry.key, entry.value, dev: true)));
       }
     }
 
@@ -81,24 +91,6 @@ class PackageInspector {
     if (c.startsWith('^') || c.startsWith('~')) return theme.info;
     if (RegExp(r'\d').hasMatch(c)) return theme.highlight;
     return theme.accent;
-  }
-
-  void _line(String content) {
-    if (content.trim().isEmpty) return;
-    final s = theme.style;
-    stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset} $content');
-  }
-
-  void _section(String name) {
-    final s = theme.style;
-    final header = '${theme.bold}${theme.accent}$name${theme.reset}';
-    stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset} $header');
-  }
-
-  String _metric(String label, String value, {String? color}) {
-    final c = color ?? '';
-    final end = color != null ? theme.reset : '';
-    return '${theme.dim}$label:${theme.reset} $c$value$end';
   }
 
   /// Convenience helper to parse a minimal pubspec.yaml for common fields.
@@ -162,7 +154,8 @@ class PackageInspector {
         }
 
         // Simple maps under dependencies and dev_dependencies
-        if ((currentTop == 'dependencies' || currentTop == 'dev_dependencies')) {
+        if ((currentTop == 'dependencies' ||
+            currentTop == 'dev_dependencies')) {
           if (indent > currentIndent) {
             final idx = t.indexOf(':');
             if (idx > 0) {
@@ -197,5 +190,3 @@ class PackageInspector {
     );
   }
 }
-
-

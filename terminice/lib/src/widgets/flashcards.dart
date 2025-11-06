@@ -6,6 +6,7 @@ import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/rendering.dart';
 
 /// Flashcards – spaced repetition deck in terminal.
 ///
@@ -43,8 +44,8 @@ class Flashcards {
         Terminal.clearAndHome();
         _renderHeader();
         if (current == null) {
-          _line('${theme.info}Session complete. No due cards.${theme.reset}');
-          _line(_summaryLine());
+          stdout.writeln(gutterLine(theme, '${theme.info}Session complete. No due cards.${theme.reset}'));
+          stdout.writeln(gutterLine(theme, _summaryLine()));
           if (theme.style.showBorder) {
             final frame = FramedLayout(title, theme: theme);
             stdout.writeln(frame.bottom());
@@ -61,8 +62,8 @@ class Flashcards {
             (ev.type == KeyEventType.char && ev.char == 'q')) {
           Terminal.clearAndHome();
           _renderHeader();
-          _line('${theme.warn}Session ended by user.${theme.reset}');
-          _line(_summaryLine());
+          stdout.writeln(gutterLine(theme, '${theme.warn}Session ended by user.${theme.reset}'));
+          stdout.writeln(gutterLine(theme, _summaryLine()));
           if (theme.style.showBorder) {
             final frame = FramedLayout(title, theme: theme);
             stdout.writeln(frame.bottom());
@@ -111,7 +112,7 @@ class Flashcards {
     final frame = FramedLayout(title, theme: theme);
     final top = frame.top();
     stdout.writeln('${theme.bold}$top${theme.reset}');
-    _line(_summaryLine());
+    stdout.writeln(gutterLine(theme, _summaryLine()));
   }
 
   String _summaryLine() {
@@ -133,14 +134,14 @@ class Flashcards {
     final face = flipped ? card.back : card.front;
     final label = flipped ? 'Answer' : 'Question';
     final color = flipped ? theme.accent : theme.highlight;
-    _section(label);
+    stdout.writeln(gutterLine(theme, sectionHeader(theme, label)));
     for (final line in face.split('\n')) {
-      _line('$color$line${theme.reset}');
+      stdout.writeln(gutterLine(theme, '$color$line${theme.reset}'));
     }
 
     if (!flipped && card.hint != null && card.hint!.isNotEmpty) {
-      _section('Hint');
-      _line('${theme.gray}${card.hint}${theme.reset}');
+      stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Hint')));
+      stdout.writeln(gutterLine(theme, '${theme.gray}${card.hint}${theme.reset}'));
     }
   }
 
@@ -157,7 +158,7 @@ class Flashcards {
     ];
     final s = Hints.grid(rows, theme).split('\n');
     for (final line in s) {
-      _line(line);
+      stdout.writeln(gutterLine(theme, line));
     }
     if (theme.style.showBorder) {
       final frame = FramedLayout(title, theme: theme);
@@ -196,17 +197,7 @@ class Flashcards {
     card.dueAt = DateTime.now().add(wait);
   }
 
-  void _line(String content) {
-    if (content.trim().isEmpty) return;
-    final s = theme.style;
-    stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset} $content');
-  }
 
-  void _section(String name) {
-    final s = theme.style;
-    final header = '${theme.bold}${theme.accent}$name${theme.reset}';
-    stdout.writeln('${theme.gray}${s.borderVertical}${theme.reset} $header');
-  }
 }
 
 class CardItem {
