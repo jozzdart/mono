@@ -5,7 +5,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// ChoiceMap – visual dashboard-like grid of options.
 ///
@@ -89,14 +89,6 @@ List<String> _choiceMap(
   final selected = <int>{};
   bool cancelled = false;
 
-  // Terminal
-  final term = Terminal.enterRaw();
-
-  void cleanup() {
-    term.restore();
-    stdout.write('\x1B[?25h');
-  }
-
   String pad(String text, int width) {
     if (text.length > width) {
       if (width <= 1) return text.substring(0, 1);
@@ -132,13 +124,11 @@ List<String> _choiceMap(
     return (top: top, bottom: bottom);
   }
 
-  void render() {
-    Terminal.clearAndHome();
-
-  final frame = FramedLayout(prompt, theme: theme);
-  final header = frame.top();
-  stdout.writeln(
-      style.boldPrompt ? '${theme.bold}$header${theme.reset}' : header);
+  void render(RenderOutput out) {
+    final frame = FramedLayout(prompt, theme: theme);
+    final header = frame.top();
+    out.writeln(
+        style.boldPrompt ? '${theme.bold}$header${theme.reset}' : header);
 
     final colSep = '${theme.gray}│${theme.reset}';
     for (int r = 0; r < rows; r++) {
@@ -168,8 +158,8 @@ List<String> _choiceMap(
         }
       }
 
-      stdout.writeln(line1.toString());
-      stdout.writeln(line2.toString());
+      out.writeln(line1.toString());
+      out.writeln(line2.toString());
 
       if (r != rows - 1) {
         final sepPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
@@ -177,22 +167,20 @@ List<String> _choiceMap(
           cols,
           (i) => '${theme.gray}${'─' * computedCardWidth}${theme.reset}',
         ).join('${theme.gray}┼${theme.reset}');
-        stdout.writeln('$sepPrefix$rowLine');
+        out.writeln('$sepPrefix$rowLine');
       }
     }
 
-  if (style.showBorder) {
-    stdout.writeln(frame.bottom());
-  }
+    if (style.showBorder) {
+      out.writeln(frame.bottom());
+    }
 
-    final rowsHints = <List<String>>[
+    out.writeln(Hints.grid([
       [Hints.key('↑/↓/←/→', theme), 'navigate'],
       if (multiSelect) [Hints.key('Space', theme), 'toggle selection'],
       [Hints.key('Enter', theme), 'confirm'],
       [Hints.key('Esc', theme), 'cancel'],
-    ];
-  frame.printHintsGrid(rowsHints);
-    Terminal.hideCursor();
+    ], theme));
   }
 
   int moveUp(int idx) {
@@ -226,16 +214,14 @@ List<String> _choiceMap(
   int moveLeft(int idx) => idx == 0 ? total - 1 : idx - 1;
   int moveRight(int idx) => idx == total - 1 ? 0 : idx + 1;
 
-  render();
-
-  try {
-    while (true) {
-      final ev = KeyEventReader.read();
-
-      if (ev.type == KeyEventType.enter) break;
+  final runner = PromptRunner(hideCursor: true);
+  final result = runner.run(
+    render: render,
+    onKey: (ev) {
+      if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
       if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
         cancelled = true;
-        break;
+        return PromptResult.cancelled;
       }
 
       if (multiSelect && ev.type == KeyEventType.space) {
@@ -254,16 +240,11 @@ List<String> _choiceMap(
         focused = moveRight(focused);
       }
 
-      render();
-    }
-  } finally {
-    cleanup();
-  }
+      return null;
+    },
+  );
 
-  Terminal.clearAndHome();
-  Terminal.showCursor();
-
-  if (cancelled) return [];
+  if (cancelled || result == PromptResult.cancelled) return [];
   if (multiSelect) {
     if (selected.isEmpty) selected.add(focused);
     final indices = selected.toList()..sort();

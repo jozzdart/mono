@@ -1,10 +1,8 @@
-import 'dart:io';
-
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// Star rating prompt (1–5) with theme-aware, colored stars (no emojis).
 ///
@@ -32,15 +30,6 @@ class RatingPrompt {
   int run() {
     final style = theme.style;
     int value = initial.clamp(1, maxStars);
-    bool cancelled = false;
-
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
-
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
 
     String starsLine(int current) {
       final buffer = StringBuffer();
@@ -68,60 +57,54 @@ class RatingPrompt {
       return buffer.toString();
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Title
       final frame = FramedLayout(prompt, theme: theme);
       final top = frame.top();
-      if (style.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
+      if (style.boldPrompt) out.writeln('${theme.bold}$top${theme.reset}');
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Stars line
       final stars = starsLine(value);
-      stdout
-          .writeln('${theme.gray}${style.borderVertical}${theme.reset} $stars');
+      out.writeln('${theme.gray}${style.borderVertical}${theme.reset} $stars');
 
       // Optional label beneath stars (aligned start)
       final effectiveLabels = labels;
       if (effectiveLabels != null && effectiveLabels.length >= maxStars) {
         final label = effectiveLabels[(value - 1).clamp(0, maxStars - 1)];
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}Rating:${theme.reset} ${theme.accent}$label${theme.reset}');
       } else {
         // Numeric scale and current value
         final scale = scaleLine(value);
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} $scale   ${theme.dim}(${theme.reset}${theme.accent}$value${theme.reset}${theme.dim}/$maxStars${theme.reset}${theme.dim})${theme.reset}');
       }
 
       // Bottom border
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Hints (grid layout for clarity)
-      frame.printHintsGrid([
+      out.writeln(Hints.grid([
         [Hints.key('←/→', theme), 'adjust'],
         ['1–$maxStars', 'set exact'],
         [Hints.key('Enter', theme), 'confirm'],
         [Hints.key('Esc', theme), 'cancel'],
-      ]);
+      ], theme));
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
-        if (ev.type == KeyEventType.enter) break;
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
+        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
         if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-          cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.arrowLeft) {
@@ -136,13 +119,12 @@ class RatingPrompt {
           }
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    return cancelled ? initial.clamp(1, maxStars) : value.clamp(1, maxStars);
+    return result == PromptResult.cancelled
+        ? initial.clamp(1, maxStars)
+        : value.clamp(1, maxStars);
   }
 }

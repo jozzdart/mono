@@ -1,10 +1,10 @@
-import 'dart:io';
+import 'dart:io' show stdout;
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// TutorialRunner – interactive tutorial that tracks progress.
 ///
@@ -119,19 +119,17 @@ class TutorialRunner {
       }
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Title
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       final l = layout();
 
       // Optional connector
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Progress section
@@ -139,11 +137,11 @@ class TutorialRunner {
       final total = current.length;
       final pct = total == 0 ? 0 : ((done / total) * 100).round();
       final leftPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      stdout.writeln('$leftPrefix${theme.dim}Progress${theme.reset} ${theme.accent}$done${theme.reset}/${theme.accent}$total${theme.reset} (${theme.highlight}$pct%${theme.reset})');
-      stdout.writeln('$leftPrefix${progressBar(done, total, width: 28)}');
+      out.writeln('$leftPrefix${theme.dim}Progress${theme.reset} ${theme.accent}$done${theme.reset}/${theme.accent}$total${theme.reset} (${theme.highlight}$pct%${theme.reset})');
+      out.writeln('$leftPrefix${progressBar(done, total, width: 28)}');
 
       // Underline-like connector sized to content
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderConnector}${'─' * (l.content)}${theme.reset}');
 
       // Steps list
@@ -158,51 +156,42 @@ class TutorialRunner {
         line.write(leftPrefix);
         line.write('$arrow $cb ');
         line.write(titleTxt);
-        stdout.writeln(line.toString());
+        out.writeln(line.toString());
 
         if (isFocused && s.description.trim().isNotEmpty) {
           final wrapped = wrap(s.description, l.descWidth);
           for (final w in wrapped) {
-            stdout.writeln('$leftPrefix  ${theme.dim}$w${theme.reset}');
+            out.writeln('$leftPrefix  ${theme.dim}$w${theme.reset}');
           }
         }
       }
 
       // Bottom
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Hints
-      stdout.writeln(Hints.grid([
+      out.writeln(Hints.grid([
         [Hints.key('↑/↓', theme), 'navigate'],
         [Hints.key('Space', theme), 'toggle done'],
         [Hints.key('R', theme), 'reset progress'],
         [Hints.key('Enter', theme), 'confirm'],
         [Hints.key('Esc', theme), 'cancel'],
       ], theme));
-
-      Terminal.hideCursor();
     }
 
     int moveUp(int i) => (i - 1 + current.length) % current.length;
     int moveDown(int i) => (i + 1) % current.length;
 
-    final term = Terminal.enterRaw();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    render();
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
-        if (ev.type == KeyEventType.enter) break;
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
+        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.arrowUp) {
@@ -216,13 +205,10 @@ class TutorialRunner {
           resetAll();
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
     return cancelled ? initial : current;
   }
 }

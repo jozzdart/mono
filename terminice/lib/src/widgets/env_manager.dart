@@ -3,8 +3,9 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 import 'text_prompt.dart';
 import 'confirm_prompt.dart';
 import 'search_select.dart';
@@ -71,31 +72,33 @@ class EnvManager {
     final style = theme.style;
     String currentName = name;
     var entries = getEntries();
+    _PostAction result = _PostAction.back;
+    bool needsNestedPrompt = false;
+    String? nestedPromptType;
 
-    void render() {
-      Terminal.clearAndHome();
+    void render(RenderOutput out) {
       final heading = 'Env · $currentName';
       final frame = FramedLayout(heading, theme: theme);
-      stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+      out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
       final entry = entries.firstWhere(
         (e) => e.name == currentName,
         orElse: () => _EnvEntry(currentName, ''),
       );
 
-      stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset} '
+      out.writeln('${theme.gray}${style.borderVertical}${theme.reset} '
           '${theme.dim}Name:${theme.reset} ${theme.accent}${entry.name}${theme.reset}');
       final value = entry.value.isEmpty
           ? '${theme.dim}<empty>${theme.reset}'
           : entry.value;
-      stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset} '
+      out.writeln('${theme.gray}${style.borderVertical}${theme.reset} '
           '${theme.dim}Value:${theme.reset} $value');
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.grid([
+      out.writeln(Hints.grid([
         ['Enter / e', 'edit value'],
         ['d', 'delete variable'],
         ['n', 'new variable'],
@@ -105,38 +108,70 @@ class EnvManager {
       ], theme));
     }
 
-    // Enter raw mode for action loop
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
-    render();
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
+    while (true) {
+      needsNestedPrompt = false;
+      nestedPromptType = null;
 
-        // Quit
-        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-          return _PostAction.quit;
-        }
-        if (ev.type == KeyEventType.char &&
-            (ev.char == 'q' || ev.char == 'Q')) {
-          return _PostAction.quit;
-        }
+      final runner = PromptRunner(hideCursor: true);
+      runner.run(
+        render: render,
+        onKey: (ev) {
+          // Quit
+          if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
+            result = _PostAction.quit;
+            return PromptResult.confirmed;
+          }
+          if (ev.type == KeyEventType.char &&
+              (ev.char == 'q' || ev.char == 'Q')) {
+            result = _PostAction.quit;
+            return PromptResult.confirmed;
+          }
 
-        // Back to list
-        if (ev.type == KeyEventType.char &&
-            (ev.char == 'b' || ev.char == 'B')) {
-          return _PostAction.back;
-        }
+          // Back to list
+          if (ev.type == KeyEventType.char &&
+              (ev.char == 'b' || ev.char == 'B')) {
+            result = _PostAction.back;
+            return PromptResult.confirmed;
+          }
 
-        // Reload
-        if (ev.type == KeyEventType.ctrlR) {
-          return _PostAction.reload;
-        }
+          // Reload
+          if (ev.type == KeyEventType.ctrlR) {
+            result = _PostAction.reload;
+            return PromptResult.confirmed;
+          }
 
-        // Edit (Enter or 'e')
-        if (ev.type == KeyEventType.enter ||
-            (ev.type == KeyEventType.char &&
-                (ev.char == 'e' || ev.char == 'E'))) {
+          // Edit (Enter or 'e')
+          if (ev.type == KeyEventType.enter ||
+              (ev.type == KeyEventType.char &&
+                  (ev.char == 'e' || ev.char == 'E'))) {
+            needsNestedPrompt = true;
+            nestedPromptType = 'edit';
+            return PromptResult.confirmed;
+          }
+
+          // Delete
+          if (ev.type == KeyEventType.char &&
+              (ev.char == 'd' || ev.char == 'D')) {
+            needsNestedPrompt = true;
+            nestedPromptType = 'delete';
+            return PromptResult.confirmed;
+          }
+
+          // New variable
+          if (ev.type == KeyEventType.char &&
+              (ev.char == 'n' || ev.char == 'N')) {
+            needsNestedPrompt = true;
+            nestedPromptType = 'new';
+            return PromptResult.confirmed;
+          }
+
+          return null;
+        },
+      );
+
+      // Handle nested prompts outside of the runner
+      if (needsNestedPrompt) {
+        if (nestedPromptType == 'edit') {
           final entry = entries.firstWhere(
             (e) => e.name == currentName,
             orElse: () => _EnvEntry(currentName, ''),
@@ -150,13 +185,10 @@ class EnvManager {
           if (newVal != null) {
             _setEntry(entries, entry.name, newVal);
           }
-          render();
-          continue;
+          continue; // Loop back to show actions again
         }
 
-        // Delete
-        if (ev.type == KeyEventType.char &&
-            (ev.char == 'd' || ev.char == 'D')) {
+        if (nestedPromptType == 'delete') {
           final ok = ConfirmPrompt(
             label: 'Delete Variable',
             message: 'Delete $currentName?',
@@ -169,21 +201,17 @@ class EnvManager {
             entries.removeWhere((e) => e.name == currentName);
             return _PostAction.back; // go back to list after deletion
           }
-          render();
-          continue;
+          continue; // Loop back to show actions again
         }
 
-        // New variable
-        if (ev.type == KeyEventType.char &&
-            (ev.char == 'n' || ev.char == 'N')) {
+        if (nestedPromptType == 'new') {
           await _add(entries);
-          render();
-          continue;
+          continue; // Loop back to show actions again
         }
       }
-    } finally {
-      term.restore();
-      Terminal.showCursor();
+
+      // No nested prompt - we have a final result
+      return result;
     }
   }
 

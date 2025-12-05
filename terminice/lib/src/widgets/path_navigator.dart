@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// PathNavigator – interactive directory (and optional file) navigation.
 ///
@@ -33,17 +33,11 @@ class PathNavigator {
   /// Returns a selected path, or empty string if cancelled.
   String run() {
     final style = theme.style;
-    final term = Terminal.enterRaw();
 
     Directory current = startDir;
     int selectedIndex = 0;
     int scrollOffset = 0;
-    bool cancelled = false;
-
-    void cleanup() {
-      term.restore();
-      stdout.write('\x1B[?25h');
-    }
+    String? selectedPath;
 
     List<_Entry> readEntries(Directory dir) {
       final raw = dir.listSync(followLinks: false);
@@ -83,24 +77,22 @@ class PathNavigator {
       return path.length > 60 ? '...${path.substring(path.length - 57)}' : path;
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final frame = FramedLayout(label, theme: theme);
       final title = frame.top();
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
+      out.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
       // Current path line
       final pathLine = '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Path:${theme.reset} ${shortPath(current.path)}';
-      stdout.writeln(pathLine);
+      out.writeln(pathLine);
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       final entries = readEntries(current);
       if (entries.isEmpty) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(empty)${theme.reset}');
       }
 
@@ -115,7 +107,7 @@ class PathNavigator {
       final window = entries.sublist(start, end);
 
       if (start > 0) {
-        stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
+        out.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
       for (var i = 0; i < window.length; i++) {
@@ -126,46 +118,39 @@ class PathNavigator {
         final lineText = '$prefix ${e.label}';
         final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
         if (isHighlighted && style.useInverseHighlight) {
-          stdout.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
+          out.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
         } else {
-          stdout.writeln('$framePrefix$lineText');
+          out.writeln('$framePrefix$lineText');
         }
       }
 
       if (end < entries.length) {
-        stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
+        out.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      frame.printHintsGrid([
+      out.writeln(Hints.grid([
         [Hints.key('↑/↓', theme), 'Navigate'],
         [Hints.key('→ / Enter', theme), 'Enter directory / Select'],
         [Hints.key('←', theme), 'Parent directory'],
         [Hints.key('Esc', theme), 'Cancel'],
-      ]);
-
-      Terminal.hideCursor();
+      ], theme));
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
-        if (ev.type == KeyEventType.esc) break;
-        if (ev.type == KeyEventType.ctrlC) {
-          cancelled = true;
-          break;
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
+        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
+          return PromptResult.cancelled;
         }
 
         final entries = readEntries(current);
         if (entries.isEmpty) {
-          render();
-          continue;
+          return null;
         }
 
         if (ev.type == KeyEventType.arrowUp) {
@@ -186,22 +171,15 @@ class PathNavigator {
             selectedIndex = 0;
             scrollOffset = 0;
           } else if (cur.type == _EntryType.confirmDir) {
-            // select current directory
-            final result = current.path;
-            cleanup();
-            Terminal.clearAndHome();
-            Terminal.showCursor();
-            return result;
+            selectedPath = current.path;
+            return PromptResult.confirmed;
           } else if (cur.type == _EntryType.directory) {
             current = Directory(cur.path);
             selectedIndex = 0;
             scrollOffset = 0;
           } else if (cur.type == _EntryType.file && allowFiles) {
-            final result = cur.path;
-            cleanup();
-            Terminal.clearAndHome();
-            Terminal.showCursor();
-            return result;
+            selectedPath = cur.path;
+            return PromptResult.confirmed;
           }
         }
 
@@ -212,16 +190,11 @@ class PathNavigator {
           scrollOffset = selectedIndex - maxVisible + 1;
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    Terminal.showCursor();
-    if (cancelled) return '';
-    return '';
+    return (result == PromptResult.confirmed && selectedPath != null) ? selectedPath! : '';
   }
 }
 

@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// SnippetEditor – small code editor with syntax highlighting.
 ///
@@ -39,7 +38,6 @@ class SnippetEditor {
   /// Returns an empty string when cancelled.
   String run() {
     final style = theme.style;
-    final term = Terminal.enterRaw();
 
     final lines = initialText.isEmpty ? <String>[''] : initialText.split('\n');
     int cursorLine = 0;
@@ -47,18 +45,11 @@ class SnippetEditor {
     int scrollOffset = 0;
     bool cancelled = false;
 
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Header
       final frame = FramedLayout(_titleWithLang(title), theme: theme);
       final top = frame.top();
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       // Visible viewport
       final start = scrollOffset;
@@ -81,26 +72,26 @@ class SnippetEditor {
           final afterH = _highlightLine(afterTail, lang);
           final cursorCell = '${theme.inverse}$cursorChar${theme.reset}';
 
-          stdout.writeln(
+          out.writeln(
               '${theme.gray}${style.borderVertical}${theme.reset} $prefix $beforeH$cursorCell$afterH');
         } else {
           final lang = _resolveLanguage(raw);
-          stdout.writeln(
+          out.writeln(
               '${theme.gray}${style.borderVertical}${theme.reset} $prefix ${_highlightLine(raw, lang)}');
         }
       }
 
       // Fill remaining lines
       for (var i = end; i < start + visibleLines; i++) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset}   ${theme.dim}~${theme.reset}');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         Hints.hint('↑/↓', 'line', theme),
         Hints.hint('←/→', 'move', theme),
         Hints.hint('Tab', 'indent', theme),
@@ -108,25 +99,23 @@ class SnippetEditor {
         Hints.hint('Ctrl+D', 'confirm', theme),
         Hints.hint('Esc', 'cancel', theme),
       ], theme));
-
-      Terminal.hideCursor();
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         // Cancel
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         // Confirm
         if (ev.type == KeyEventType.ctrlD) {
-          if (allowEmpty || lines.any((l) => l.trim().isNotEmpty)) break;
+          if (allowEmpty || lines.any((l) => l.trim().isNotEmpty)) {
+            return PromptResult.confirmed;
+          }
         }
 
         // Typing
@@ -210,13 +199,10 @@ class SnippetEditor {
           scrollOffset = cursorLine - visibleLines + 1;
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
     if (cancelled) return '';
     return lines.join('\n');
   }

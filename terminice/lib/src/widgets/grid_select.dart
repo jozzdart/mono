@@ -2,10 +2,10 @@ import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// 2D grid selection with arrow-key navigation.
 ///
@@ -87,14 +87,6 @@ List<String> _gridSelect(
   final selectedSet = <int>{};
   bool cancelled = false;
 
-  // Terminal setup
-  final term = Terminal.enterRaw();
-
-  void cleanup() {
-    term.restore();
-    stdout.write('\x1B[?25h');
-  }
-
   String renderCell(String label,
       {required bool highlighted, required bool checked}) {
     // ASCII-only checkbox to avoid emoji/unicode shapes
@@ -116,12 +108,10 @@ List<String> _gridSelect(
     return padded;
   }
 
-  void render() {
-    Terminal.clearAndHome();
-
+  void render(RenderOutput out) {
     final frame = FramedLayout(prompt, theme: theme);
     final top = frame.top();
-    if (style.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
+    if (style.boldPrompt) out.writeln('${theme.bold}$top${theme.reset}');
 
     for (int r = 0; r < rows; r++) {
       final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
@@ -139,7 +129,7 @@ List<String> _gridSelect(
         }
         if (c != cols - 1) buffer.write(colSep);
       }
-      stdout.writeln(buffer.toString());
+      out.writeln(buffer.toString());
 
       // Row separator (snap-to-grid line) except after last row
       if (r != rows - 1) {
@@ -148,22 +138,20 @@ List<String> _gridSelect(
           cols,
           (i) => '${theme.gray}${'─' * computedCellWidth}${theme.reset}',
         ).join('${theme.gray}┼${theme.reset}');
-        stdout.writeln('$sepPrefix$rowLine');
+        out.writeln('$sepPrefix$rowLine');
       }
     }
 
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
 
-    final rowsHints = <List<String>>[
+    out.writeln(Hints.grid([
       [Hints.key('↑/↓/←/→', theme), 'navigate'],
       if (multiSelect) [Hints.key('Space', theme), 'toggle selection'],
       [Hints.key('Enter', theme), 'confirm'],
       [Hints.key('Esc', theme), 'cancel'],
-    ];
-    frame.printHintsGrid(rowsHints);
-    Terminal.hideCursor();
+    ], theme));
   }
 
   int moveUp(int idx) {
@@ -198,16 +186,14 @@ List<String> _gridSelect(
     return idx + 1;
   }
 
-  render();
-
-  try {
-    while (true) {
-      final ev = KeyEventReader.read();
-
-      if (ev.type == KeyEventType.enter) break;
+  final runner = PromptRunner(hideCursor: true);
+  final result = runner.run(
+    render: render,
+    onKey: (ev) {
+      if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
       if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
         cancelled = true;
-        break;
+        return PromptResult.cancelled;
       }
 
       if (multiSelect && ev.type == KeyEventType.space) {
@@ -226,16 +212,11 @@ List<String> _gridSelect(
         selected = moveRight(selected);
       }
 
-      render();
-    }
-  } finally {
-    cleanup();
-  }
+      return null;
+    },
+  );
 
-  Terminal.clearAndHome();
-  Terminal.showCursor();
-
-  if (cancelled) return [];
+  if (cancelled || result == PromptResult.cancelled) return [];
 
   if (multiSelect) {
     if (selectedSet.isEmpty) selectedSet.add(selected);

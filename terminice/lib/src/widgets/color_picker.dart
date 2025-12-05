@@ -6,7 +6,7 @@ import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
-// no import for TextPrompt; hex input handled synchronously
+import '../system/prompt_runner.dart';
 
 /// Interactive color picker with ANSI preview and hex output.
 ///
@@ -67,77 +67,65 @@ class ColorPickerPrompt {
       _setFromHex(initialHex!);
     }
 
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
-
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    void render() {
-      Terminal.clearAndHome();
-      _renderTitle();
-      _renderSubtitle();
+    void render(RenderOutput out) {
+      _renderTitle(out);
+      _renderSubtitle(out);
       if (_style.showBorder) {
         final frame = FramedLayout(label, theme: theme);
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
-      _renderCaretLine();
-      _renderGrid();
-      _renderPresets();
-      _renderSwatchAndHex();
+      _renderCaretLine(out);
+      _renderGrid(out);
+      _renderPresets(out);
+      _renderSwatchAndHex(out);
       if (_style.showBorder) {
         final frame = FramedLayout(label, theme: theme);
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
-      _renderHints();
+      _renderHints(out);
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-        if (ev.type == KeyEventType.enter) break;
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
+        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
         if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
           _cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
         _handleKey(ev);
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    Terminal.showCursor();
-    return _cancelled ? null : _selectedHex();
+    return (_cancelled || result == PromptResult.cancelled)
+        ? null
+        : _selectedHex();
   }
 
   // ───────── Rendering ─────────
-  void _renderTitle() {
+  void _renderTitle(RenderOutput out) {
     final frame = FramedLayout(label, theme: theme);
     final top = frame.top();
-    if (_style.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
+    if (_style.boldPrompt) out.writeln('${theme.bold}$top${theme.reset}');
   }
 
-  void _renderSubtitle() {
+  void _renderSubtitle(RenderOutput out) {
     final subtitle =
         '${theme.gray}${_style.borderVertical}${theme.reset} ${theme.accent}Pick visually. ${theme.reset}${theme.dim}(←/→ hue, ↑/↓ brightness, S saturation)${theme.reset}';
-    stdout.writeln(subtitle);
+    out.writeln(subtitle);
   }
 
-  void _renderCaretLine() {
+  void _renderCaretLine(RenderOutput out) {
     final caretColumn = _selX * 2;
     final prefix = '${theme.gray}${_style.borderVertical}${theme.reset} ';
     final caretPad = ' ' * caretColumn;
     final caretLine = '$prefix$caretPad${theme.selection}^^${theme.reset}';
-    stdout.writeln(caretLine);
+    out.writeln(caretLine);
   }
 
-  void _renderGrid() {
+  void _renderGrid(RenderOutput out) {
     for (int y = 0; y < rows; y++) {
       final line = StringBuffer();
       line.write('${theme.gray}${_style.borderVertical}${theme.reset} ');
@@ -150,11 +138,11 @@ class ColorPickerPrompt {
           ..write(isSel ? '${theme.inverse}  ${theme.reset}' : '  ')
           ..write(theme.reset);
       }
-      stdout.writeln(line.toString());
+      out.writeln(line.toString());
     }
   }
 
-  void _renderPresets() {
+  void _renderPresets(RenderOutput out) {
     final presetsLine = StringBuffer();
     presetsLine.write('${theme.gray}${_style.borderVertical}${theme.reset} ');
     for (int i = 0; i < _presets.length; i++) {
@@ -169,19 +157,19 @@ class ColorPickerPrompt {
         ..write(' $labelText ')
         ..write(theme.reset);
     }
-    stdout.writeln(presetsLine.toString());
+    out.writeln(presetsLine.toString());
   }
 
-  void _renderSwatchAndHex() {
+  void _renderSwatchAndHex(RenderOutput out) {
     final hex = _selectedHex();
     final rgb = _hexToRgb(hex);
     final swatch = '${_bg(rgb[0], rgb[1], rgb[2])}      ${theme.reset}';
-    stdout.writeln(
+    out.writeln(
         '${theme.gray}${_style.borderVertical}${theme.reset} $swatch ${theme.accent}$hex${theme.reset}');
   }
 
-  void _renderHints() {
-    stdout.writeln(Hints.grid([
+  void _renderHints(RenderOutput out) {
+    out.writeln(Hints.grid([
       ['←/→', 'hue'],
       ['↑/↓', 'brightness'],
       ['[ / ]', 'sat − / +'],

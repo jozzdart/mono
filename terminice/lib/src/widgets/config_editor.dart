@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// ConfigEditor – lightweight YAML/JSON editor with color syntax.
 ///
@@ -56,7 +55,6 @@ class ConfigEditor {
   /// Returns empty string if cancelled.
   String run() {
     final style = theme.style;
-    final state = Terminal.enterRaw();
 
     final lines = initialText.isEmpty
         ? <String>['']
@@ -65,11 +63,6 @@ class ConfigEditor {
     int cursorColumn = 0;
     int scrollOffset = 0;
     bool cancelled = false;
-
-    void cleanup() {
-      state.restore();
-      Terminal.showCursor();
-    }
 
     String resolveLang() {
       if (language != 'auto') return language;
@@ -83,14 +76,12 @@ class ConfigEditor {
       return 'yaml';
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final lang = resolveLang();
       final header = '$title · ${lang.toUpperCase()}';
       final frame = FramedLayout(header, theme: theme);
       final topLine = frame.top();
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$topLine${theme.reset}' : topLine);
+      out.writeln(style.boldPrompt ? '${theme.bold}$topLine${theme.reset}' : topLine);
 
       final start = scrollOffset;
       final end = min(scrollOffset + visibleLines, lines.length);
@@ -107,25 +98,25 @@ class ConfigEditor {
           final cursorChar = after.isEmpty ? ' ' : after[0];
           final beforeH = _highlight(before, lang);
           final afterH = after.isEmpty ? '' : _highlight(after.substring(1), lang);
-          stdout.writeln(
+          out.writeln(
               '${theme.gray}${style.borderVertical}${theme.reset} $prefix $beforeH${theme.inverse}$cursorChar${theme.reset}$afterH');
         } else {
-          stdout.writeln(
+          out.writeln(
               '${theme.gray}${style.borderVertical}${theme.reset} $prefix ${_highlight(raw, lang)}');
         }
       }
 
       // Fill remaining viewport lines
       for (var i = end; i < start + visibleLines; i++) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset}   ${theme.dim}~${theme.reset}');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         Hints.hint('↑/↓', 'line', theme),
         Hints.hint('←/→', 'move', theme),
         Hints.hint('Tab', 'indent', theme),
@@ -133,26 +124,24 @@ class ConfigEditor {
         Hints.hint('Ctrl+D/S', 'confirm', theme),
         Hints.hint('Esc', 'cancel', theme),
       ], theme));
-
-      Terminal.hideCursor();
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         // Cancel
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         // Confirm
         if (ev.type == KeyEventType.ctrlD ||
             (ev.type == KeyEventType.ctrlGeneric && ev.char == 's')) {
-          if (allowEmpty || lines.any((l) => l.trim().isNotEmpty)) break;
+          if (allowEmpty || lines.any((l) => l.trim().isNotEmpty)) {
+            return PromptResult.confirmed;
+          }
         }
 
         // Type
@@ -238,13 +227,10 @@ class ConfigEditor {
           scrollOffset = cursorLine - visibleLines + 1;
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
     if (cancelled) return '';
     return lines.join('\n');
   }

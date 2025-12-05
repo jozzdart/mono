@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
 import '../system/key_events.dart';
+import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 import 'markdown_viewer.dart';
 
@@ -31,7 +32,6 @@ class DocNavigator {
   /// Returns the selected Markdown file path, or null if cancelled.
   String? run() {
     final style = theme.style;
-    final term = Terminal.enterRaw();
 
     // Expanded state is tracked by absolute path
     final Map<String, bool> expanded = {root.path: true};
@@ -39,11 +39,7 @@ class DocNavigator {
     int selectedIndex = 0;
     int scrollOffset = 0;
     bool cancelled = false;
-
-    void cleanup() {
-      term.restore();
-      stdout.write('\x1B[?25h');
-    }
+    String? result;
 
     // Build the visible list based on expansion map
     List<_Entry> visible() {
@@ -132,12 +128,10 @@ class DocNavigator {
       return abs;
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final frame = FramedLayout(title, theme: theme);
       final titleLine = frame.top();
-      stdout.writeln(style.boldPrompt
+      out.writeln(style.boldPrompt
           ? '${theme.bold}$titleLine${theme.reset}'
           : titleLine);
 
@@ -146,13 +140,13 @@ class DocNavigator {
       final relSel = relPath(currentSel);
 
       // Root line and selection line
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Root:${theme.reset} ${_shortPath(root.path)}');
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Selected:${theme.reset} ${relSel.isEmpty ? '.' : relSel}');
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Keep selection within viewport
@@ -165,7 +159,7 @@ class DocNavigator {
       final window = currentList.sublist(start, end);
 
       if (start > 0) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
@@ -191,62 +185,56 @@ class DocNavigator {
         final framePrefix =
             '${theme.gray}${style.borderVertical}${theme.reset} ';
         if (isHighlighted && style.useInverseHighlight) {
-          stdout.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
+          out.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
         } else {
-          stdout.writeln('$framePrefix$lineText');
+          out.writeln('$framePrefix$lineText');
         }
       }
 
       if (end < currentList.length) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
       if (currentList.isEmpty) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(no markdown files)${theme.reset}');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Bottom controls and (optional) quick preview of first heading for files
       final sPath = selectedPath(currentList);
       final heading = _firstHeadingIfAny(sPath);
       if (heading != null && heading.isNotEmpty) {
-        stdout.writeln('${theme.dim}Preview:${theme.reset} $heading');
+        out.writeln('${theme.dim}Preview:${theme.reset} $heading');
       }
 
-      frame.printHintsGrid([
+      out.writeln(Hints.grid([
         [Hints.key('↑/↓', theme), 'Navigate'],
         [Hints.key('→ / Enter', theme), 'Expand dir / Open file'],
         [Hints.key('←', theme), 'Collapse / Parent'],
         [Hints.key('Space', theme), 'Toggle'],
         [Hints.key('Ctrl+D', theme), 'Select file'],
         [Hints.key('Esc', theme), 'Exit'],
-      ]);
-
-      Terminal.hideCursor();
+      ], theme));
     }
 
-    render();
-
-    String? result;
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
-        if (ev.type == KeyEventType.esc) break;
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
+        if (ev.type == KeyEventType.esc) return PromptResult.confirmed;
         if (ev.type == KeyEventType.ctrlC) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         final list = visible();
         if (list.isEmpty) {
-          render();
-          continue;
+          return null;
         }
         final current = list[selectedIndex.clamp(0, list.length - 1)];
 
@@ -271,7 +259,7 @@ class DocNavigator {
           // Quick select current file and exit
           if (!current.isDir) {
             result = current.path;
-            break;
+            return PromptResult.confirmed;
           }
         }
 
@@ -282,14 +270,10 @@ class DocNavigator {
           scrollOffset = selectedIndex - maxVisible + 1;
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    Terminal.showCursor();
     if (cancelled) return null;
     return result;
   }

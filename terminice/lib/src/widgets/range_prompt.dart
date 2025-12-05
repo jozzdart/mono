@@ -1,11 +1,11 @@
-import 'dart:io';
+import 'dart:io' show stdout;
 import 'dart:math' as math;
 
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// RangePrompt – select a numeric or percent range with two handles.
 ///
@@ -71,31 +71,19 @@ class RangePrompt {
   bool editingStart = true;
   bool cancelled = false;
 
-  final term = Terminal.enterRaw();
-  Terminal.hideCursor();
-
-  void cleanup() {
-    term.restore();
-    Terminal.showCursor();
-  }
-
   int valueToIndex(num v, int w) {
     final ratio = (v - min) / (max - min);
     return (ratio * w).round().clamp(0, w);
   }
 
-  // (previous tooltip helper removed; inline formatting is used for clarity)
-
   String handleGlyph(bool active) => active ? '█' : '█';
 
-  void render({bool pulse = false}) {
-    Terminal.clearAndHome();
-
+  void render(RenderOutput out) {
     // Header
     final frame = FramedLayout(label, theme: theme);
     final top = frame.top();
     final title = style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top;
-    stdout.writeln(title);
+    out.writeln(title);
 
     // Effective width (responsive to terminal columns)
     final totalCols = () {
@@ -110,8 +98,6 @@ class RangePrompt {
     // Compute positions
     final startIdx = valueToIndex(start, effWidth);
     final endIdx = valueToIndex(end, effWidth);
-
-    // (bar layout is rendered procedurally below)
 
     // Tooltip line (single centered label above the selected range)
     final border = '${theme.gray}┃${theme.reset}';
@@ -130,9 +116,9 @@ class RangePrompt {
 
     // Caret pointer to active handle (visual switch indicator)
     final activeIdx = editingStart ? startIdx : endIdx;
-    stdout.writeln(
+    out.writeln(
         '$border${' ' * (2 + activeIdx)}${theme.accent}^${theme.reset}');
-    stdout.writeln('$border${' ' * (2 + leftPad)}$rangeTxt');
+    out.writeln('$border${' ' * (2 + leftPad)}$rangeTxt');
 
     // Bar with handles
     final startHandle = handleGlyph(editingStart);
@@ -159,19 +145,19 @@ class RangePrompt {
         barLine.write('${theme.dim}·${theme.reset}');
       }
     }
-    stdout.writeln(barLine.toString());
+    out.writeln(barLine.toString());
 
     // Active handle label
-    stdout.writeln(
+    out.writeln(
         '${theme.gray}${style.borderVertical}${theme.reset} Active: ${theme.accent}${editingStart ? 'start' : 'end'}${theme.reset}');
 
     // Bottom border
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
 
     // Hints
-    stdout.writeln(Hints.bullets([
+    out.writeln(Hints.bullets([
       Hints.hint('↑/↓', 'toggle handle', theme),
       Hints.hint('Space', 'toggle handle', theme),
       Hints.hint('←/→', 'adjust', theme),
@@ -180,17 +166,14 @@ class RangePrompt {
     ], theme));
   }
 
-  // Initial draw
-  render();
-
-  try {
-    while (true) {
-      final ev = KeyEventReader.read();
-
-      if (ev.type == KeyEventType.enter) break;
+  final runner = PromptRunner(hideCursor: true);
+  final result = runner.run(
+    render: render,
+    onKey: (ev) {
+      if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
       if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
         cancelled = true;
-        break;
+        return PromptResult.cancelled;
       }
 
       // Toggle active handle
@@ -219,15 +202,12 @@ class RangePrompt {
         }
       }
 
-      // Clamp and render
+      // Clamp
       start = start.clamp(min, max);
       end = end.clamp(min, max);
-      render(pulse: true);
-    }
-  } finally {
-    cleanup();
-  }
+      return null;
+    },
+  );
 
-  Terminal.clearAndHome();
-  return cancelled ? (startInitial, endInitial) : (start, end);
+  return (cancelled || result == PromptResult.cancelled) ? (startInitial, endInitial) : (start, end);
 }

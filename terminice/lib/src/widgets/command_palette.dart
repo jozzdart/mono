@@ -5,7 +5,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// Represents a command in the palette.
 class CommandEntry {
@@ -89,9 +89,7 @@ class CommandPalette {
       }
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Responsive rows based on current terminal size
       final cols = termCols();
       final lines = termLines();
@@ -100,22 +98,22 @@ class CommandPalette {
 
       final frame = FramedLayout(label, theme: theme);
       final title = frame.top();
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
+      out.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
       // Query line
       final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      stdout.writeln(
+      out.writeln(
           '$framePrefix${theme.accent}Command:${theme.reset} $query');
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Mode and counts line
       final mode = useFuzzy ? 'Fuzzy' : 'Substring';
       final countText = 'Matches: ${ranked.length}';
       final infoLine = '$mode   $countText';
-      stdout.writeln('$framePrefix${theme.dim}$infoLine${theme.reset}');
+      out.writeln('$framePrefix${theme.dim}$infoLine${theme.reset}');
 
       // Visible window
       final end = min(scrollOffset + visibleRows, ranked.length);
@@ -123,7 +121,7 @@ class CommandPalette {
       final window = ranked.sublist(start, end);
 
       if (start > 0 && window.isNotEmpty) {
-        stdout.writeln('$framePrefix${theme.dim}...${theme.reset}');
+        out.writeln('$framePrefix${theme.dim}...${theme.reset}');
       }
 
       for (var i = 0; i < window.length; i++) {
@@ -147,26 +145,26 @@ class CommandPalette {
         final lineCore = '$prefixSel $highlightedTitle$subtitlePart';
 
         if (isHighlighted && style.useInverseHighlight) {
-          stdout.writeln('$framePrefix${theme.inverse}$lineCore${theme.reset}');
+          out.writeln('$framePrefix${theme.inverse}$lineCore${theme.reset}');
         } else {
-          stdout.writeln('$framePrefix$lineCore');
+          out.writeln('$framePrefix$lineCore');
         }
       }
 
       if (end < ranked.length && window.isNotEmpty) {
-        stdout.writeln('$framePrefix${theme.dim}...${theme.reset}');
+        out.writeln('$framePrefix${theme.dim}...${theme.reset}');
       }
 
       if (ranked.isEmpty) {
-        stdout.writeln(
+        out.writeln(
             '$framePrefix${theme.dim}(no matches)${theme.reset}');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.grid([
+      out.writeln(Hints.grid([
         [Hints.key('type', theme), 'search commands'],
         [Hints.key('↑/↓', theme), 'navigate'],
         [Hints.key('Enter', theme), 'run'],
@@ -174,28 +172,20 @@ class CommandPalette {
         [Hints.key('Ctrl+R', theme), 'toggle mode'],
         [Hints.key('Esc', theme), 'cancel'],
       ], theme));
-
-      Terminal.hideCursor();
-    }
-
-    final term = Terminal.enterRaw();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
     }
 
     // Initial
     updateRanking();
-    render();
 
     CommandEntry? result;
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
 
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.ctrlC) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.arrowUp) {
@@ -206,10 +196,10 @@ class CommandPalette {
           if (ranked.isNotEmpty) {
             result = ranked[selectedIndex].entry;
           }
-          break;
+          return PromptResult.confirmed;
         } else if (ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         } else if (ev.type == KeyEventType.backspace) {
           if (query.isNotEmpty) {
             query = query.substring(0, query.length - 1);
@@ -223,13 +213,10 @@ class CommandPalette {
           updateRanking();
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
     return cancelled ? null : result;
   }
 }
@@ -359,5 +346,3 @@ String _truncate(String text, int max) {
   if (max <= 3) return text.substring(0, max);
   return '${text.substring(0, max - 3)}...';
 }
-
-

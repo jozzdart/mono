@@ -1,10 +1,9 @@
-import 'dart:io';
 import 'package:intl/intl.dart';
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// ─────────────────────────────────────────────────────────────
 /// DatePickerPrompt – aesthetic, padded, responsive CLI calendar
@@ -39,28 +38,20 @@ class DatePickerPrompt {
 
   DateTime? run() {
     final style = theme.style;
-    final term = Terminal.enterRaw();
 
     DateTime selected = DateTime(initial.year, initial.month, initial.day);
     DateTime viewMonth = DateTime(selected.year, selected.month);
     bool cancelled = false;
 
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Frame header only contains the label
       final title = label;
       final paddedTitle = '  $title  ';
       if (style.showBorder) {
         final frame = FramedLayout(paddedTitle, theme: theme);
-        stdout.writeln(frame.top());
+        out.writeln(frame.top());
       } else {
-        stdout.writeln('${theme.accent}$paddedTitle${theme.reset}');
+        out.writeln('${theme.accent}$paddedTitle${theme.reset}');
       }
 
       // Month and year selector line
@@ -68,7 +59,7 @@ class DatePickerPrompt {
       final year = viewMonth.year.toString();
       final monthLine =
           '${theme.accent}‹${theme.reset}  ${theme.bold}$monthName $year${theme.reset}  ${theme.accent}›${theme.reset}';
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} $monthLine');
 
       // Weekdays
@@ -78,7 +69,7 @@ class DatePickerPrompt {
 
       final weekdayLine =
           weekdays.map((d) => '${theme.dim}$d${theme.reset}').join(' ');
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} $weekdayLine');
 
       // Calendar math
@@ -128,18 +119,18 @@ class DatePickerPrompt {
             day++;
           }
         }
-        stdout.writeln(buffer.toString());
+        out.writeln(buffer.toString());
         if (day > daysInMonth && week > 3) break;
       }
 
       // Bottom border
       if (style.showBorder) {
         final frame = FramedLayout(paddedTitle, theme: theme);
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Footer hints
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         Hints.hint('←/→', 'day', theme),
         Hints.hint('↑/↓', 'week', theme),
         Hints.hint('W/S', 'year', theme),
@@ -149,17 +140,15 @@ class DatePickerPrompt {
       ], theme));
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
-        if (ev.type == KeyEventType.enter) break;
+        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
 
         // Ctrl+E → today
         if (ev.type == KeyEventType.cnrlE) {
@@ -192,14 +181,11 @@ class DatePickerPrompt {
 
         // Keep view month synced
         viewMonth = DateTime(selected.year, selected.month);
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    return cancelled ? null : selected;
+    return (cancelled || result == PromptResult.cancelled) ? null : selected;
   }
 
   bool _sameDay(DateTime a, DateTime b) =>

@@ -1,9 +1,8 @@
-import 'dart:io';
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// ConfirmPrompt – elegant instant confirmation dialog (no timers or delays).
 ///
@@ -30,34 +29,24 @@ class ConfirmPrompt {
 
   bool run() {
     final style = theme.style;
-    final term = Terminal.enterRaw();
-
     bool selectedYes = defaultYes;
-    bool cancelled = false;
 
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Header
       final frame = FramedLayout(label, theme: theme);
       final top = frame.top();
-      stdout.writeln(
+      out.writeln(
         style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top,
       );
 
       // Message
-      stdout.writeln('');
-      stdout.writeln(
+      out.writeln('');
+      out.writeln(
         ' ${theme.accent}${style.arrow}${theme.reset} ${theme.bold}$message${theme.reset}',
       );
-      stdout.writeln('');
+      out.writeln('');
 
-      // Static “highlighted” buttons (no animation)
+      // Static "highlighted" buttons (no animation)
       final yes = selectedYes
           ? '${theme.inverse}${theme.accent} $yesLabel ${theme.reset}'
           : '${theme.dim}$yesLabel${theme.reset}';
@@ -66,55 +55,50 @@ class ConfirmPrompt {
           : '${theme.dim}$noLabel${theme.reset}';
 
       // Balanced layout
-      stdout.writeln('   $yes   $no\n');
+      out.writeln('   $yes   $no\n');
 
       // Optional bottom line
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Hints
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         Hints.hint('←/→', 'toggle', theme),
         Hints.hint('Enter', 'confirm', theme),
         Hints.hint('Esc', 'cancel', theme),
       ], theme));
-
-      Terminal.hideCursor();
     }
 
-    // Draw initial state
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (event) {
         // Cancel instantly
-        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-          cancelled = true;
-          break;
+        if (event.type == KeyEventType.esc ||
+            event.type == KeyEventType.ctrlC) {
+          return PromptResult.cancelled;
         }
 
         // Confirm instantly
-        if (ev.type == KeyEventType.enter) break;
+        if (event.type == KeyEventType.enter) {
+          return PromptResult.confirmed;
+        }
 
         // Toggle instantly
-        if (ev.type == KeyEventType.arrowLeft ||
-            ev.type == KeyEventType.arrowRight ||
-            ev.type == KeyEventType.arrowUp ||
-            ev.type == KeyEventType.arrowDown ||
-            ev.type == KeyEventType.space) {
+        if (event.type == KeyEventType.arrowLeft ||
+            event.type == KeyEventType.arrowRight ||
+            event.type == KeyEventType.arrowUp ||
+            event.type == KeyEventType.arrowDown ||
+            event.type == KeyEventType.space) {
           selectedYes = !selectedYes;
-          render();
         }
-      }
-    } finally {
-      cleanup();
-    }
 
-    Terminal.clearAndHome();
-    if (cancelled) return false;
+        return null; // continue loop
+      },
+    );
+
+    if (result == PromptResult.cancelled) return false;
     return selectedYes;
   }
 }

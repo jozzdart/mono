@@ -5,7 +5,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// LaunchPad – grid of big icons/buttons for actions.
 ///
@@ -58,22 +58,13 @@ class LaunchPad {
 
     // State
     int selected = 0;
-    
+    LaunchAction? result;
 
-    // Terminal setup
-    final term = Terminal.enterRaw();
-    void cleanup() {
-      term.restore();
-      stdout.write('\x1B[?25h');
-    }
-
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Title
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
-      stdout.writeln('${theme.bold}$top${theme.reset}');
+      out.writeln('${theme.bold}$top${theme.reset}');
 
       // Render row-by-row; each tile expands to the same number of lines
       for (int r = 0; r < rows; r++) {
@@ -106,7 +97,7 @@ class LaunchPad {
             if (i > 0) buf.write(colSep);
             buf.write(tiles[i][line]);
           }
-          stdout.writeln(buf.toString());
+          out.writeln(buf.toString());
         }
 
         // Connector between rows
@@ -115,23 +106,21 @@ class LaunchPad {
           connector.write('${theme.gray}${style.borderConnector}${theme.reset}');
           connector.write(
               '${theme.gray}${'─' * _rowContentWidth(tiles.length, computedCellWidth)}${theme.reset}');
-          stdout.writeln(connector.toString());
+          out.writeln(connector.toString());
         }
       }
 
       // Bottom border line
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Hints
-      final rowsHints = <List<String>>[
+      out.writeln(Hints.grid([
         [Hints.key('↑/↓/←/→', theme), 'navigate'],
         [Hints.key('Enter', theme), executeOnEnter ? 'launch' : 'select'],
         [Hints.key('Esc', theme), 'cancel'],
-      ];
-      frame.printHintsGrid(rowsHints);
-      Terminal.hideCursor();
+      ], theme));
     }
 
     int moveUp(int idx) {
@@ -166,24 +155,21 @@ class LaunchPad {
       return idx + 1;
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.enter) {
           final chosen = actions[selected];
           if (executeOnEnter && chosen.onActivate != null) {
-            // Restore UI before executing to avoid raw mode during action.
-            cleanup();
-            chosen.onActivate!.call();
-            return chosen;
+            result = chosen;
+            return PromptResult.confirmed;
           }
-          return chosen;
+          result = chosen;
+          return PromptResult.confirmed;
         }
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.arrowUp) {
@@ -196,15 +182,16 @@ class LaunchPad {
           selected = moveRight(selected);
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
+        return null;
+      },
+    );
+
+    // Execute after cleanup if needed
+    if (result != null && executeOnEnter && result!.onActivate != null) {
+      result!.onActivate!.call();
     }
 
-    Terminal.clearAndHome();
-    Terminal.showCursor();
-    return null;
+    return result;
   }
 
   int _computeColumns(int width) {
@@ -361,5 +348,3 @@ String _tileStripe(PromptTheme theme, int width, {bool subtle = false}) {
   }
   return buf.toString();
 }
-
-

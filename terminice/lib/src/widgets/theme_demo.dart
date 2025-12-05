@@ -1,11 +1,9 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import 'search_select.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// A simple interactive demo to iterate through themes
 /// and preview how they affect the prompt appearance.
@@ -32,49 +30,41 @@ class ThemeDemo {
 
     String selected = themeNames.first;
     int selectedIndex = 0;
+    bool showPromptPreview = false;
 
-    final term = Terminal.enterRaw();
-
-    void cleanup() {
-      term.restore();
-      stdout.write('\x1B[?25h');
-    }
-
-    void renderThemePreview(String name, PromptTheme theme) {
+    void renderThemePreview(RenderOutput out, String name, PromptTheme theme) {
       final style = theme.style;
-      Terminal.clearAndHome();
 
       final frame = FramedLayout('Theme Preview', theme: theme);
-      stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
-      stdout.writeln(
+      out.writeln('${theme.bold}${frame.top()}${theme.reset}');
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} Theme: ${theme.accent}$name${theme.reset}');
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} Arrow: ${theme.accent}${style.arrow}${theme.reset}');
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} Checkbox: ${theme.checkboxOn}${style.checkboxOnSymbol}${theme.reset} / ${theme.checkboxOff}${style.checkboxOffSymbol}${theme.reset}');
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} Border: ${theme.selection}${style.borderTop}${style.borderConnector}${style.borderBottom}${theme.reset}');
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} Highlight: ${theme.highlight}Highlight text${theme.reset}');
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} Inverse: ${theme.inverse} Inverted line ${theme.reset}');
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderBottom}${'─' * 25}${theme.reset}');
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         '↑↓ to browse',
         'Enter to preview prompt',
         'Esc to exit',
       ], theme, dim: true));
     }
 
-    try {
-      while (true) {
-        renderThemePreview(selected, themes[selected]!);
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: (out) => renderThemePreview(out, selected, themes[selected]!),
+      onKey: (ev) {
         // ESC
-        if (ev.type == KeyEventType.esc) {
-          break;
+        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
+          return PromptResult.cancelled;
         } else if (ev.type == KeyEventType.arrowUp) {
           selectedIndex =
               (selectedIndex - 1 + themeNames.length) % themeNames.length;
@@ -86,34 +76,34 @@ class ThemeDemo {
 
         // Enter
         else if (ev.type == KeyEventType.enter) {
-          final fruits = [
-            'apple',
-            'banana',
-            'cherry',
-            'date',
-            'fig',
-            'grape',
-            'lemon',
-            'mango',
-            'pear',
-            'plum',
-          ];
-          final prompt = SearchSelectPrompt(
-            fruits,
-            prompt: 'Previewing theme: $selected',
-            multiSelect: true,
-            theme: themes[selected]!,
-          );
-          prompt.run();
+          showPromptPreview = true;
+          return PromptResult.confirmed;
         }
 
-        // Ctrl+C
-        else if (ev.type == KeyEventType.ctrlC) {
-          break;
-        }
-      }
-    } finally {
-      cleanup();
+        return null;
+      },
+    );
+
+    if (showPromptPreview) {
+      final fruits = [
+        'apple',
+        'banana',
+        'cherry',
+        'date',
+        'fig',
+        'grape',
+        'lemon',
+        'mango',
+        'pear',
+        'plum',
+      ];
+      final prompt = SearchSelectPrompt(
+        fruits,
+        prompt: 'Previewing theme: $selected',
+        multiSelect: true,
+        theme: themes[selected]!,
+      );
+      prompt.run();
     }
   }
 }

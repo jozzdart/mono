@@ -1,10 +1,8 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// ToggleGroup – manage multiple on/off toggles with elegant keyboard flipping.
 ///
@@ -71,15 +69,13 @@ class ToggleGroup {
       return colored;
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
-      if (style.boldPrompt) stdout.writeln('${theme.bold}$top${theme.reset}');
+      if (style.boldPrompt) out.writeln('${theme.bold}$top${theme.reset}');
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       final leftPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
@@ -101,22 +97,20 @@ class ToggleGroup {
         final switchTxt = switchControl(states[i], highlighted: isFocused);
 
         final lineCore = '$arrow $paddedLabel';
-        stdout.writeln('$leftPrefix$lineCore${' ' * gap}$switchTxt');
+        out.writeln('$leftPrefix$lineCore${' ' * gap}$switchTxt');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      frame.printHintsGrid([
+      out.writeln(Hints.grid([
         [Hints.key('↑/↓', theme), 'navigate'],
         [Hints.key('←/→ / Space', theme), 'toggle'],
         [Hints.key('A', theme), 'toggle all'],
         [Hints.key('Enter', theme), 'confirm'],
         [Hints.key('Esc', theme), 'cancel'],
-      ]);
-
-      Terminal.hideCursor();
+      ], theme));
     }
 
     int moveUp(int i) => (i - 1 + items.length) % items.length;
@@ -133,21 +127,14 @@ class ToggleGroup {
       }
     }
 
-    final term = Terminal.enterRaw();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    render();
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
-        if (ev.type == KeyEventType.enter) break;
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
+        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.arrowUp) {
@@ -163,18 +150,16 @@ class ToggleGroup {
           if (ch.toLowerCase() == 'a') toggleAll();
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    final result = <String, bool>{};
-    final finalStates = cancelled ? initialStates : states;
+    final resultMap = <String, bool>{};
+    final finalStates =
+        (cancelled || result == PromptResult.cancelled) ? initialStates : states;
     for (var i = 0; i < items.length; i++) {
-      result[items[i].label] = finalStates[i];
+      resultMap[items[i].label] = finalStates[i];
     }
-    return result;
+    return resultMap;
   }
 }

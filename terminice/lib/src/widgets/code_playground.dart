@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// CodePlayground – mini REPL with input/output area.
 ///
@@ -52,7 +51,6 @@ class CodePlayground {
   /// or an empty string when cancelled.
   String run() {
     final style = theme.style;
-    final term = Terminal.enterRaw();
 
     // Input state
     final lines = <String>[''];
@@ -67,11 +65,6 @@ class CodePlayground {
     // Evaluation context persisted across runs
     final ctx = <String, dynamic>{};
 
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
     String codeText() => lines.join('\n');
 
     void pushOutput(String s) {
@@ -85,82 +78,6 @@ class CodePlayground {
 
     void clearOutput() {
       output.clear();
-    }
-
-    void render() {
-      Terminal.clearAndHome();
-
-      // Header
-      final frame = FramedLayout(title, theme: theme);
-      final top = frame.top();
-      stdout
-          .writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
-
-      // Input section title connector
-      stdout.writeln(
-          '${theme.gray}${style.borderConnector}${theme.reset} ${theme.dim}Input${theme.reset}');
-
-      // Visible input viewport
-      final start = scrollOffset;
-      final end = min(scrollOffset + inputVisibleLines, lines.length);
-      for (var i = start; i < end; i++) {
-        final raw = lines[i];
-        final isCursorLine = i == cursorLine;
-        final prefix =
-            isCursorLine ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
-
-        if (isCursorLine) {
-          final safeCol = min(cursorColumn, raw.length);
-          final before = raw.substring(0, safeCol);
-          final after = raw.substring(safeCol);
-          final cursorChar = after.isEmpty ? ' ' : after[0];
-          final afterTail = after.length > 1 ? after.substring(1) : '';
-          stdout.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $prefix $before${theme.inverse}$cursorChar${theme.reset}$afterTail');
-        } else {
-          stdout.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $prefix $raw');
-        }
-      }
-
-      // Fill remaining input lines
-      for (var i = end; i < start + inputVisibleLines; i++) {
-        stdout.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset}   ${theme.dim}~${theme.reset}');
-      }
-
-      // Output section title connector
-      stdout.writeln(
-          '${theme.gray}${style.borderConnector}${theme.reset} ${theme.dim}Output${theme.reset}');
-
-      // Render output (tail)
-      final outStart = max(0, output.length - outputVisibleLines);
-      final outSlice = output.sublist(outStart);
-      for (final line in outSlice) {
-        stdout.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset}   $line');
-      }
-      // Pad remaining rows
-      for (int i = outSlice.length; i < outputVisibleLines; i++) {
-        stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset}   ');
-      }
-
-      // Bottom border
-      if (style.showBorder) {
-        stdout.writeln(frame.bottom());
-      }
-
-      // Hints
-      stdout.writeln(Hints.grid([
-        [Hints.key('Ctrl+R', theme), 'run'],
-        [Hints.key('Ctrl+L', theme), 'clear output'],
-        [Hints.key('Enter', theme), 'new line'],
-        [Hints.key('↑/↓/←/→', theme), 'move'],
-        [Hints.key('Ctrl+D', theme), 'confirm/exit'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
-
-      Terminal.hideCursor();
     }
 
     void doRun() {
@@ -186,34 +103,102 @@ class CodePlayground {
       }
     }
 
-    render();
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
+    void render(RenderOutput out) {
+      // Header
+      final frame = FramedLayout(title, theme: theme);
+      final top = frame.top();
+      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
+      // Input section title connector
+      out.writeln(
+          '${theme.gray}${style.borderConnector}${theme.reset} ${theme.dim}Input${theme.reset}');
+
+      // Visible input viewport
+      final start = scrollOffset;
+      final end = min(scrollOffset + inputVisibleLines, lines.length);
+      for (var i = start; i < end; i++) {
+        final raw = lines[i];
+        final isCursorLine = i == cursorLine;
+        final prefix =
+            isCursorLine ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+
+        if (isCursorLine) {
+          final safeCol = min(cursorColumn, raw.length);
+          final before = raw.substring(0, safeCol);
+          final after = raw.substring(safeCol);
+          final cursorChar = after.isEmpty ? ' ' : after[0];
+          final afterTail = after.length > 1 ? after.substring(1) : '';
+          out.writeln(
+              '${theme.gray}${style.borderVertical}${theme.reset} $prefix $before${theme.inverse}$cursorChar${theme.reset}$afterTail');
+        } else {
+          out.writeln(
+              '${theme.gray}${style.borderVertical}${theme.reset} $prefix $raw');
+        }
+      }
+
+      // Fill remaining input lines
+      for (var i = end; i < start + inputVisibleLines; i++) {
+        out.writeln(
+            '${theme.gray}${style.borderVertical}${theme.reset}   ${theme.dim}~${theme.reset}');
+      }
+
+      // Output section title connector
+      out.writeln(
+          '${theme.gray}${style.borderConnector}${theme.reset} ${theme.dim}Output${theme.reset}');
+
+      // Render output (tail)
+      final outStart = max(0, output.length - outputVisibleLines);
+      final outSlice = output.sublist(outStart);
+      for (final line in outSlice) {
+        out.writeln(
+            '${theme.gray}${style.borderVertical}${theme.reset}   $line');
+      }
+      // Pad remaining rows
+      for (int i = outSlice.length; i < outputVisibleLines; i++) {
+        out.writeln('${theme.gray}${style.borderVertical}${theme.reset}   ');
+      }
+
+      // Bottom border
+      if (style.showBorder) {
+        out.writeln(frame.bottom());
+      }
+
+      // Hints
+      out.writeln(Hints.grid([
+        [Hints.key('Ctrl+R', theme), 'run'],
+        [Hints.key('Ctrl+L', theme), 'clear output'],
+        [Hints.key('Enter', theme), 'new line'],
+        [Hints.key('↑/↓/←/→', theme), 'move'],
+        [Hints.key('Ctrl+D', theme), 'confirm/exit'],
+        [Hints.key('Esc', theme), 'cancel'],
+      ], theme));
+    }
+
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         // Cancel
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         // Confirm/exit
         if (ev.type == KeyEventType.ctrlD) {
-          break;
+          return PromptResult.confirmed;
         }
 
         // Run
         if (ev.type == KeyEventType.ctrlR) {
           doRun();
-          render();
-          continue;
+          return null;
         }
 
         // Clear output (Ctrl+L)
         if (ev.type == KeyEventType.ctrlGeneric && ev.char == 'l') {
           clearOutput();
-          render();
-          continue;
+          return null;
         }
 
         // Typing
@@ -294,13 +279,10 @@ class CodePlayground {
           scrollOffset = cursorLine - inputVisibleLines + 1;
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
     if (cancelled) return '';
     return codeText();
   }

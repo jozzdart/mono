@@ -1,10 +1,8 @@
-import 'dart:io';
-
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 class TreeNode {
   final String label;
@@ -34,7 +32,6 @@ class TreeExplorer {
   /// Returns the selected node's label path (e.g., "root/child/grandchild"), or null if cancelled.
   String? run() {
     final style = theme.style;
-    final term = Terminal.enterRaw();
 
     final expanded = <TreeNode, bool>{};
     for (final r in roots) {
@@ -45,11 +42,7 @@ class TreeExplorer {
     int selectedIndex = 0;
     int scrollOffset = 0;
     bool cancelled = false;
-
-    void cleanup() {
-      term.restore();
-      stdout.write('\x1B[?25h');
-    }
+    bool confirmed = false;
 
     List<_VisibleEntry> visible() {
       final list = <_VisibleEntry>[];
@@ -100,15 +93,13 @@ class TreeExplorer {
       }
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       final list = visible();
@@ -122,7 +113,7 @@ class TreeExplorer {
       final window = list.sublist(start, end);
 
       if (start > 0) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
@@ -140,51 +131,49 @@ class TreeExplorer {
         final lineText = '$prefix $indent$branch $toggleGlyph ${e.node.label}';
         final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
         if (isHighlighted && style.useInverseHighlight) {
-          stdout.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
+          out.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
         } else {
-          stdout.writeln('$framePrefix$lineText');
+          out.writeln('$framePrefix$lineText');
         }
       }
 
       if (end < list.length) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
       if (list.isEmpty) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(empty)${theme.reset}');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.grid([
+      out.writeln(Hints.grid([
         [Hints.key('↑/↓', theme), 'Navigate'],
         [Hints.key('→ / Enter', theme), 'Expand / Select'],
         [Hints.key('←', theme), 'Collapse / Parent'],
         [Hints.key('Space', theme), 'Toggle'],
         [Hints.key('Esc', theme), 'Exit'],
       ], theme));
-
-      Terminal.hideCursor();
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
-        if (ev.type == KeyEventType.esc) break;
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
+        if (ev.type == KeyEventType.esc) {
+          return PromptResult.confirmed; // exit without selection
+        }
         if (ev.type == KeyEventType.ctrlC) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         final list = visible();
-        if (list.isEmpty) continue;
+        if (list.isEmpty) return null;
         final current = list[selectedIndex.clamp(0, list.length - 1)];
 
         if (ev.type == KeyEventType.arrowUp) {
@@ -193,7 +182,8 @@ class TreeExplorer {
           selectedIndex = (selectedIndex + 1) % list.length;
         } else if (ev.type == KeyEventType.arrowRight || ev.type == KeyEventType.enter || ev.type == KeyEventType.space) {
           if (current.node.isLeaf) {
-            break; // select leaf
+            confirmed = true;
+            return PromptResult.confirmed; // select leaf
           } else {
             if (ev.type == KeyEventType.arrowRight) {
               expand(current);
@@ -205,20 +195,15 @@ class TreeExplorer {
           collapse(current);
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
-
-    Terminal.clearAndHome();
-    Terminal.showCursor();
+        return null;
+      },
+    );
 
     if (cancelled) return null;
     final v = visible();
     if (v.isEmpty) return null;
     final selected = v[selectedIndex.clamp(0, v.length - 1)];
-    return entryToPath(selected);
+    return confirmed ? entryToPath(selected) : null;
   }
 
   void _initExpanded(TreeNode node, Map<TreeNode, bool> expanded) {
@@ -280,5 +265,3 @@ String _treeBranchGlyph(_VisibleEntry e, PromptTheme theme) {
   final branch = e.isLast ? '└' : '├';
   return '${theme.gray}$branch${theme.reset}';
 }
-
-

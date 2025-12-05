@@ -3,8 +3,8 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// CheckboxMenu – vertical multi-select checklist with live summary counter.
 ///
@@ -113,24 +113,22 @@ class CheckboxMenu {
       return '${theme.accent}$count${theme.reset}/${theme.dim}$total${theme.reset} • ${names.join('${theme.dim}, ${theme.reset}')} $more';
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Responsive rows from terminal lines: reserve around 7 for chrome/hints
       final lines = termLines();
       visibleRows = (lines - 7).clamp(5, maxVisible);
 
       final frame = FramedLayout(label, theme: theme);
       final title = frame.top();
-      stdout.writeln(
+      out.writeln(
           style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
       // Summary line
       final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      stdout.writeln(prefix + summaryLine());
+      out.writeln(prefix + summaryLine());
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Compute viewport
@@ -140,7 +138,7 @@ class CheckboxMenu {
 
       // Optional overflow indicator (top)
       if (scroll > 0 && visible.isNotEmpty) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
@@ -166,50 +164,39 @@ class CheckboxMenu {
         }
 
         if (isFocused && style.useInverseHighlight) {
-          stdout.writeln('$framePrefix${theme.inverse}$core${theme.reset}');
+          out.writeln('$framePrefix${theme.inverse}$core${theme.reset}');
         } else {
-          stdout.writeln('$framePrefix$core');
+          out.writeln('$framePrefix$core');
         }
       }
 
       // Optional overflow indicator (bottom)
       if (end < options.length && visible.isNotEmpty) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Hints (aligned grid)
-      frame.printHintsGrid([
+      out.writeln(Hints.grid([
         [Hints.key('↑/↓', theme), 'navigate'],
         [Hints.key('Space', theme), 'toggle'],
         [Hints.key('A', theme), 'select all / clear'],
         [Hints.key('Enter', theme), 'confirm'],
         [Hints.key('Esc', theme), 'cancel'],
-      ]);
-
-      Terminal.hideCursor();
+      ], theme));
     }
 
-    final term = Terminal.enterRaw();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    // Initial render
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.ctrlC) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.arrowUp) {
@@ -225,19 +212,16 @@ class CheckboxMenu {
           }
         } else if (ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         } else if (ev.type == KeyEventType.enter) {
-          break;
+          return PromptResult.confirmed;
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    if (cancelled) return <String>[];
+    if (cancelled || result == PromptResult.cancelled) return <String>[];
     if (selected.isEmpty) selected.add(focused);
     final out = selected.toList()..sort();
     return out.map((i) => options[i]).toList(growable: false);

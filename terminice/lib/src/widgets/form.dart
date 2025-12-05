@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'dart:math' as math;
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// Form – multi-field form builder for CLI with auto validation and Tab navigation.
 ///
@@ -64,6 +63,7 @@ class Form {
         List<String>.generate(fields.length, (i) => fields[i].initialValue);
     final errors = List<String?>.filled(fields.length, null);
     bool cancelled = false;
+    bool submitted = false;
 
     void validateField(int index) {
       final spec = fields[index];
@@ -99,19 +99,17 @@ class Form {
       return '${theme.accent}$value${theme.reset}';
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final frame = FramedLayout(title, theme: theme);
       final baseTitle = frame.top();
       final header = style.boldPrompt
           ? '${theme.bold}$baseTitle${theme.reset}'
           : baseTitle;
-      stdout.writeln(header);
+      out.writeln(header);
 
       // Optional connector line for separation
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Render each field line
@@ -127,33 +125,31 @@ class Form {
         var line = '$arrow $labelPart: $valuePart';
 
         if (isFocused && style.useInverseHighlight) {
-          stdout.writeln('$prefix${theme.inverse}$line${theme.reset}');
+          out.writeln('$prefix${theme.inverse}$line${theme.reset}');
         } else {
-          stdout.writeln('$prefix$line');
+          out.writeln('$prefix$line');
         }
 
         // Error line if invalid
         final err = errors[i];
         if (err != null && err.isNotEmpty) {
-          stdout.writeln('$prefix${theme.highlight}$err${theme.reset}');
+          out.writeln('$prefix${theme.highlight}$err${theme.reset}');
         }
       }
 
       // Bottom border
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Hints footer
-      stdout.writeln(Hints.grid([
+      out.writeln(Hints.grid([
         [Hints.key('Tab', theme), 'next field'],
         [Hints.key('↑/↓', theme), 'navigate'],
         [Hints.key('Backspace', theme), 'delete'],
         [Hints.key('Enter', theme), 'submit'],
         [Hints.key('Esc', theme), 'cancel'],
       ], theme));
-
-      Terminal.hideCursor();
     }
 
     void moveFocus(int delta) {
@@ -174,32 +170,24 @@ class Form {
       validateField(focusedIndex);
     }
 
-    // Setup terminal
-    final term = Terminal.enterRaw();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
     // Initial validation pass for placeholders/initial
     for (var i = 0; i < fields.length; i++) {
       validateField(i);
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.enter) {
           if (validateAllAndFocusFirstInvalid()) {
-            break;
+            submitted = true;
+            return PromptResult.confirmed;
           }
         } else if (ev.type == KeyEventType.tab ||
             ev.type == KeyEventType.arrowDown) {
@@ -212,14 +200,11 @@ class Form {
           appendChar(ev.char!);
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    if (cancelled) return null;
+    if (cancelled || !submitted) return null;
     final result = <String, String>{};
     for (var i = 0; i < fields.length; i++) {
       result[fields[i].name] = values[i];

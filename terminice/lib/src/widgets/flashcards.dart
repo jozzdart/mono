@@ -2,11 +2,11 @@ import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
 import '../system/rendering.dart';
+import '../system/prompt_runner.dart';
 
 /// Flashcards – spaced repetition deck in terminal.
 ///
@@ -35,46 +35,55 @@ class Flashcards {
       return;
     }
 
-    final state = Terminal.enterRaw();
-    Terminal.hideCursor();
-    try {
-      var flipped = false;
-      CardItem? current = _nextDueCard();
-      while (true) {
-        Terminal.clearAndHome();
-        _renderHeader();
+    var flipped = false;
+    CardItem? current = _nextDueCard();
+    bool userQuit = false;
+
+    void render(RenderOutput out) {
+      _renderHeader(out);
+      if (current == null) {
+        out.writeln(gutterLine(theme, '${theme.info}Session complete. No due cards.${theme.reset}'));
+        out.writeln(gutterLine(theme, _summaryLine()));
+        if (theme.style.showBorder) {
+          final frame = FramedLayout(title, theme: theme);
+          out.writeln(frame.bottom());
+        }
+        return;
+      }
+
+      if (userQuit) {
+        out.writeln(gutterLine(theme, '${theme.warn}Session ended by user.${theme.reset}'));
+        out.writeln(gutterLine(theme, _summaryLine()));
+        if (theme.style.showBorder) {
+          final frame = FramedLayout(title, theme: theme);
+          out.writeln(frame.bottom());
+        }
+        return;
+      }
+
+      _renderCard(out, current!, flipped: flipped);
+      _renderHints(out, flipped: flipped);
+    }
+
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         if (current == null) {
-          stdout.writeln(gutterLine(theme, '${theme.info}Session complete. No due cards.${theme.reset}'));
-          stdout.writeln(gutterLine(theme, _summaryLine()));
-          if (theme.style.showBorder) {
-            final frame = FramedLayout(title, theme: theme);
-            stdout.writeln(frame.bottom());
-          }
-          break;
+          return PromptResult.confirmed;
         }
 
-        _renderCard(current, flipped: flipped);
-        _renderHints(flipped: flipped);
-
-        final ev = KeyEventReader.read();
         if (ev.type == KeyEventType.esc ||
             ev.type == KeyEventType.ctrlC ||
             (ev.type == KeyEventType.char && ev.char == 'q')) {
-          Terminal.clearAndHome();
-          _renderHeader();
-          stdout.writeln(gutterLine(theme, '${theme.warn}Session ended by user.${theme.reset}'));
-          stdout.writeln(gutterLine(theme, _summaryLine()));
-          if (theme.style.showBorder) {
-            final frame = FramedLayout(title, theme: theme);
-            stdout.writeln(frame.bottom());
-          }
-          break;
+          userQuit = true;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.space ||
             (ev.type == KeyEventType.char && ev.char == 'f')) {
           flipped = !flipped;
-          continue;
+          return null;
         }
 
         if (ev.type == KeyEventType.char) {
@@ -83,15 +92,18 @@ class Flashcards {
             if (!flipped) {
               // First numeric press reveals the answer for quick flow.
               flipped = true;
-              continue;
+              return null;
             }
             final score = int.parse(ch);
-            _grade(current, score);
+            _grade(current!, score);
             totalReviews += 1;
             if (score >= 4) correctReviews += 1;
             flipped = false;
             current = _nextDueCard();
-            continue;
+            if (current == null) {
+              return PromptResult.confirmed;
+            }
+            return null;
           }
         }
 
@@ -99,20 +111,22 @@ class Flashcards {
             (ev.type == KeyEventType.char && ev.char == 'n')) {
           flipped = false;
           current = _nextDueCard(skipCurrent: current);
-          continue;
+          if (current == null) {
+            return PromptResult.confirmed;
+          }
+          return null;
         }
-      }
-    } finally {
-      Terminal.showCursor();
-      state.restore();
-    }
+
+        return null;
+      },
+    );
   }
 
-  void _renderHeader() {
+  void _renderHeader(RenderOutput out) {
     final frame = FramedLayout(title, theme: theme);
     final top = frame.top();
-    stdout.writeln('${theme.bold}$top${theme.reset}');
-    stdout.writeln(gutterLine(theme, _summaryLine()));
+    out.writeln('${theme.bold}$top${theme.reset}');
+    out.writeln(gutterLine(theme, _summaryLine()));
   }
 
   String _summaryLine() {
@@ -130,23 +144,23 @@ class Flashcards {
         '${theme.dim}Time:${theme.reset} ${mins}m ${secs}s';
   }
 
-  void _renderCard(CardItem card, {required bool flipped}) {
+  void _renderCard(RenderOutput out, CardItem card, {required bool flipped}) {
     final face = flipped ? card.back : card.front;
     final label = flipped ? 'Answer' : 'Question';
     final color = flipped ? theme.accent : theme.highlight;
-    stdout.writeln(gutterLine(theme, sectionHeader(theme, label)));
+    out.writeln(gutterLine(theme, sectionHeader(theme, label)));
     for (final line in face.split('\n')) {
-      stdout.writeln(gutterLine(theme, '$color$line${theme.reset}'));
+      out.writeln(gutterLine(theme, '$color$line${theme.reset}'));
     }
 
     if (!flipped && card.hint != null && card.hint!.isNotEmpty) {
-      stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Hint')));
-      stdout.writeln(gutterLine(theme, '${theme.gray}${card.hint}${theme.reset}'));
+      out.writeln(gutterLine(theme, sectionHeader(theme, 'Hint')));
+      out.writeln(gutterLine(theme, '${theme.gray}${card.hint}${theme.reset}'));
     }
   }
 
-  void _renderHints({required bool flipped}) {
-    stdout.writeln();
+  void _renderHints(RenderOutput out, {required bool flipped}) {
+    out.writeln('');
     final rows = <List<String>>[
       [Hints.key('Space', theme), flipped ? 'Hide answer' : 'Show answer'],
       [
@@ -158,11 +172,11 @@ class Flashcards {
     ];
     final s = Hints.grid(rows, theme).split('\n');
     for (final line in s) {
-      stdout.writeln(gutterLine(theme, line));
+      out.writeln(gutterLine(theme, line));
     }
     if (theme.style.showBorder) {
       final frame = FramedLayout(title, theme: theme);
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
   }
 

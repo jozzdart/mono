@@ -1,10 +1,10 @@
-import 'dart:io';
+import 'dart:io' show stdout;
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 import 'tag_selector.dart';
 
 /// TodoDashboard – full task board (with tags and priorities)
@@ -158,16 +158,13 @@ class TodoDashboard {
           .padRight(tagWidth);
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
-      stdout
-          .writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       final leftPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
@@ -181,10 +178,10 @@ class TodoDashboard {
       header.write('${theme.dim}Priority${theme.reset}'.padRight(l.prioWidth));
       header.write('  ');
       header.write('${theme.dim}Tags${theme.reset}'.padRight(l.tagWidth));
-      stdout.writeln(header.toString());
+      out.writeln(header.toString());
 
       // Underline-like connector sized to content
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderConnector}${'─' * (l.content)}${theme.reset}');
 
       for (var i = 0; i < current.length; i++) {
@@ -206,24 +203,21 @@ class TodoDashboard {
         line.write(prio);
         line.write('  ');
         line.write(tags);
-        stdout.writeln(line.toString());
+        out.writeln(line.toString());
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      final frame2 = frame; // reuse to print hints below
-      frame2.printHintsGrid([
+      out.writeln(Hints.grid([
         [Hints.key('↑/↓', theme), 'navigate'],
         [Hints.key('Space', theme), 'toggle done'],
         [Hints.key('←/→ or [ / ]', theme), 'priority'],
         [Hints.key('T', theme), 'edit tags'],
         [Hints.key('Enter', theme), 'confirm'],
         [Hints.key('Esc', theme), 'cancel'],
-      ]);
-
-      Terminal.hideCursor();
+      ], theme));
     }
 
     int moveUp(int i) => (i - 1 + current.length) % current.length;
@@ -250,21 +244,14 @@ class TodoDashboard {
       current[i] = current[i].copyWith(tags: selected);
     }
 
-    final term = Terminal.enterRaw();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    render();
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
-        if (ev.type == KeyEventType.enter) break;
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
+        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.arrowUp) {
@@ -284,13 +271,10 @@ class TodoDashboard {
           if (ch.toLowerCase() == 't') editTags(focused);
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    return cancelled ? initial : current;
+    return (cancelled || result == PromptResult.cancelled) ? initial : current;
   }
 }

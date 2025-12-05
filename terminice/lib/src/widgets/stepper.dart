@@ -1,10 +1,8 @@
-import 'dart:io';
-
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// StepperPrompt – interactive step-by-step wizard with progress display.
 ///
@@ -37,13 +35,6 @@ class StepperPrompt {
     int index = startIndex.clamp(0, steps.length - 1);
     bool cancelled = false;
 
-    final term = Terminal.enterRaw();
-
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
     String progressBar(int current, int total, {int width = 24}) {
       if (total <= 1) return '${theme.accent}${'█' * width}${theme.reset}';
       final ratio = current / (total - 1);
@@ -52,26 +43,24 @@ class StepperPrompt {
       return '${theme.accent}$bar${theme.reset}';
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Title
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       // Step header line
       final stepNum = '${index + 1}/${steps.length}';
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}Step${theme.reset} ${theme.accent}$stepNum${theme.reset}');
 
       // Connector line
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Progress bar
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${progressBar(index, steps.length, width: 28)}');
 
       // Steps list
@@ -83,67 +72,58 @@ class StepperPrompt {
 
         if (isCurrent) {
           final line = ' ${theme.accent}${style.arrow}${theme.reset} ${theme.inverse}${theme.accent} $label ${theme.reset}';
-          stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset}$line');
+          out.writeln('${theme.gray}${style.borderVertical}${theme.reset}$line');
         } else if (isDone) {
           final check = '${theme.checkboxOn}${style.checkboxOnSymbol}${theme.reset}';
-          stdout.writeln(
+          out.writeln(
               '${theme.gray}${style.borderVertical}${theme.reset}  $check ${theme.accent}$label${theme.reset}');
         } else {
           final box = '${theme.checkboxOff}${style.checkboxOffSymbol}${theme.reset}';
-          stdout.writeln(
+          out.writeln(
               '${theme.gray}${style.borderVertical}${theme.reset}  $box ${theme.dim}$label${theme.reset}');
         }
       }
 
       // Bottom border
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Hints
-      stdout.writeln(Hints.grid([
+      out.writeln(Hints.grid([
         [Hints.key('←', theme), 'back'],
         [Hints.key('→', theme), 'next'],
         [Hints.key('Enter', theme), index == steps.length - 1 ? 'finish' : 'next'],
         [Hints.key('Esc', theme), 'cancel'],
       ], theme));
-
-      Terminal.hideCursor();
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.arrowLeft) {
           index = (index - 1).clamp(0, steps.length - 1);
-          render();
-          continue;
+          return null;
         }
 
         if (ev.type == KeyEventType.arrowRight || ev.type == KeyEventType.enter) {
           if (index == steps.length - 1) {
-            break; // finish
+            return PromptResult.confirmed; // finish
           }
           index = (index + 1).clamp(0, steps.length - 1);
-          render();
-          continue;
+          return null;
         }
-      }
-    } finally {
-      cleanup();
-    }
 
-    Terminal.clearAndHome();
-    return cancelled ? -1 : index;
+        return null;
+      },
+    );
+
+    return (cancelled || result == PromptResult.cancelled) ? -1 : index;
   }
 }
-
-

@@ -1,12 +1,11 @@
-import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
 import '../system/highlighter.dart';
+import '../system/prompt_runner.dart';
 
 class ManualOption {
   final String flag; // e.g. "-f, --force"
@@ -211,21 +210,19 @@ class CLIManual {
       return lines;
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final cols = cols0();
       final linesCount = lines0();
 
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      stdout.writeln('$framePrefix${theme.accent}Search:${theme.reset} $query');
+      out.writeln('$framePrefix${theme.accent}Search:${theme.reset} $query');
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Fixed layout budgeting: ensure we do not exceed fixed height
@@ -241,7 +238,7 @@ class CLIManual {
 
       // Results header
       final headerText = '${theme.dim}Results (${filtered.length})${theme.reset}';
-      stdout.writeln('$framePrefix$headerText');
+      out.writeln('$framePrefix$headerText');
 
       // Result window
       final end = filtered.isEmpty ? 0 : min(listScroll + listRows, filtered.length);
@@ -255,18 +252,18 @@ class CLIManual {
         final label = _labelFor(window[i]);
         final line = '$prefix ${highlightSubstring(label, query, theme)}';
         if (isSel && style.useInverseHighlight) {
-          stdout.writeln('$framePrefix${theme.inverse}$line${theme.reset}');
+          out.writeln('$framePrefix${theme.inverse}$line${theme.reset}');
         } else {
-          stdout.writeln('$framePrefix$line');
+          out.writeln('$framePrefix$line');
         }
       }
 
       for (var pad = (window.length); pad < listRows; pad++) {
-        stdout.writeln('$framePrefix${theme.dim}·${theme.reset}');
+        out.writeln('$framePrefix${theme.dim}·${theme.reset}');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Preview header
@@ -274,12 +271,12 @@ class CLIManual {
       final previewTitle = selected == null
           ? '${theme.dim}(no selection)${theme.reset}'
           : '${theme.accent}Manual:${theme.reset} ${_labelFor(selected)}';
-      stdout.writeln('$framePrefix$previewTitle');
+      out.writeln('$framePrefix$previewTitle');
 
       // Preview content
       if (selected == null) {
         for (var i = 0; i < previewRows; i++) {
-          stdout.writeln(framePrefix);
+          out.writeln(framePrefix);
         }
       } else {
         final contentWidth = max(10, cols - 4);
@@ -288,15 +285,15 @@ class CLIManual {
         final endLine = min(startLine + previewRows, all.length);
         for (var i = startLine; i < endLine; i++) {
           final ln = truncate(all[i], contentWidth);
-          stdout.writeln('$framePrefix$ln');
+          out.writeln('$framePrefix$ln');
         }
         for (var i = endLine; i < startLine + previewRows; i++) {
-          stdout.writeln(framePrefix);
+          out.writeln(framePrefix);
         }
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Hints: crop to remaining space to preserve fixed height
@@ -315,11 +312,9 @@ class CLIManual {
         final hintLines = hintsBlock.split('\n');
         final toShow = min(remaining, hintLines.length);
         for (var i = 0; i < toShow; i++) {
-          stdout.writeln(hintLines[i]);
+          out.writeln(hintLines[i]);
         }
       }
-
-      Terminal.hideCursor();
     }
 
     void moveSelection(int delta) {
@@ -334,28 +329,22 @@ class CLIManual {
       pageScroll = 0;
     }
 
-    final term = Terminal.enterRaw();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
     updateFilter();
-    render();
 
     ManualPage? result;
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
 
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.enter) {
           if (filtered.isNotEmpty) result = filtered[selectedIndex];
-          break;
+          return PromptResult.confirmed;
         }
 
         if (ev.type == KeyEventType.arrowUp) {
@@ -376,13 +365,10 @@ class CLIManual {
           updateFilter();
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
     return cancelled ? null : result;
   }
 

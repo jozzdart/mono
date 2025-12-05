@@ -1,11 +1,9 @@
-import 'dart:io';
-import 'dart:async';
 import 'dart:math' as math;
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// A text input prompt with blinking cursor, placeholder, and validation.
 ///
@@ -39,47 +37,37 @@ class TextPrompt {
   Future<String?> run() async {
     final style = theme.style;
     final buffer = StringBuffer();
-    bool cancelled = false;
-    bool showCursor = true;
+    bool confirmed = false;
     bool valid = true;
     String? error;
+    final cursorBlink = CursorBlink();
 
-    // Terminal setup
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor(); // hide real cursor
-
-    void cleanup() {
-      term.restore();
-      stdout.write('\x1B[?25h'); // show cursor again
-    }
-
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Title
       final frame = FramedLayout(prompt, theme: theme);
       final baseTitle = frame.top();
       final title = style.boldPrompt
           ? '${theme.bold}$baseTitle${theme.reset}'
           : baseTitle;
-      stdout.writeln(title);
+      out.writeln(title);
 
       // Input line
       final text = buffer.isEmpty
           ? '${theme.dim}${placeholder ?? ''}${theme.reset}'
           : buffer.toString();
-      final cursor = showCursor ? '${theme.accent}▌${theme.reset}' : ' ';
+      final cursor =
+          cursorBlink.isVisible ? '${theme.accent}▌${theme.reset}' : ' ';
       final validatedColor = valid ? theme.accent : theme.checkboxOn;
 
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} $validatedColor$text$cursor${theme.reset}');
 
       // Error line (if invalid)
       if (error != null) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.highlight}$error${theme.reset}');
       } else {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${Hints.comma([
               'Enter to confirm',
               'Esc to cancel'
@@ -88,26 +76,17 @@ class TextPrompt {
 
       // Bottom border
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
     }
 
-    final cursorTimer = Timer.periodic(
-      const Duration(milliseconds: 500),
-      (_) {
-        showCursor = !showCursor;
-        render();
-      },
-    );
-
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    await runner.runAsync(
+      render: render,
+      cursorBlink: cursorBlink,
+      onKey: (event) {
         // ENTER → Validate & exit if valid
-        if (ev.type == KeyEventType.enter) {
+        if (event.type == KeyEventType.enter) {
           final text = buffer.toString().trim();
           if (required && text.isEmpty) {
             valid = false;
@@ -126,40 +105,37 @@ class TextPrompt {
             error = null;
           }
 
-          if (valid) break;
+          if (valid) {
+            confirmed = true;
+            return PromptResult.confirmed;
+          }
         }
 
         // ESC → Cancel
-        else if (ev.type == KeyEventType.esc) {
-          cancelled = true;
-          break;
+        else if (event.type == KeyEventType.esc) {
+          return PromptResult.cancelled;
         }
 
         // BACKSPACE
-        else if (ev.type == KeyEventType.backspace) {
+        else if (event.type == KeyEventType.backspace) {
           if (buffer.isNotEmpty) {
-            buffer.clear();
             final text = buffer.toString();
+            buffer.clear();
             buffer.write(text.substring(0, math.max(0, text.length - 1)));
           }
         }
 
         // Regular character
-        else if (ev.type == KeyEventType.char && ev.char != null) {
-          buffer.write(ev.char!);
+        else if (event.type == KeyEventType.char && event.char != null) {
+          buffer.write(event.char!);
         }
 
         valid = true;
         error = null;
-        render();
-      }
-    } finally {
-      cursorTimer.cancel();
-      cleanup();
-    }
+        return null; // continue loop
+      },
+    );
 
-    Terminal.clearAndHome();
-    Terminal.showCursor();
-    return cancelled ? null : buffer.toString().trim();
+    return confirmed ? buffer.toString().trim() : null;
   }
 }

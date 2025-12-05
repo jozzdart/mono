@@ -1,12 +1,12 @@
-import 'dart:io';
+import 'dart:io' show stdout;
 import 'dart:math';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
 import '../system/highlighter.dart';
+import '../system/prompt_runner.dart';
 
 class HelpDoc {
   final String id;
@@ -102,21 +102,19 @@ class HelpCenter {
       return '${d.title}  ${theme.dim}(${d.category})${theme.reset}';
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final cols = termCols();
 
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      stdout.writeln(
+      out.writeln(
           '$framePrefix${theme.accent}Search:${theme.reset} $query');
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Compact layout: never expand to terminal height. Use caps only.
@@ -124,11 +122,11 @@ class HelpCenter {
 
       // Results header
       final header = '${theme.dim}Results (${filtered.length})${theme.reset}';
-      stdout.writeln('$framePrefix$header');
+      out.writeln('$framePrefix$header');
 
       // Results window
       if (filtered.isEmpty) {
-        stdout.writeln('$framePrefix${theme.dim}(no matches)${theme.reset}');
+        out.writeln('$framePrefix${theme.dim}(no matches)${theme.reset}');
       } else {
         final total = filtered.length;
         // Determine if top/bottom ellipses are needed within listRows budget
@@ -149,7 +147,7 @@ class HelpCenter {
 
         int printed = 0;
         if (showTopEllipsis) {
-          stdout.writeln('$framePrefix${theme.dim}...${theme.reset}');
+          out.writeln('$framePrefix${theme.dim}...${theme.reset}');
           printed++;
         }
 
@@ -159,22 +157,22 @@ class HelpCenter {
           final label = labelFor(filtered[idx]);
           final line = '$prefix ${highlightSubstring(label, query, theme)}';
           if (isSel && style.useInverseHighlight) {
-            stdout.writeln('$framePrefix${theme.inverse}$line${theme.reset}');
+            out.writeln('$framePrefix${theme.inverse}$line${theme.reset}');
           } else {
-            stdout.writeln('$framePrefix$line');
+            out.writeln('$framePrefix$line');
           }
           printed++;
         }
 
         if (showBottomEllipsis && printed < listRows) {
-          stdout.writeln('$framePrefix${theme.dim}...${theme.reset}');
+          out.writeln('$framePrefix${theme.dim}...${theme.reset}');
           printed++;
         }
       }
 
       // Separator to preview
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       // Preview header
@@ -184,7 +182,7 @@ class HelpCenter {
       final previewTitle = selected == null
           ? '${theme.dim}(no selection)${theme.reset}'
           : '${theme.accent}Preview:${theme.reset} ${selected.title}';
-      stdout.writeln('$framePrefix$previewTitle');
+      out.writeln('$framePrefix$previewTitle');
 
       // Preview content area
       if (selected == null) {
@@ -197,17 +195,17 @@ class HelpCenter {
 
         for (var i = viewportStart; i < viewportEnd; i++) {
           final ln = rawLines[i];
-          final out = highlightSubstring(truncate(ln, contentWidth), query, theme);
-          stdout.writeln('$framePrefix$out');
+          final highlighted = highlightSubstring(truncate(ln, contentWidth), query, theme);
+          out.writeln('$framePrefix$highlighted');
         }
         // Compact: no filler beyond content
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         Hints.hint('type', 'search', theme),
         Hints.hint('↑/↓', 'results', theme),
         Hints.hint('←/→', 'scroll preview', theme),
@@ -215,8 +213,6 @@ class HelpCenter {
         Hints.hint('Enter', 'confirm', theme),
         Hints.hint('Esc', 'cancel', theme),
       ], theme));
-
-      Terminal.hideCursor();
     }
 
     void moveSelection(int delta) {
@@ -231,28 +227,22 @@ class HelpCenter {
       previewScroll = 0; // reset preview to top of new selection
     }
 
-    final term = Terminal.enterRaw();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
     updateFilter();
-    render();
 
     HelpDoc? result;
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
 
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.enter) {
           if (filtered.isNotEmpty) result = filtered[selectedIndex];
-          break;
+          return PromptResult.confirmed;
         }
 
         if (ev.type == KeyEventType.arrowUp) {
@@ -276,13 +266,10 @@ class HelpCenter {
           updateFilter();
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
     return cancelled ? null : result;
   }
 }

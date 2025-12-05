@@ -1,10 +1,9 @@
-import 'dart:io';
 import 'dart:math';
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// MultiLineInputPrompt – editable pseudo text area for multi-line input.
 ///
@@ -33,26 +32,19 @@ class MultiLineInputPrompt {
 
   String run() {
     final style = theme.style;
-    final term = Terminal.enterRaw();
 
     final lines = <String>[''];
     int cursorLine = 0;
     int cursorColumn = 0;
     int scrollOffset = 0;
     bool cancelled = false;
+    bool confirmed = false;
 
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       // Header
       final frame = FramedLayout(label, theme: theme);
       final topLine = frame.top();
-      stdout.writeln(
+      out.writeln(
           style.boldPrompt ? '${theme.bold}$topLine${theme.reset}' : topLine);
 
       // Visible text area
@@ -68,50 +60,49 @@ class MultiLineInputPrompt {
           final before = text.substring(0, cursorColumn);
           final after = text.substring(cursorColumn);
           final cursorChar = after.isEmpty ? ' ' : after[0];
-          stdout.writeln(
+          out.writeln(
               '${theme.gray}${style.borderVertical}${theme.reset} $prefix $before${theme.inverse}$cursorChar${theme.reset}${after.length > 1 ? after.substring(1) : ''}');
         } else {
-          stdout.writeln(
+          out.writeln(
               '${theme.gray}${style.borderVertical}${theme.reset} $prefix $text');
         }
       }
 
       // Fill remaining lines
       for (var i = end; i < start + visibleLines; i++) {
-        stdout.writeln(
+        out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset}   ${theme.dim}~${theme.reset}');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         Hints.hint('↑/↓', 'line', theme),
         Hints.hint('←/→', 'move', theme),
         Hints.hint('Enter', 'new line', theme),
         Hints.hint('Ctrl+D', 'confirm', theme),
         Hints.hint('Esc', 'cancel', theme),
       ], theme));
-
-      Terminal.hideCursor();
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         // Cancel
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         // Confirm with Ctrl+D
         if (ev.type == KeyEventType.ctrlD) {
-          if (allowEmpty || lines.any((l) => l.trim().isNotEmpty)) break;
+          if (allowEmpty || lines.any((l) => l.trim().isNotEmpty)) {
+            confirmed = true;
+            return PromptResult.confirmed;
+          }
         }
 
         // Typing
@@ -187,14 +178,11 @@ class MultiLineInputPrompt {
           scrollOffset = cursorLine - visibleLines + 1;
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    if (cancelled) return '';
+    if (cancelled || !confirmed) return '';
     return lines.join('\n');
   }
 }

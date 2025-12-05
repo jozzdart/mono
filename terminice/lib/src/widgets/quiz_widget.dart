@@ -1,10 +1,10 @@
-import 'dart:io';
+import 'dart:io' show stdout;
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// QuizWidget – question/answer interaction with scoring.
 ///
@@ -28,96 +28,77 @@ class QuizWidget {
   }) : assert(questions.isNotEmpty, 'Provide at least one question');
 
   QuizResult run() {
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
     int correct = 0;
     final selections = <int, int>{};
+    bool earlyExit = false;
+    int exitedAt = 0;
 
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
+    for (int qi = 0; qi < questions.length; qi++) {
+      final q = questions[qi];
+      int selected = 0;
 
-    try {
-      for (int qi = 0; qi < questions.length; qi++) {
-        final q = questions[qi];
-        int selected = 0;
-        bool submitted = false;
+      void render(RenderOutput out) {
+        final style = theme.style;
 
-        void render() {
-          final style = theme.style;
-          Terminal.clearAndHome();
+        final label = _title(qi);
+        final frame = FramedLayout(label, theme: theme);
+        out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
-          final label = _title(qi);
-          final frame = FramedLayout(label, theme: theme);
-          stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-          // Question
-          stdout.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} ${theme.bold}${q.text}${theme.reset}');
-          if (q.description != null && q.description!.trim().isNotEmpty) {
-            stdout.writeln(
-                '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}${q.description}${theme.reset}');
-          }
-
-          // Options
-          for (int i = 0; i < q.options.length; i++) {
-            final isSel = i == selected;
-            final bullet = isSel
-                ? '${theme.accent}${style.arrow}${theme.reset}'
-                : '${theme.dim}${style.arrow}${theme.reset}';
-            final label = allowNumberShortcuts
-                ? '${i + 1}. '
-                : '';
-            final optionText = '$label${q.options[i]}';
-            final line = isSel
-                ? '${theme.inverse}${theme.accent} $optionText ${theme.reset}'
-                : optionText;
-            stdout.writeln(
-                '${theme.gray}${style.borderVertical}${theme.reset} $bullet $line');
-          }
-
-          // Bottom border
-          if (style.showBorder) {
-            stdout.writeln(frame.bottom());
-          }
-
-          // Hints
-          stdout.writeln(Hints.bullets([
-            Hints.hint('↑/↓', 'navigate', theme),
-            Hints.hint('Enter', 'submit', theme),
-            if (allowNumberShortcuts) Hints.hint('1-9', 'quick select', theme),
-            Hints.hint('Esc', 'quit', theme),
-          ], theme));
+        // Question
+        out.writeln(
+            '${theme.gray}${style.borderVertical}${theme.reset} ${theme.bold}${q.text}${theme.reset}');
+        if (q.description != null && q.description!.trim().isNotEmpty) {
+          out.writeln(
+              '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}${q.description}${theme.reset}');
         }
 
-        render();
+        // Options
+        for (int i = 0; i < q.options.length; i++) {
+          final isSel = i == selected;
+          final bullet = isSel
+              ? '${theme.accent}${style.arrow}${theme.reset}'
+              : '${theme.dim}${style.arrow}${theme.reset}';
+          final label = allowNumberShortcuts
+              ? '${i + 1}. '
+              : '';
+          final optionText = '$label${q.options[i]}';
+          final line = isSel
+              ? '${theme.inverse}${theme.accent} $optionText ${theme.reset}'
+              : optionText;
+          out.writeln(
+              '${theme.gray}${style.borderVertical}${theme.reset} $bullet $line');
+        }
 
-        // Interaction loop for this question
-        while (!submitted) {
-          final ev = KeyEventReader.read();
+        // Bottom border
+        if (style.showBorder) {
+          out.writeln(frame.bottom());
+        }
 
+        // Hints
+        out.writeln(Hints.bullets([
+          Hints.hint('↑/↓', 'navigate', theme),
+          Hints.hint('Enter', 'submit', theme),
+          if (allowNumberShortcuts) Hints.hint('1-9', 'quick select', theme),
+          Hints.hint('Esc', 'quit', theme),
+        ], theme));
+      }
+
+      final runner = PromptRunner(hideCursor: true);
+      final result = runner.run(
+        render: render,
+        onKey: (ev) {
           if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-            // Early exit: summarize what we have so far
-            cleanup();
-            return QuizResult(
-              total: questions.length,
-              answered: qi,
-              correct: correct,
-              selections: selections,
-            );
+            return PromptResult.cancelled;
           }
 
           if (ev.type == KeyEventType.arrowUp) {
             selected = (selected - 1 + q.options.length) % q.options.length;
-            render();
-            continue;
+            return null;
           }
 
           if (ev.type == KeyEventType.arrowDown) {
             selected = (selected + 1) % q.options.length;
-            render();
-            continue;
+            return null;
           }
 
           if (allowNumberShortcuts && ev.type == KeyEventType.char) {
@@ -126,31 +107,44 @@ class QuizWidget {
               final idx = int.parse(ch) - 1;
               if (idx >= 0 && idx < q.options.length) {
                 selected = idx;
-                render();
-                continue;
+                return null;
               }
             }
           }
 
           if (ev.type == KeyEventType.enter) {
-            submitted = true;
+            return PromptResult.confirmed;
           }
-        }
 
-        selections[qi] = selected;
-        final isCorrect = selected == q.correctIndex;
-        if (isCorrect) correct++;
+          return null;
+        },
+      );
 
-        if (showFeedback) {
-          _renderFeedback(qi, isCorrect, q, selected);
-        }
+      if (result == PromptResult.cancelled) {
+        earlyExit = true;
+        exitedAt = qi;
+        break;
       }
-    } finally {
-      cleanup();
+
+      selections[qi] = selected;
+      final isCorrect = selected == q.correctIndex;
+      if (isCorrect) correct++;
+
+      if (showFeedback) {
+        _renderFeedback(qi, isCorrect, q, selected);
+      }
+    }
+
+    if (earlyExit) {
+      return QuizResult(
+        total: questions.length,
+        answered: exitedAt,
+        correct: correct,
+        selections: selections,
+      );
     }
 
     // Final summary
-    Terminal.clearAndHome();
     _renderSummary(correct);
 
     return QuizResult(

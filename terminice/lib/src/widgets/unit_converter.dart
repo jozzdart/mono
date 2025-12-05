@@ -3,9 +3,9 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/rendering.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// UnitConverter – quick conversion panel (cm↔in, USD↔EUR)
 ///
@@ -91,7 +91,7 @@ class UnitConverter {
   /// - T to flip sides (left/right input)
   /// - R to change converter (cm↔in, USD↔EUR)
   /// - Enter / Esc to exit
-  Future<void> run() async {
+  void run() {
     // Build converters
     final converters = <_Converter>[
       _Converter(
@@ -117,19 +117,18 @@ class UnitConverter {
     bool inputLeft = true; // which side is active input
     String buffer = _initialBuffer(mode, inputLeft);
 
-    void render() {
-      Terminal.clearAndHome();
+    void render(RenderOutput out) {
       final style = theme.style;
       final conv = converters[mode];
 
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
-      stdout.writeln('${theme.bold}$top${theme.reset}');
+      out.writeln('${theme.bold}$top${theme.reset}');
 
       // Section
-      stdout.writeln(gutterLine(theme, sectionHeader(theme, conv.name)));
+      out.writeln(gutterLine(theme, sectionHeader(theme, conv.name)));
       if (conv.details.isNotEmpty) {
-        stdout.writeln(gutterLine(theme, '${theme.gray}${conv.details}${theme.reset}'));
+        out.writeln(gutterLine(theme, '${theme.gray}${conv.details}${theme.reset}'));
       }
 
       // Compute values based on buffer and active side
@@ -145,7 +144,7 @@ class UnitConverter {
           ? '${theme.inverse}${theme.highlight}${conv.rightLabel}${theme.reset}'
           : '${theme.highlight}${conv.rightLabel}${theme.reset}';
 
-      stdout.writeln(gutterLine(theme, _equation(
+      out.writeln(gutterLine(theme, _equation(
         leftLabel: lLabel,
         leftValue: leftVal,
         rightLabel: rLabel,
@@ -154,7 +153,7 @@ class UnitConverter {
       )));
 
       // Also show reverse for clarity
-      stdout.writeln(gutterLine(theme, _equation(
+      out.writeln(gutterLine(theme, _equation(
         leftLabel: rLabel,
         leftValue: rightVal,
         rightLabel: lLabel,
@@ -163,11 +162,11 @@ class UnitConverter {
       )));
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Hints
-      stdout.writeln(Hints.grid([
+      out.writeln(Hints.grid([
         [Hints.key('type', theme), 'enter amount'],
         [Hints.key('Backspace', theme), 'delete'],
         [Hints.key('T', theme), 'flip sides'],
@@ -176,16 +175,12 @@ class UnitConverter {
       ], theme));
     }
 
-    // Terminal session
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
-    try {
-      render();
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.enter || ev.type == KeyEventType.esc) {
-          break;
+          return PromptResult.confirmed;
         }
         if (ev.type == KeyEventType.backspace) {
           if (buffer.isNotEmpty) buffer = buffer.substring(0, buffer.length - 1);
@@ -204,13 +199,9 @@ class UnitConverter {
           }
         }
 
-        render();
-      }
-    } finally {
-      term.restore();
-      Terminal.showCursor();
-      Terminal.clearAndHome();
-    }
+        return null;
+      },
+    );
   }
 
   // --- Rendering helpers -------------------------------------------------

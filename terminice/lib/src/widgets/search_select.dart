@@ -1,12 +1,11 @@
-import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/highlighter.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 class SearchSelectPrompt {
   final List<String> allOptions;
@@ -56,14 +55,6 @@ List<String> _searchSelect(
   int scrollOffset = 0;
   bool cancelled = false;
 
-  // Setup terminal
-  final term = Terminal.enterRaw();
-
-  void cleanup() {
-    term.restore();
-    stdout.write('\x1B[?25h');
-  }
-
   void updateFilter() {
     if (!searchEnabled || query.isEmpty) {
       filtered = List.from(allOptions);
@@ -76,29 +67,25 @@ List<String> _searchSelect(
     scrollOffset = 0;
   }
 
-  // highlighting handled by shared utility
-
-  void render() {
-    Terminal.clearAndHome();
-
+  void render(RenderOutput out) {
     final frame = FramedLayout(prompt, theme: theme);
     final topBorder = frame.top();
     if (style.boldPrompt) {
-      stdout.writeln('${theme.bold}$topBorder${theme.reset}');
+      out.writeln('${theme.bold}$topBorder${theme.reset}');
     } else {
-      stdout.writeln(topBorder);
+      out.writeln(topBorder);
     }
 
     if (searchEnabled) {
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Search:${theme.reset} $query');
     } else {
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(Search disabled — press / to enable)${theme.reset}');
     }
 
     if (style.showBorder) {
-      stdout.writeln(frame.connector());
+      out.writeln(frame.connector());
     }
 
     final end = min(scrollOffset + maxVisible, filtered.length);
@@ -120,19 +107,19 @@ List<String> _searchSelect(
           '$prefix $checkbox ${highlightSubstring(visible[i], query, theme, enabled: searchEnabled)}';
       final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
       if (isHighlighted && style.useInverseHighlight) {
-        stdout.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
+        out.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
       } else {
-        stdout.writeln('$framePrefix$lineText');
+        out.writeln('$framePrefix$lineText');
       }
     }
 
     if (filtered.isEmpty) {
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.gray}(no matches)${theme.reset}');
     }
 
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
 
     final hints = <String>[Hints.hint('↑/↓', 'navigate', theme)];
@@ -142,21 +129,19 @@ List<String> _searchSelect(
       Hints.hint('/', 'search', theme),
       Hints.hint('Esc', 'cancel', theme),
     ]);
-    stdout.writeln(Hints.bullets(hints, theme));
-    Terminal.hideCursor();
+    out.writeln(Hints.bullets(hints, theme));
   }
 
   updateFilter();
-  render();
 
-  try {
-    while (true) {
-      final ev = KeyEventReader.read();
-
-      if (ev.type == KeyEventType.enter) break;
+  final runner = PromptRunner(hideCursor: true);
+  final result = runner.run(
+    render: render,
+    onKey: (ev) {
+      if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
       if (ev.type == KeyEventType.ctrlC) {
         cancelled = true;
-        break;
+        return PromptResult.cancelled;
       }
 
       // Space
@@ -187,7 +172,7 @@ List<String> _searchSelect(
           selectedIndex = (selectedIndex + 1) % filtered.length;
         } else if (ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
       }
 
@@ -214,15 +199,13 @@ List<String> _searchSelect(
         scrollOffset = selectedIndex - maxVisible + 1;
       }
 
-      render();
-    }
-  } finally {
-    cleanup();
-  }
+      return null;
+    },
+  );
 
-  Terminal.clearAndHome();
-  Terminal.showCursor();
-  if (cancelled || filtered.isEmpty) return [];
+  if (cancelled || result == PromptResult.cancelled || filtered.isEmpty) {
+    return [];
+  }
 
   if (multiSelect) {
     if (selectedSet.isEmpty) selectedSet.add(filtered[selectedIndex]);

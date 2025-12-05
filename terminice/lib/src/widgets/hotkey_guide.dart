@@ -1,10 +1,8 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// HotkeyGuide – displays available shortcuts in a themed frame.
 ///
@@ -30,49 +28,42 @@ class HotkeyGuide {
     List<String>? footer,
   }) : footerHints = footer ?? const ['Esc or ? to close'];
 
-  /// Renders the guide once to stdout (no input handling).
-  void show() {
+  /// Renders the guide to a RenderOutput.
+  void _render(RenderOutput out) {
     final style = theme.style;
 
     final frame = FramedLayout(title, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final body = Hints.grid(shortcuts, theme).split('\n');
     for (final line in body) {
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} $line');
     }
 
     if (footerHints.isNotEmpty) {
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${Hints.comma(footerHints, theme)}');
     }
 
     final bottom = frame.bottom();
-    stdout.writeln(bottom);
+    out.writeln(bottom);
   }
 
   /// Displays the guide and waits for a close key: Esc, Enter, or '?'.
   void run() {
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
-    try {
-      Terminal.clearAndHome();
-      show();
-      while (true) {
-        final ev = KeyEventReader.read();
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: _render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.esc ||
             ev.type == KeyEventType.enter ||
             (ev.type == KeyEventType.char && ev.char == '?') ||
             ev.type == KeyEventType.ctrlC) {
-          break;
+          return PromptResult.confirmed;
         }
-      }
-    } finally {
-      term.restore();
-      Terminal.showCursor();
-    }
+        return null;
+      },
+    );
   }
 }
-
-

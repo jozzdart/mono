@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// Interactive CSV-like grid editor.
 ///
@@ -45,6 +44,7 @@ class TableEditor {
     int selectedCol = 0;
     bool editing = false;
     String editBuffer = '';
+    bool cancelled = false;
 
     // Ensure at least one empty row to allow editing
     if (data.isEmpty) {
@@ -55,14 +55,6 @@ class TableEditor {
 
     // Precompute helpful glyphs
     final String colSep = '${theme.gray}${style.borderVertical}${theme.reset}';
-
-    // Terminal setup
-    final term = Terminal.enterRaw();
-
-    void cleanup() {
-      term.restore();
-      stdout.write('\x1B[?25h');
-    }
 
     List<int> computeWidths() {
       final widths = List<int>.generate(columns.length, (i) => _visible(columns[i]).length);
@@ -152,12 +144,10 @@ class TableEditor {
       if (selectedRow >= data.length) selectedRow = data.length - 1;
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
-      stdout.writeln('${theme.bold}$top${theme.reset}');
+      out.writeln('${theme.bold}$top${theme.reset}');
 
       final widths = computeWidths();
 
@@ -174,13 +164,13 @@ class TableEditor {
         header.write(colText.padRight(widths[i]));
         header.write(theme.reset);
       }
-      stdout.writeln(header.toString());
+      out.writeln(header.toString());
 
       // Connector under header sized to the table content width
       final tableWidth = 2 + // left border + space
           widths.fold<int>(0, (sum, w) => sum + w) +
           (columns.length - 1) * 3; // separators ' │ '
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderConnector}${'─' * tableWidth}${theme.reset}');
 
       // Rows
@@ -203,16 +193,16 @@ class TableEditor {
           rowBuf.write(rendered);
           rowBuf.write(suffix);
         }
-        stdout.writeln(rowBuf.toString());
+        out.writeln(rowBuf.toString());
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Status line
       final status = '${theme.info}Row ${selectedRow + 1}/${data.length} · Col ${selectedCol + 1}/${columns.length}${theme.reset}';
-      stdout.writeln(status);
+      out.writeln(status);
 
       // Hints
       final rowsHints = <List<String>>[
@@ -224,26 +214,21 @@ class TableEditor {
         [Hints.key('Esc', theme), editing ? 'cancel edit' : 'cancel editor'],
         [Hints.key('Type', theme), 'start editing'],
       ];
-      stdout.writeln(Hints.grid(rowsHints, theme));
-      Terminal.hideCursor();
+      out.writeln(Hints.grid(rowsHints, theme));
     }
 
-    render();
-
-    bool cancelled = false;
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    runner.run(
+      render: render,
+      onKey: (ev) {
         if (!editing) {
           if (ev.type == KeyEventType.enter) {
             // Finish editor
-            break;
+            return PromptResult.confirmed;
           }
           if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
             cancelled = true;
-            break;
+            return PromptResult.cancelled;
           }
           if (ev.type == KeyEventType.arrowUp) {
             selectedRow = (selectedRow - 1 + data.length) % data.length;
@@ -266,7 +251,7 @@ class TableEditor {
               startEditing(overwrite: true);
             } else if (ch == 's') {
               // Save/finish
-              break;
+              return PromptResult.confirmed;
             } else {
               // Begin editing with first typed char overwriting existing content
               startEditing(overwrite: true, firstChar: ch);
@@ -312,14 +297,9 @@ class TableEditor {
         }
 
         ensureInBounds();
-        render();
-      }
-    } finally {
-      cleanup();
-    }
-
-    Terminal.clearAndHome();
-    Terminal.showCursor();
+        return null;
+      },
+    );
 
     if (cancelled) return original;
     // Commit pending edit if any when finishing

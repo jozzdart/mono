@@ -1,10 +1,9 @@
-import 'dart:io';
 import 'package:intl/intl.dart';
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// ─────────────────────────────────────────────────────────────
 /// DateFieldsPrompt – elegant multi-field date selector
@@ -29,75 +28,11 @@ class DateFieldsPrompt {
 
   DateTime? run() {
     final style = theme.style;
-    final term = Terminal.enterRaw();
     const innerPadding = 4;
 
     DateTime selected = DateTime(initial.year, initial.month, initial.day);
     int fieldIndex = 0; // 0=day, 1=month, 2=year
     bool cancelled = false;
-
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    void render() {
-      Terminal.clearAndHome();
-
-      final title = '$label — Choose Date';
-      final paddedTitle = '  $title  ';
-      if (style.showBorder) {
-        final frame = FramedLayout(paddedTitle, theme: theme);
-        stdout.writeln(frame.top());
-      } else {
-        stdout.writeln('${theme.accent}$paddedTitle${theme.reset}');
-      }
-
-      final leftPad = ' ' * innerPadding;
-      final monthName = DateFormat('MMMM').format(selected);
-
-      // Field highlighting
-      String fmt(String label, String value, bool active) {
-        if (active) {
-          return '${theme.inverse} $label: $value ${theme.reset}';
-        } else {
-          return '${theme.dim}$label:${theme.reset} $value';
-        }
-      }
-
-      // Fields
-      final fields = [
-        fmt('Day', selected.day.toString().padLeft(2), fieldIndex == 0),
-        fmt('Month', monthName, fieldIndex == 1),
-        fmt('Year', selected.year.toString(), fieldIndex == 2),
-      ];
-
-      // Layout
-      stdout.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} $leftPad${fields.join('   ')}');
-
-      // Preview
-      final formatted =
-          DateFormat('EEE, d MMM yyyy').format(selected).padLeft(10);
-      stdout.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} $leftPad${theme.gray}Preview:${theme.reset} ${theme.accent}$formatted${theme.reset}');
-
-      // Footer
-      if (style.showBorder) {
-        final frame = FramedLayout(title, theme: theme);
-        stdout.writeln(frame.bottom());
-      }
-
-      stdout.writeln(Hints.bullets([
-        Hints.hint('←/→', 'switch', theme),
-        Hints.hint('↑/↓', 'adjust', theme),
-        Hints.hint('Ctrl+E', 'today', theme),
-        Hints.hint('Enter', 'confirm', theme),
-        Hints.hint('Esc', 'cancel', theme),
-      ], theme));
-    }
-
-    render();
 
     void adjustField(int delta) {
       switch (fieldIndex) {
@@ -121,16 +56,70 @@ class DateFieldsPrompt {
       }
     }
 
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
+    void render(RenderOutput out) {
+      final title = '$label — Choose Date';
+      final paddedTitle = '  $title  ';
+      if (style.showBorder) {
+        final frame = FramedLayout(paddedTitle, theme: theme);
+        out.writeln(frame.top());
+      } else {
+        out.writeln('${theme.accent}$paddedTitle${theme.reset}');
+      }
 
+      final leftPad = ' ' * innerPadding;
+      final monthName = DateFormat('MMMM').format(selected);
+
+      // Field highlighting
+      String fmt(String label, String value, bool active) {
+        if (active) {
+          return '${theme.inverse} $label: $value ${theme.reset}';
+        } else {
+          return '${theme.dim}$label:${theme.reset} $value';
+        }
+      }
+
+      // Fields
+      final fields = [
+        fmt('Day', selected.day.toString().padLeft(2), fieldIndex == 0),
+        fmt('Month', monthName, fieldIndex == 1),
+        fmt('Year', selected.year.toString(), fieldIndex == 2),
+      ];
+
+      // Layout
+      out.writeln(
+          '${theme.gray}${style.borderVertical}${theme.reset} $leftPad${fields.join('   ')}');
+
+      // Preview
+      final formatted =
+          DateFormat('EEE, d MMM yyyy').format(selected).padLeft(10);
+      out.writeln(
+          '${theme.gray}${style.borderVertical}${theme.reset} $leftPad${theme.gray}Preview:${theme.reset} ${theme.accent}$formatted${theme.reset}');
+
+      // Footer
+      if (style.showBorder) {
+        final frame = FramedLayout(title, theme: theme);
+        out.writeln(frame.bottom());
+      }
+
+      out.writeln(Hints.bullets([
+        Hints.hint('←/→', 'switch', theme),
+        Hints.hint('↑/↓', 'adjust', theme),
+        Hints.hint('Ctrl+E', 'today', theme),
+        Hints.hint('Enter', 'confirm', theme),
+        Hints.hint('Esc', 'cancel', theme),
+      ], theme));
+    }
+
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
-        if (ev.type == KeyEventType.enter) break;
+        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
 
         if (ev.type == KeyEventType.cnrlE) {
           selected = DateTime.now();
@@ -150,13 +139,10 @@ class DateFieldsPrompt {
           adjustField(-1);
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    return cancelled ? null : selected;
+    return (cancelled || result == PromptResult.cancelled) ? null : selected;
   }
 }

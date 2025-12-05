@@ -1,10 +1,8 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// SurveyForm – interactive questionnaire builder.
 ///
@@ -246,16 +244,14 @@ class SurveyForm {
       }
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final frame = FramedLayout(title, theme: theme);
       final baseTitle = frame.top();
       final header = style.boldPrompt ? '${theme.bold}$baseTitle${theme.reset}' : baseTitle;
-      stdout.writeln(header);
+      out.writeln(header);
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       for (var i = 0; i < questions.length; i++) {
@@ -267,31 +263,29 @@ class SurveyForm {
         var line = '$arrow $label: $value';
 
         if (isFocused && style.useInverseHighlight) {
-          stdout.writeln('$prefix${theme.inverse}$line${theme.reset}');
+          out.writeln('$prefix${theme.inverse}$line${theme.reset}');
         } else {
-          stdout.writeln('$prefix$line');
+          out.writeln('$prefix$line');
         }
 
         // Error line if invalid
         final err = errors[i];
         if (err != null && err.isNotEmpty) {
-          stdout.writeln('$prefix${theme.highlight}$err${theme.reset}');
+          out.writeln('$prefix${theme.highlight}$err${theme.reset}');
         }
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.grid([
+      out.writeln(Hints.grid([
         [Hints.key('↑/↓', theme), 'navigate questions'],
         [Hints.key('←/→', theme), 'change option/rating'],
         [Hints.key('Space', theme), 'toggle (multi)'],
         [Hints.key('Enter', theme), 'next / submit'],
         [Hints.key('Esc', theme), 'cancel'],
       ], theme));
-
-      Terminal.hideCursor();
     }
 
     void moveFocus(int delta) {
@@ -366,13 +360,6 @@ class SurveyForm {
       validate(focused);
     }
 
-    // Setup terminal
-    final term = Terminal.enterRaw();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
     // Initial validation pass and cursor sync from initial values
     for (var i = 0; i < questions.length; i++) {
       final q = questions[i];
@@ -390,15 +377,13 @@ class SurveyForm {
       validate(i);
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
         if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.enter) {
@@ -406,7 +391,7 @@ class SurveyForm {
           if (focused < questions.length - 1) {
             moveFocus(1);
           } else {
-            if (validateAll()) break;
+            if (validateAll()) return PromptResult.confirmed;
           }
         } else if (ev.type == KeyEventType.arrowUp) {
           moveFocus(-1);
@@ -424,14 +409,11 @@ class SurveyForm {
           appendChar(ev.char!);
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    if (cancelled) return null;
+    if (cancelled || result == PromptResult.cancelled) return null;
     final out = <String, dynamic>{};
     for (var i = 0; i < questions.length; i++) {
       final q = questions[i];

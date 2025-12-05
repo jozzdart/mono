@@ -1,10 +1,10 @@
-import 'dart:io';
+import 'dart:io' show stdout;
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// TagSelector – choose multiple "chips" (tags) from a list.
 ///
@@ -43,14 +43,6 @@ class TagSelector {
     int focusedIndex = 0;
     final selected = <int>{};
     bool cancelled = false;
-
-    // Terminal
-    final term = Terminal.enterRaw();
-
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
 
     int terminalColumns() {
       try {
@@ -102,23 +94,21 @@ class TagSelector {
       return '${theme.dim}$padded${theme.reset}';
     }
 
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out) {
       final frame = FramedLayout(prompt, theme: theme);
       final title = frame.top();
-      stdout.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
+      out.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
       // Selected summary
       final count = selected.length;
       final summary = count == 0
           ? '${theme.dim}(none selected)${theme.reset}'
           : '${theme.accent}$count selected${theme.reset}';
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${Hints.comma(['Space to toggle', 'Enter to confirm', 'Esc to cancel'], theme)}  $summary');
 
       if (style.showBorder) {
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
       final l = layout();
@@ -131,21 +121,19 @@ class TagSelector {
             renderChip(idx, idx == focusedIndex, selected.contains(idx), l.colWidth),
           );
         }
-        stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${pieces.join(' ')}');
+        out.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${pieces.join(' ')}');
       }
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         Hints.hint('←/→/↑/↓', 'navigate', theme),
         Hints.hint('Space', 'toggle', theme),
         Hints.hint('Enter', 'confirm', theme),
         Hints.hint('Esc', 'cancel', theme),
       ], theme));
-
-      Terminal.hideCursor();
     }
 
     void moveLeft() {
@@ -190,16 +178,14 @@ class TagSelector {
       }
     }
 
-    render();
-
-    try {
-      while (true) {
-        final ev = KeyEventReader.read();
-
-        if (ev.type == KeyEventType.enter) break;
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.run(
+      render: render,
+      onKey: (ev) {
+        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
         if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
           cancelled = true;
-          break;
+          return PromptResult.cancelled;
         }
 
         if (ev.type == KeyEventType.space) {
@@ -218,16 +204,11 @@ class TagSelector {
           moveDown();
         }
 
-        render();
-      }
-    } finally {
-      cleanup();
-    }
+        return null;
+      },
+    );
 
-    Terminal.clearAndHome();
-    if (cancelled) return [];
+    if (cancelled || result == PromptResult.cancelled) return [];
     return selected.map((i) => tags[i]).toList(growable: false);
   }
 }
-
-
