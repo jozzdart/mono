@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
@@ -6,6 +5,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 
 /// ChoiceMap – visual dashboard-like grid of options.
 ///
@@ -72,7 +72,7 @@ List<String> _choiceMap(
   final int total = items.length;
   int cols = columns;
   if (cols <= 0) {
-    final termWidth = stdout.hasTerminal ? stdout.terminalColumns : 80;
+    final termWidth = TerminalInfo.columns;
     // Prefix left border + space
     const leftPrefix = 2;
     const sepWidth = 1; // vertical separator

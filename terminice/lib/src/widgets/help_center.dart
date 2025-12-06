@@ -1,4 +1,3 @@
-import 'dart:io' show stdout;
 import 'dart:math';
 
 import '../style/theme.dart';
@@ -7,6 +6,7 @@ import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/highlighter.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 
 class HelpDoc {
   final String id;
@@ -58,13 +58,6 @@ class HelpCenter {
 
     List<HelpDoc> filtered = List.from(docs);
 
-    int termCols() {
-      try {
-        if (stdout.hasTerminal) return stdout.terminalColumns;
-      } catch (_) {}
-      return 100;
-    }
-
     // Note: compact mode ignores terminal height to avoid expansion
 
     void updateFilter() {
@@ -103,7 +96,7 @@ class HelpCenter {
     }
 
     void render(RenderOutput out) {
-      final cols = termCols();
+      final cols = TerminalInfo.columns;
 
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();

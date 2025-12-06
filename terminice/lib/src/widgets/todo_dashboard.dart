@@ -1,10 +1,9 @@
-import 'dart:io' show stdout;
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 import 'tag_selector.dart';
 
 /// TodoDashboard – full task board (with tags and priorities)
@@ -71,15 +70,8 @@ class TodoDashboard {
     var current = List<TodoTask>.from(tasks);
     final initial = List<TodoTask>.from(tasks);
 
-    int terminalColumns() {
-      try {
-        if (stdout.hasTerminal) return stdout.terminalColumns;
-      } catch (_) {}
-      return 80;
-    }
-
     ({int content, int titleWidth, int tagWidth, int prioWidth}) layout() {
-      final termCols = useTerminalWidth ? terminalColumns() : 80;
+      final termCols = useTerminalWidth ? TerminalInfo.columns : 80;
       final content = (termCols - 4).clamp(48, 200);
 
       // Columns: [arrow][checkbox] [title] [priority] [tags]

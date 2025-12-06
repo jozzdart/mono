@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
@@ -6,6 +5,7 @@ import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 
 /// 2D grid selection with arrow-key navigation.
 ///
@@ -66,7 +66,7 @@ List<String> _gridSelect(
   // Compute columns responsively if not provided or <= 0
   int cols = columns;
   if (cols <= 0) {
-    final termWidth = stdout.hasTerminal ? stdout.terminalColumns : 80;
+    final termWidth = TerminalInfo.columns;
     // Left prefix is "│ " (2 chars). Separator between cells is "│" (1 char).
     const leftPrefix = 2;
     const sepWidth = 1; // between cells

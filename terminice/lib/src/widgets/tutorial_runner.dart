@@ -1,10 +1,9 @@
-import 'dart:io' show stdout;
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 
 /// TutorialRunner – interactive tutorial that tracks progress.
 ///
@@ -43,15 +42,8 @@ class TutorialRunner {
     var current = List<TutorialStep>.from(steps);
     final initial = List<TutorialStep>.from(steps);
 
-    int terminalColumns() {
-      try {
-        if (stdout.hasTerminal) return stdout.terminalColumns;
-      } catch (_) {}
-      return 80;
-    }
-
     ({int content, int titleWidth, int descWidth}) layout() {
-      final termCols = useTerminalWidth ? terminalColumns() : 80;
+      final termCols = useTerminalWidth ? TerminalInfo.columns : 80;
       final content = (termCols - 4).clamp(48, 200);
       // Columns: [arrow][checkbox] [title]
       final titleWidth = (content - 6).clamp(16, content);

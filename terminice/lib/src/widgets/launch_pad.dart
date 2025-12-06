@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math' as math;
 
 import '../style/theme.dart';
@@ -6,6 +5,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 import '../system/text_utils.dart' as text;
 
 /// LaunchPad – grid of big icons/buttons for actions.
@@ -197,7 +197,7 @@ class LaunchPad {
 
   int _computeColumns(int width) {
     if (columns > 0) return columns;
-    final termWidth = stdout.hasTerminal ? stdout.terminalColumns : 80;
+    final termWidth = TerminalInfo.columns;
     // Left gutter is "│ " (2). Separator is " │ " (3).
     const leftPrefix = 2;
     const sepWidth = 3;

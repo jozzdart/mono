@@ -1,10 +1,9 @@
-import 'dart:io' show stdout;
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 
 /// TagSelector – choose multiple "chips" (tags) from a list.
 ///
@@ -44,19 +43,12 @@ class TagSelector {
     final selected = <int>{};
     bool cancelled = false;
 
-    int terminalColumns() {
-      try {
-        if (stdout.hasTerminal) return stdout.terminalColumns;
-      } catch (_) {}
-      return 80;
-    }
-
     // Layout calculator for snapping to grid
     ({int contentWidth, int colWidth, int cols, int rows}) layout() {
       // Rough left frame prefix width: border + space
       const framePrefix = 2; // visual columns ignoring color codes
 
-      final termCols = useTerminalWidth ? terminalColumns() : 80;
+      final termCols = useTerminalWidth ? TerminalInfo.columns : 80;
       final targetContent = (maxContentWidth != null)
           ? maxContentWidth!.clamp(minContentWidth, termCols - 4)
           : (termCols - 4).clamp(minContentWidth, termCols);
@@ -70,14 +62,21 @@ class TagSelector {
       final available = targetContent - framePrefix;
       final cols = available <= 0
           ? 1
-          : (available + 1) ~/ (colWidth + 1) /* +1 for inter-column space */
-              .clamp(1, 99);
+          : (available + 1) ~/
+              (colWidth + 1) /* +1 for inter-column space */
+                  .clamp(1, 99);
 
       final rows = (tags.length / cols).ceil().clamp(1, 999);
-      return (contentWidth: targetContent, colWidth: colWidth, cols: cols, rows: rows);
+      return (
+        contentWidth: targetContent,
+        colWidth: colWidth,
+        cols: cols,
+        rows: rows
+      );
     }
 
-    String renderChip(int index, bool isFocused, bool isSelected, int colWidth) {
+    String renderChip(
+        int index, bool isFocused, bool isSelected, int colWidth) {
       final base = tags[index];
       final raw = '[ $base ]';
       final padding = (colWidth - raw.length).clamp(0, 1000);
@@ -88,7 +87,8 @@ class TagSelector {
       }
       if (isSelected) {
         // Accentuate text while preserving bracket structure
-        final colored = padded.replaceFirst(base, '${theme.accent}$base${theme.reset}');
+        final colored =
+            padded.replaceFirst(base, '${theme.accent}$base${theme.reset}');
         return colored;
       }
       return '${theme.dim}$padded${theme.reset}';
@@ -97,7 +97,8 @@ class TagSelector {
     void render(RenderOutput out) {
       final frame = FramedLayout(prompt, theme: theme);
       final title = frame.top();
-      out.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
+      out.writeln(
+          style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
       // Selected summary
       final count = selected.length;
@@ -105,7 +106,11 @@ class TagSelector {
           ? '${theme.dim}(none selected)${theme.reset}'
           : '${theme.accent}$count selected${theme.reset}';
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${Hints.comma(['Space to toggle', 'Enter to confirm', 'Esc to cancel'], theme)}  $summary');
+          '${theme.gray}${style.borderVertical}${theme.reset} ${Hints.comma([
+            'Space to toggle',
+            'Enter to confirm',
+            'Esc to cancel'
+          ], theme)}  $summary');
 
       if (style.showBorder) {
         out.writeln(frame.connector());
@@ -118,10 +123,12 @@ class TagSelector {
           final idx = r * l.cols + c;
           if (idx >= tags.length) break;
           pieces.add(
-            renderChip(idx, idx == focusedIndex, selected.contains(idx), l.colWidth),
+            renderChip(
+                idx, idx == focusedIndex, selected.contains(idx), l.colWidth),
           );
         }
-        out.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${pieces.join(' ')}');
+        out.writeln(
+            '${theme.gray}${style.borderVertical}${theme.reset} ${pieces.join(' ')}');
       }
 
       if (style.showBorder) {

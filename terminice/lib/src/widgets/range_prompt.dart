@@ -1,4 +1,3 @@
-import 'dart:io' show stdout;
 import 'dart:math' as math;
 
 import '../style/theme.dart';
@@ -6,6 +5,7 @@ import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 
 /// RangePrompt – select a numeric or percent range with two handles.
 ///
@@ -86,14 +86,7 @@ class RangePrompt {
     out.writeln(title);
 
     // Effective width (responsive to terminal columns)
-    final totalCols = () {
-      try {
-        return stdout.terminalColumns;
-      } catch (_) {
-        return 80;
-      }
-    }();
-    final effWidth = math.max(10, math.min(width, totalCols - 8));
+    final effWidth = math.max(10, math.min(width, TerminalInfo.columns - 8));
 
     // Compute positions
     final startIdx = valueToIndex(start, effWidth);
@@ -209,5 +202,7 @@ class RangePrompt {
     },
   );
 
-  return (cancelled || result == PromptResult.cancelled) ? (startInitial, endInitial) : (start, end);
+  return (cancelled || result == PromptResult.cancelled)
+      ? (startInitial, endInitial)
+      : (start, end);
 }

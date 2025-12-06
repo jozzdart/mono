@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
@@ -6,6 +5,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 import '../system/text_utils.dart' as text;
 
 /// Represents a command in the palette.
@@ -54,19 +54,6 @@ class CommandPalette {
 
     List<_RankedCommand> ranked = _rank(commands, query, useFuzzy);
 
-    int termCols() {
-      try {
-        if (stdout.hasTerminal) return stdout.terminalColumns;
-      } catch (_) {}
-      return 100;
-    }
-
-    int termLines() {
-      try {
-        if (stdout.hasTerminal) return stdout.terminalLines;
-      } catch (_) {}
-      return 28;
-    }
 
     void updateRanking() {
       ranked = _rank(commands, query, useFuzzy);
@@ -92,8 +79,8 @@ class CommandPalette {
 
     void render(RenderOutput out) {
       // Responsive rows based on current terminal size
-      final cols = termCols();
-      final lines = termLines();
+      final cols = TerminalInfo.columns;
+      final lines = TerminalInfo.rows;
       // Reserve: 1 title + 1 query + 1 connector + 1 mode line + 1 bottom + 4 hints ≈ 8
       visibleRows = (lines - 8).clamp(5, maxVisible);
 

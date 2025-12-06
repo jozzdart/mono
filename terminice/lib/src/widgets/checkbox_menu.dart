@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 
 /// CheckboxMenu – vertical multi-select checklist with live summary counter.
 ///
@@ -43,19 +42,6 @@ class CheckboxMenu {
     };
     bool cancelled = false;
 
-    int termCols() {
-      try {
-        if (stdout.hasTerminal) return stdout.terminalColumns;
-      } catch (_) {}
-      return 100;
-    }
-
-    int termLines() {
-      try {
-        if (stdout.hasTerminal) return stdout.terminalLines;
-      } catch (_) {}
-      return 28;
-    }
 
     void move(int delta) {
       if (options.isEmpty) return;
@@ -115,8 +101,7 @@ class CheckboxMenu {
 
     void render(RenderOutput out) {
       // Responsive rows from terminal lines: reserve around 7 for chrome/hints
-      final lines = termLines();
-      visibleRows = (lines - 7).clamp(5, maxVisible);
+      visibleRows = (TerminalInfo.rows - 7).clamp(5, maxVisible);
 
       final frame = FramedLayout(label, theme: theme);
       final title = frame.top();
@@ -142,7 +127,7 @@ class CheckboxMenu {
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
-      final cols = termCols();
+      final cols = TerminalInfo.columns;
       for (var i = 0; i < visible.length; i++) {
         final idx = scroll + i;
         final isFocused = idx == focused;

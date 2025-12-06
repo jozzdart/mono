@@ -1,9 +1,9 @@
-import 'dart:io' show stdout;
 import 'dart:math' as math;
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 import '../system/text_utils.dart' as text;
 
 /// ResourceGrid – tabular boxes with CPU/Memory/IO graphs.
@@ -110,7 +110,7 @@ class ResourceGrid {
 
   int _computeColumns() {
     if (columns > 0) return columns;
-    final termWidth = stdout.hasTerminal ? stdout.terminalColumns : 80;
+    final termWidth = TerminalInfo.columns;
     // Left gutter is "│ " (2 chars). Separator between cells is " │ " (3 chars).
     const leftPrefix = 2;
     const sepWidth = 3;
