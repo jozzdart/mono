@@ -1,4 +1,5 @@
 import '../style/theme.dart';
+import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
@@ -40,7 +41,8 @@ class ToggleGroup {
     final style = theme.style;
     if (items.isEmpty) return const {};
 
-    int focused = 0;
+    // Use centralized focus navigation
+    final focus = FocusNavigation(itemCount: items.length);
     bool cancelled = false;
     final states = List<bool>.generate(items.length, (i) => items[i].initialOn);
     final initialStates = List<bool>.from(states);
@@ -83,7 +85,7 @@ class ToggleGroup {
       final labelWidth = maxLabelWidth();
 
       for (var i = 0; i < items.length; i++) {
-        final isFocused = i == focused;
+        final isFocused = focus.isFocused(i);
         final item = items[i];
 
         var label = item.label;
@@ -113,9 +115,6 @@ class ToggleGroup {
       ], theme));
     }
 
-    int moveUp(int i) => (i - 1 + items.length) % items.length;
-    int moveDown(int i) => (i + 1) % items.length;
-
     void toggle(int i) {
       states[i] = !states[i];
     }
@@ -138,13 +137,13 @@ class ToggleGroup {
         }
 
         if (ev.type == KeyEventType.arrowUp) {
-          focused = moveUp(focused);
+          focus.moveUp();
         } else if (ev.type == KeyEventType.arrowDown) {
-          focused = moveDown(focused);
+          focus.moveDown();
         } else if (ev.type == KeyEventType.arrowLeft ||
             ev.type == KeyEventType.arrowRight ||
             ev.type == KeyEventType.space) {
-          toggle(focused);
+          toggle(focus.focusedIndex);
         } else if (ev.type == KeyEventType.char && ev.char != null) {
           final ch = ev.char!;
           if (ch.toLowerCase() == 'a') toggleAll();

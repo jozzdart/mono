@@ -1,4 +1,5 @@
 import '../style/theme.dart';
+import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
@@ -65,7 +66,8 @@ class TodoDashboard {
 
     final style = theme.style;
 
-    int focused = 0;
+    // Use centralized focus navigation
+    final focus = FocusNavigation(itemCount: tasks.length);
     bool cancelled = false;
     var current = List<TodoTask>.from(tasks);
     final initial = List<TodoTask>.from(tasks);
@@ -177,7 +179,7 @@ class TodoDashboard {
           '${theme.gray}${style.borderConnector}${'─' * (l.content)}${theme.reset}');
 
       for (var i = 0; i < current.length; i++) {
-        final isFocused = i == focused;
+        final isFocused = focus.isFocused(i);
         final t = current[i];
 
         final arrow =
@@ -212,9 +214,6 @@ class TodoDashboard {
       ], theme));
     }
 
-    int moveUp(int i) => (i - 1 + current.length) % current.length;
-    int moveDown(int i) => (i + 1) % current.length;
-
     void toggleDone(int i) {
       final t = current[i];
       current[i] = t.copyWith(done: !t.done);
@@ -247,20 +246,20 @@ class TodoDashboard {
         }
 
         if (ev.type == KeyEventType.arrowUp) {
-          focused = moveUp(focused);
+          focus.moveUp();
         } else if (ev.type == KeyEventType.arrowDown) {
-          focused = moveDown(focused);
+          focus.moveDown();
         } else if (ev.type == KeyEventType.arrowLeft) {
-          adjustPriority(focused, false);
+          adjustPriority(focus.focusedIndex, false);
         } else if (ev.type == KeyEventType.arrowRight) {
-          adjustPriority(focused, true);
+          adjustPriority(focus.focusedIndex, true);
         } else if (ev.type == KeyEventType.space) {
-          toggleDone(focused);
+          toggleDone(focus.focusedIndex);
         } else if (ev.type == KeyEventType.char && ev.char != null) {
           final ch = ev.char!;
-          if (ch == ']') adjustPriority(focused, true);
-          if (ch == '[') adjustPriority(focused, false);
-          if (ch.toLowerCase() == 't') editTags(focused);
+          if (ch == ']') adjustPriority(focus.focusedIndex, true);
+          if (ch == '[') adjustPriority(focus.focusedIndex, false);
+          if (ch.toLowerCase() == 't') editTags(focus.focusedIndex);
         }
 
         return null;

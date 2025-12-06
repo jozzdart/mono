@@ -1,4 +1,5 @@
 import '../style/theme.dart';
+import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
@@ -140,8 +141,8 @@ class SurveyForm {
   SurveyResult? run() {
     final style = theme.style;
 
-    // State per question
-    int focused = 0;
+    // State per question - use centralized focus navigation
+    final focus = FocusNavigation(itemCount: questions.length);
     final innerCursor = List<int>.filled(questions.length, 0);
     // Use centralized text input for text questions
     final textValues = List<TextInputBuffer>.generate(
@@ -156,10 +157,10 @@ class SurveyForm {
         questions.length, (i) => questions[i].initialRating);
     final yesNoValues =
         List<bool?>.generate(questions.length, (i) => questions[i].initialYes);
-    final errors = List<String?>.filled(questions.length, null);
     bool cancelled = false;
 
-    void validate(int index) {
+    // Validator function for FocusNavigation
+    String? validateQuestion(int index) {
       final q = questions[index];
       dynamic val;
       switch (q.type) {
@@ -179,25 +180,7 @@ class SurveyForm {
           val = yesNoValues[index];
           break;
       }
-      if (q.validator != null) {
-        errors[index] = q.validator!(val);
-      } else {
-        errors[index] = null;
-      }
-    }
-
-    bool validateAll() {
-      int? firstInvalid;
-      for (var i = 0; i < questions.length; i++) {
-        validate(i);
-        if (errors[i] != null &&
-            errors[i]!.isNotEmpty &&
-            firstInvalid == null) {
-          firstInvalid = i;
-        }
-      }
-      if (firstInvalid != null) focused = firstInvalid;
-      return firstInvalid == null;
+      return q.validator?.call(val);
     }
 
     String renderValue(int index) {
@@ -275,7 +258,7 @@ class SurveyForm {
       }
 
       for (var i = 0; i < questions.length; i++) {
-        final isFocused = i == focused;
+        final isFocused = focus.isFocused(i);
         final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
         final arrow =
             isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
@@ -289,8 +272,8 @@ class SurveyForm {
           out.writeln('$prefix$line');
         }
 
-        // Error line if invalid
-        final err = errors[i];
+        // Error line if invalid - use FocusNavigation's error tracking
+        final err = focus.getError(i);
         if (err != null && err.isNotEmpty) {
           out.writeln('$prefix${theme.highlight}$err${theme.reset}');
         }
@@ -309,69 +292,66 @@ class SurveyForm {
       ], theme));
     }
 
-    void moveFocus(int delta) {
-      final len = questions.length;
-      focused = (focused + delta + len) % len;
-    }
-
     void moveInner(int delta) {
-      final q = questions[focused];
+      final idx = focus.focusedIndex;
+      final q = questions[idx];
       if (q.type == SurveyQuestionType.singleChoice ||
           q.type == SurveyQuestionType.multiChoice) {
         final len = q.options.length;
         if (len == 0) return;
-        innerCursor[focused] = (innerCursor[focused] + delta + len) % len;
+        innerCursor[idx] = (innerCursor[idx] + delta + len) % len;
         if (q.type == SurveyQuestionType.singleChoice) {
-          singleValues[focused] = innerCursor[focused];
-          validate(focused);
+          singleValues[idx] = innerCursor[idx];
+          focus.validateOne(idx, validateQuestion);
         }
       } else if (q.type == SurveyQuestionType.rating) {
         final minR = q.minRating;
         final maxR = q.maxRating;
-        final cur = (ratingValues[focused] ?? minR) + delta;
-        ratingValues[focused] = cur.clamp(minR, maxR);
-        validate(focused);
+        final cur = (ratingValues[idx] ?? minR) + delta;
+        ratingValues[idx] = cur.clamp(minR, maxR);
+        focus.validateOne(idx, validateQuestion);
       } else if (q.type == SurveyQuestionType.yesNo) {
-        final current = yesNoValues[focused];
+        final current = yesNoValues[idx];
         if (delta != 0) {
           if (current == null) {
-            yesNoValues[focused] = delta > 0 ? true : false;
+            yesNoValues[idx] = delta > 0 ? true : false;
           } else {
-            yesNoValues[focused] = !current;
+            yesNoValues[idx] = !current;
           }
-          validate(focused);
+          focus.validateOne(idx, validateQuestion);
         }
       }
     }
 
     void toggleOrSelect() {
-      final q = questions[focused];
+      final idx = focus.focusedIndex;
+      final q = questions[idx];
       if (q.type == SurveyQuestionType.multiChoice) {
         final maxIdx = q.options.isNotEmpty ? q.options.length - 1 : 0;
-        final idx = innerCursor[focused].clamp(0, maxIdx);
-        final set = multiValues[focused];
-        if (set.contains(idx)) {
-          set.remove(idx);
+        final cursorIdx = innerCursor[idx].clamp(0, maxIdx);
+        final set = multiValues[idx];
+        if (set.contains(cursorIdx)) {
+          set.remove(cursorIdx);
         } else {
-          set.add(idx);
+          set.add(cursorIdx);
         }
-        validate(focused);
+        focus.validateOne(idx, validateQuestion);
       } else if (q.type == SurveyQuestionType.singleChoice) {
         if (q.options.isEmpty) return;
-        singleValues[focused] =
-            innerCursor[focused].clamp(0, q.options.length - 1);
-        validate(focused);
+        singleValues[idx] = innerCursor[idx].clamp(0, q.options.length - 1);
+        focus.validateOne(idx, validateQuestion);
       } else if (q.type == SurveyQuestionType.yesNo) {
-        yesNoValues[focused] = !(yesNoValues[focused] ?? false);
-        validate(focused);
+        yesNoValues[idx] = !(yesNoValues[idx] ?? false);
+        focus.validateOne(idx, validateQuestion);
       }
     }
 
     void handleTextInput(KeyEvent ev) {
-      final q = questions[focused];
+      final idx = focus.focusedIndex;
+      final q = questions[idx];
       if (q.type != SurveyQuestionType.text) return;
-      if (textValues[focused].handleKey(ev)) {
-        validate(focused);
+      if (textValues[idx].handleKey(ev)) {
+        focus.validateOne(idx, validateQuestion);
       }
     }
 
@@ -390,8 +370,9 @@ class SurveyForm {
           innerCursor[i] = first.clamp(0, q.options.length - 1);
         }
       }
-      validate(i);
     }
+    // Initial validation using FocusNavigation
+    focus.validateAll(validateQuestion, focusFirstInvalid: false);
 
     final runner = PromptRunner(hideCursor: true);
     final result = runner.run(
@@ -404,16 +385,19 @@ class SurveyForm {
 
         if (ev.type == KeyEventType.enter) {
           // If not last, advance; otherwise submit if valid
-          if (focused < questions.length - 1) {
-            moveFocus(1);
+          if (focus.focusedIndex < questions.length - 1) {
+            focus.moveDown();
           } else {
-            if (validateAll()) return PromptResult.confirmed;
+            // Use FocusNavigation's validateAll with focusFirstInvalid
+            if (focus.validateAll(validateQuestion, focusFirstInvalid: true)) {
+              return PromptResult.confirmed;
+            }
           }
         } else if (ev.type == KeyEventType.arrowUp) {
-          moveFocus(-1);
+          focus.moveUp();
         } else if (ev.type == KeyEventType.arrowDown ||
             ev.type == KeyEventType.tab) {
-          moveFocus(1);
+          focus.moveDown();
         } else if (ev.type == KeyEventType.arrowLeft) {
           moveInner(-1);
         } else if (ev.type == KeyEventType.arrowRight) {

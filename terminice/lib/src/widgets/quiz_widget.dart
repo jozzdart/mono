@@ -1,6 +1,7 @@
 import 'dart:io' show stdout;
 
 import '../style/theme.dart';
+import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
@@ -35,7 +36,8 @@ class QuizWidget {
 
     for (int qi = 0; qi < questions.length; qi++) {
       final q = questions[qi];
-      int selected = 0;
+      // Use centralized focus navigation for option selection
+      final focus = FocusNavigation(itemCount: q.options.length);
 
       void render(RenderOutput out) {
         final style = theme.style;
@@ -54,13 +56,11 @@ class QuizWidget {
 
         // Options
         for (int i = 0; i < q.options.length; i++) {
-          final isSel = i == selected;
+          final isSel = focus.isFocused(i);
           final bullet = isSel
               ? '${theme.accent}${style.arrow}${theme.reset}'
               : '${theme.dim}${style.arrow}${theme.reset}';
-          final label = allowNumberShortcuts
-              ? '${i + 1}. '
-              : '';
+          final label = allowNumberShortcuts ? '${i + 1}. ' : '';
           final optionText = '$label${q.options[i]}';
           final line = isSel
               ? '${theme.inverse}${theme.accent} $optionText ${theme.reset}'
@@ -92,12 +92,12 @@ class QuizWidget {
           }
 
           if (ev.type == KeyEventType.arrowUp) {
-            selected = (selected - 1 + q.options.length) % q.options.length;
+            focus.moveUp();
             return null;
           }
 
           if (ev.type == KeyEventType.arrowDown) {
-            selected = (selected + 1) % q.options.length;
+            focus.moveDown();
             return null;
           }
 
@@ -106,7 +106,7 @@ class QuizWidget {
             if (RegExp(r'^[1-9]$').hasMatch(ch)) {
               final idx = int.parse(ch) - 1;
               if (idx >= 0 && idx < q.options.length) {
-                selected = idx;
+                focus.jumpTo(idx);
                 return null;
               }
             }
@@ -126,12 +126,12 @@ class QuizWidget {
         break;
       }
 
-      selections[qi] = selected;
-      final isCorrect = selected == q.correctIndex;
+      selections[qi] = focus.focusedIndex;
+      final isCorrect = focus.focusedIndex == q.correctIndex;
       if (isCorrect) correct++;
 
       if (showFeedback) {
-        _renderFeedback(qi, isCorrect, q, selected);
+        _renderFeedback(qi, isCorrect, q, focus.focusedIndex);
       }
     }
 
@@ -166,8 +166,8 @@ class QuizWidget {
     final correctAns = q.options[q.correctIndex];
     final chosen = q.options[selected];
 
-    stdout.writeln(
-        '${theme.gray}${style.borderVertical}${theme.reset} $verdict');
+    stdout
+        .writeln('${theme.gray}${style.borderVertical}${theme.reset} $verdict');
     if (!isCorrect) {
       stdout.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}Your answer:${theme.reset} $chosen');
@@ -260,5 +260,3 @@ QuizResult quizWidget({
     allowNumberShortcuts: allowNumberShortcuts,
   ).run();
 }
-
-

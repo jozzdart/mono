@@ -1,4 +1,5 @@
 import '../style/theme.dart';
+import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
@@ -56,39 +57,21 @@ class Form {
   FormResult? run() {
     final style = theme.style;
 
-    // State
-    int focusedIndex = 0;
+    // State - use centralized focus navigation for index + error tracking
+    final focus = FocusNavigation(itemCount: fields.length);
     // Use centralized text input for each field
     final values = List<TextInputBuffer>.generate(
       fields.length,
       (i) => TextInputBuffer(initialText: fields[i].initialValue),
     );
-    final errors = List<String?>.filled(fields.length, null);
     bool cancelled = false;
     bool submitted = false;
 
-    void validateField(int index) {
+    // Validator function for FocusNavigation
+    String? validateField(int index) {
       final spec = fields[index];
       final val = values[index].text;
-      if (spec.validator != null) {
-        errors[index] = spec.validator!(val);
-      } else {
-        errors[index] = null;
-      }
-    }
-
-    bool validateAllAndFocusFirstInvalid() {
-      int? firstInvalid;
-      for (var i = 0; i < fields.length; i++) {
-        validateField(i);
-        if (errors[i] != null &&
-            errors[i]!.isNotEmpty &&
-            firstInvalid == null) {
-          firstInvalid = i;
-        }
-      }
-      if (firstInvalid != null) focusedIndex = firstInvalid;
-      return firstInvalid == null;
+      return spec.validator?.call(val);
     }
 
     String renderValue(TextInputBuffer buffer, FormFieldSpec spec) {
@@ -118,7 +101,7 @@ class Form {
       // Render each field line
       for (var i = 0; i < fields.length; i++) {
         final spec = fields[i];
-        final isFocused = i == focusedIndex;
+        final isFocused = focus.isFocused(i);
         final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
         final arrow =
             isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
@@ -133,8 +116,8 @@ class Form {
           out.writeln('$prefix$line');
         }
 
-        // Error line if invalid
-        final err = errors[i];
+        // Error line if invalid - use FocusNavigation's error tracking
+        final err = focus.getError(i);
         if (err != null && err.isNotEmpty) {
           out.writeln('$prefix${theme.highlight}$err${theme.reset}');
         }
@@ -155,21 +138,14 @@ class Form {
       ], theme));
     }
 
-    void moveFocus(int delta) {
-      final len = fields.length;
-      focusedIndex = (focusedIndex + delta + len) % len;
-    }
-
     void handleTextInput(KeyEvent ev) {
-      if (values[focusedIndex].handleKey(ev)) {
-        validateField(focusedIndex);
+      if (values[focus.focusedIndex].handleKey(ev)) {
+        focus.validateOne(focus.focusedIndex, validateField);
       }
     }
 
     // Initial validation pass for placeholders/initial
-    for (var i = 0; i < fields.length; i++) {
-      validateField(i);
-    }
+    focus.validateAll(validateField, focusFirstInvalid: false);
 
     final runner = PromptRunner(hideCursor: true);
     runner.run(
@@ -181,15 +157,16 @@ class Form {
         }
 
         if (ev.type == KeyEventType.enter) {
-          if (validateAllAndFocusFirstInvalid()) {
+          // Use FocusNavigation's validateAll with focusFirstInvalid
+          if (focus.validateAll(validateField, focusFirstInvalid: true)) {
             submitted = true;
             return PromptResult.confirmed;
           }
         } else if (ev.type == KeyEventType.tab ||
             ev.type == KeyEventType.arrowDown) {
-          moveFocus(1);
+          focus.moveDown();
         } else if (ev.type == KeyEventType.arrowUp) {
-          moveFocus(-1);
+          focus.moveUp();
         } else {
           // Text input (typing, backspace) - handled by centralized TextInputBuffer
           handleTextInput(ev);

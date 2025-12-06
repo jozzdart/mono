@@ -1,4 +1,5 @@
 import '../style/theme.dart';
+import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
@@ -37,7 +38,8 @@ class TutorialRunner {
     if (steps.isEmpty) return steps;
 
     final style = theme.style;
-    int focused = 0;
+    // Use centralized focus navigation
+    final focus = FocusNavigation(itemCount: steps.length);
     bool cancelled = false;
     var current = List<TutorialStep>.from(steps);
     final initial = List<TutorialStep>.from(steps);
@@ -138,7 +140,7 @@ class TutorialRunner {
 
       // Steps list
       for (var i = 0; i < current.length; i++) {
-        final isFocused = i == focused;
+        final isFocused = focus.isFocused(i);
         final s = current[i];
         final arrow = isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
         final cb = checkbox(s.done, highlight: isFocused);
@@ -173,9 +175,6 @@ class TutorialRunner {
       ], theme));
     }
 
-    int moveUp(int i) => (i - 1 + current.length) % current.length;
-    int moveDown(int i) => (i + 1) % current.length;
-
     final runner = PromptRunner(hideCursor: true);
     runner.run(
       render: render,
@@ -187,11 +186,11 @@ class TutorialRunner {
         }
 
         if (ev.type == KeyEventType.arrowUp) {
-          focused = moveUp(focused);
+          focus.moveUp();
         } else if (ev.type == KeyEventType.arrowDown) {
-          focused = moveDown(focused);
+          focus.moveDown();
         } else if (ev.type == KeyEventType.space) {
-          toggleDone(focused);
+          toggleDone(focus.focusedIndex);
         } else if (ev.type == KeyEventType.ctrlR ||
             (ev.type == KeyEventType.char && ev.char?.toLowerCase() == 'r')) {
           resetAll();

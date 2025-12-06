@@ -1,5 +1,6 @@
 import '../style/theme.dart';
 import 'search_select.dart';
+import '../system/focus_navigation.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
@@ -28,8 +29,9 @@ class ThemeDemo {
   void run() {
     final themeNames = themes.keys.toList();
 
+    // Use centralized focus navigation
+    final focus = FocusNavigation(itemCount: themeNames.length);
     String selected = themeNames.first;
-    int selectedIndex = 0;
     bool showPromptPreview = false;
 
     void renderThemePreview(RenderOutput out, String name, PromptTheme theme) {
@@ -66,12 +68,11 @@ class ThemeDemo {
         if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
           return PromptResult.cancelled;
         } else if (ev.type == KeyEventType.arrowUp) {
-          selectedIndex =
-              (selectedIndex - 1 + themeNames.length) % themeNames.length;
-          selected = themeNames[selectedIndex];
+          focus.moveUp();
+          selected = themeNames[focus.focusedIndex];
         } else if (ev.type == KeyEventType.arrowDown) {
-          selectedIndex = (selectedIndex + 1) % themeNames.length;
-          selected = themeNames[selectedIndex];
+          focus.moveDown();
+          selected = themeNames[focus.focusedIndex];
         }
 
         // Enter
