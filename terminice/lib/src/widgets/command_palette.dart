@@ -1,13 +1,7 @@
-import 'dart:math';
-
 import '../style/theme.dart';
-import '../system/key_bindings.dart';
-import '../system/list_navigation.dart';
-import '../system/prompt_runner.dart';
+import '../system/ranked_list_prompt.dart';
 import '../system/terminal.dart';
-import '../system/text_input_buffer.dart';
 import '../system/text_utils.dart' as text;
-import '../system/widget_frame.dart';
 
 /// Represents a command in the palette.
 class CommandEntry {
@@ -27,6 +21,9 @@ class CommandEntry {
 /// - Backspace to erase
 /// - Esc to cancel
 /// - Ctrl+R to toggle fuzzy <-> substring mode
+///
+/// **Implementation:** Uses [RankedListPrompt] for core functionality,
+/// demonstrating composition over inheritance.
 class CommandPalette {
   final List<CommandEntry> commands;
   final String label;
@@ -44,240 +41,73 @@ class CommandPalette {
   CommandEntry? run() {
     if (commands.isEmpty) return null;
 
-    // Use centralized text input for query handling
-    final queryInput = TextInputBuffer();
-    bool useFuzzy = true;
-    bool cancelled = false;
-
-    List<_RankedCommand> ranked = _rank(commands, queryInput.text, useFuzzy);
-
-    // Use centralized list navigation for selection & scrolling
-    final nav = ListNavigation(
-      itemCount: ranked.length,
+    final prompt = RankedListPrompt<CommandEntry>(
+      title: label,
+      items: commands,
+      theme: theme,
       maxVisible: maxVisible,
     );
 
-    void updateRanking() {
-      ranked = _rank(commands, queryInput.text, useFuzzy);
-      nav.itemCount = ranked.length;
-    }
+    return prompt.run(
+      // Custom ranking that checks both title and subtitle
+      rankItem: (entry, query, useFuzzy) {
+        if (query.isEmpty) return const RankResult(0, []);
 
-    CommandEntry? result;
+        // Try title first
+        final titleMatch = useFuzzy
+            ? fuzzyMatch(entry.title, query)
+            : substringMatch(entry.title, query);
 
-    // Use KeyBindings for declarative key handling
-    final bindings = KeyBindings.verticalNavigation(
-          onUp: () => nav.moveUp(),
-          onDown: () => nav.moveDown(),
-        ) +
-        KeyBindings.textInput(buffer: queryInput, onInput: updateRanking) +
-        KeyBindings.ctrlR(
-          onPress: () {
-            useFuzzy = !useFuzzy;
-            updateRanking();
-          },
-          hintDescription: 'toggle mode',
-        ) +
-        KeyBindings.confirm(onConfirm: () {
-          if (ranked.isNotEmpty) {
-            result = ranked[nav.selectedIndex].entry;
+        if (titleMatch != null) return titleMatch;
+
+        // Fall back to subtitle
+        if (entry.subtitle != null) {
+          final subMatch = useFuzzy
+              ? fuzzyMatch(entry.subtitle!, query)
+              : substringMatch(entry.subtitle!, query);
+
+          if (subMatch != null) {
+            // Return with reduced score and empty spans (subtitle match)
+            return RankResult(subMatch.score ~/ 2, const []);
           }
-          return KeyActionResult.confirmed;
-        }) +
-        KeyBindings.cancel(onCancel: () => cancelled = true);
+        }
 
-    // Use WidgetFrame for consistent frame rendering
-    final frame = WidgetFrame(
-      title: label,
-      theme: theme,
-      bindings: bindings,
-      showConnector: true,
-      hintStyle: HintStyle.grid,
-    );
+        return null;
+      },
+      itemLabel: (entry) => entry.title,
+      itemSubtitle: (entry) => entry.subtitle,
 
-    void render(RenderOutput out) {
-      // Responsive rows based on current terminal size
-      final cols = TerminalInfo.columns;
-      final lines = TerminalInfo.rows;
-      // Reserve: 1 title + 1 query + 1 connector + 1 mode line + 1 bottom + 4 hints ≈ 8
-      nav.maxVisible = (lines - 8).clamp(5, maxVisible);
+      // Custom rendering with subtitle and span highlighting
+      renderItem: (ctx, rankedItem, index, isFocused, query) {
+        final cols = TerminalInfo.columns;
+        final arrow = ctx.lb.arrow(isFocused);
 
-      frame.render(out, (ctx) {
-        // Query line
-        ctx.headerLine('Command', queryInput.text);
-
-        // Connector after query
-        ctx.writeConnector();
-
-        // Mode and counts line
-        final mode = useFuzzy ? 'Fuzzy' : 'Substring';
-        final countText = 'Matches: ${ranked.length}';
-        ctx.infoLine([mode, countText]);
-
-        // Use ListNavigation's viewport for visible window
-        final window = nav.visibleWindow(ranked);
-
-        ctx.listWindow(
-          window,
-          selectedIndex: nav.selectedIndex,
-          renderItem: (rankedItem, index, isFocused) {
-            final prefixSel = ctx.lb.arrow(isFocused);
-
-            // Compose display text with highlighted match spans
-            final highlightedTitle = _highlightSpans(
-              rankedItem.entry.title,
-              rankedItem.titleSpans,
-              theme,
-            );
-            final subtitle = rankedItem.entry.subtitle;
-            final subtitlePart = subtitle == null
-                ? ''
-                : '  ${theme.dim}${text.truncate(subtitle, cols ~/ 2)}${theme.reset}';
-
-            final lineCore = '$prefixSel $highlightedTitle$subtitlePart';
-            ctx.highlightedLine(lineCore, highlighted: isFocused);
-          },
+        // Highlight matched spans in title
+        final highlightedTitle = highlightSpans(
+          rankedItem.item.title,
+          rankedItem.spans,
+          theme,
         );
 
-        if (ranked.isEmpty) {
-          ctx.emptyMessage('no matches');
-        }
-      });
-    }
+        // Add truncated subtitle if present
+        final subtitle = rankedItem.item.subtitle;
+        final subtitlePart = subtitle == null
+            ? ''
+            : '  ${theme.dim}${text.truncate(subtitle, cols ~/ 2)}${theme.reset}';
 
-    // Initial
-    updateRanking();
+        ctx.highlightedLine(
+          '$arrow $highlightedTitle$subtitlePart',
+          highlighted: isFocused,
+        );
+      },
 
-    final runner = PromptRunner(hideCursor: true);
-    runner.runWithBindings(
-      render: render,
-      bindings: bindings,
+      // Custom header showing mode and match count
+      beforeItems: (ctx, query, useFuzzy, matchCount) {
+        ctx.headerLine('Command', query);
+        ctx.writeConnector();
+        final mode = useFuzzy ? 'Fuzzy' : 'Substring';
+        ctx.infoLine([mode, 'Matches: $matchCount']);
+      },
     );
-
-    return cancelled ? null : result;
   }
-}
-
-class _RankedCommand {
-  final CommandEntry entry;
-  final int score;
-  final List<int> titleSpans;
-
-  _RankedCommand(this.entry, this.score, this.titleSpans);
-}
-
-List<_RankedCommand> _rank(
-    List<CommandEntry> entries, String query, bool fuzzy) {
-  if (query.isEmpty) {
-    return entries
-        .map((e) => _RankedCommand(e, 0, const []))
-        .toList(growable: false);
-  }
-
-  final results = <_RankedCommand>[];
-  for (final e in entries) {
-    _FuzzyMatchResult? r;
-    if (fuzzy) {
-      r = _fuzzyMatch(e.title, query);
-      // Consider subtitle as secondary boost for visibility in fuzzy mode
-      if (r == null && e.subtitle != null) {
-        final sub = _fuzzyMatch(e.subtitle!, query);
-        if (sub != null) {
-          // show title spans unchanged but give a small bonus score so it appears
-          r = _FuzzyMatchResult(sub.score ~/ 2, const []);
-        }
-      }
-    } else {
-      final idx = e.title.toLowerCase().indexOf(query.toLowerCase());
-      if (idx != -1) {
-        r = _FuzzyMatchResult(100000 - idx * 100,
-            List<int>.generate(query.length, (i) => idx + i));
-      } else if (e.subtitle != null) {
-        final sidx = e.subtitle!.toLowerCase().indexOf(query.toLowerCase());
-        if (sidx != -1) {
-          r = _FuzzyMatchResult(50000 - sidx * 50, const []);
-        }
-      }
-    }
-
-    if (r != null) {
-      results.add(_RankedCommand(e, r.score, r.indices));
-    }
-  }
-
-  results.sort((a, b) {
-    final sc = b.score.compareTo(a.score);
-    if (sc != 0) return sc;
-    return a.entry.title.toLowerCase().compareTo(b.entry.title.toLowerCase());
-  });
-  return results;
-}
-
-class _FuzzyMatchResult {
-  final int score;
-  final List<int> indices;
-  _FuzzyMatchResult(this.score, this.indices);
-}
-
-// Simple, effective fuzzy matcher: sequential char matching with bonuses.
-_FuzzyMatchResult? _fuzzyMatch(String text, String pattern) {
-  final t = text.toLowerCase();
-  final p = pattern.toLowerCase();
-  int ti = 0;
-  final matched = <int>[];
-
-  for (var pi = 0; pi < p.length; pi++) {
-    final ch = p[pi];
-    final found = t.indexOf(ch, ti);
-    if (found == -1) return null;
-    matched.add(found);
-    ti = found + 1;
-  }
-
-  // Scoring: prefer contiguous, early, word-boundary and case-exact matches
-  int score = 0;
-  if (matched.isEmpty) return null;
-  // Base: more compact span is better
-  final span = matched.last - matched.first + 1;
-  score += max(0, 100000 - span * 300);
-  // Contiguity bonus
-  for (var i = 1; i < matched.length; i++) {
-    if (matched[i] == matched[i - 1] + 1) score += 1200;
-  }
-  // Early start bonus
-  score += max(0, 8000 - matched.first * 200);
-  // Word boundary bonus (space or - or _ before)
-  final before = matched.first > 0 ? text[matched.first - 1] : ' ';
-  if (before == ' ' ||
-      before == '-' ||
-      before == '_' ||
-      before == '/' ||
-      before == '.') {
-    score += 2500;
-  }
-  // Exact case bonus
-  for (final i in matched) {
-    if (text[i] == pattern[matched.indexOf(i)]) score += 150;
-  }
-
-  return _FuzzyMatchResult(score, matched);
-}
-
-String _highlightSpans(String text, List<int> indices, PromptTheme theme) {
-  if (indices.isEmpty) return text;
-  final set = indices.toSet();
-  final buf = StringBuffer();
-  bool inSpan = false;
-  for (var i = 0; i < text.length; i++) {
-    final isMatch = set.contains(i);
-    if (isMatch && !inSpan) {
-      buf.write(theme.highlight);
-      inSpan = true;
-    } else if (!isMatch && inSpan) {
-      buf.write(theme.reset);
-      inSpan = false;
-    }
-    buf.write(text[i]);
-  }
-  if (inSpan) buf.write(theme.reset);
-  return buf.toString();
 }

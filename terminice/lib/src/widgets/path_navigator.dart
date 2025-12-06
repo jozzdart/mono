@@ -1,24 +1,25 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/key_bindings.dart';
-import '../system/list_navigation.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import '../system/dynamic_list_prompt.dart';
 
 /// PathNavigator – interactive directory (and optional file) navigation.
 ///
+/// Controls:
 /// - Arrow ↑/↓ to move selection
 /// - Enter / → to enter a directory
 /// - ← to go to parent directory
 /// - Enter on "✓ Select this directory" to confirm current directory
 /// - Esc cancels
+///
+/// **Implementation:** Uses [DynamicListPrompt] for core functionality,
+/// demonstrating composition over inheritance.
 class PathNavigator {
   final String label;
   final PromptTheme theme;
   final Directory startDir;
   final bool showHidden;
-  final bool allowFiles; // If true, selecting a file returns its path
+  final bool allowFiles;
   final int maxVisible;
 
   PathNavigator({
@@ -35,161 +36,118 @@ class PathNavigator {
     Directory current = startDir;
     String? selectedPath;
 
-    // Use centralized list navigation for selection & scrolling
-    final nav = ListNavigation(
-      itemCount: 0, // Will be set after first readEntries() call
+    final prompt = DynamicListPrompt<_Entry>(
+      title: label,
+      theme: theme,
       maxVisible: maxVisible,
     );
 
-    List<_Entry> readEntries(Directory dir) {
-      final raw = dir.listSync(followLinks: false);
-      raw.sort((a, b) {
-        final aDir = a is Directory;
-        final bDir = b is Directory;
-        if (aDir != bDir) return aDir ? -1 : 1;
-        return _basename(a.path)
-            .toLowerCase()
-            .compareTo(_basename(b.path).toLowerCase());
-      });
+    final result = prompt.run(
+      buildItems: () => _readEntries(current, showHidden, allowFiles),
 
-      final filtered = raw
-          .where((e) => showHidden || !_basename(e.path).startsWith('.'))
-          .toList();
-
-      final List<_Entry> list = [];
-
-      // Optional parent navigation.
-      final hasParent = dir.parent.path != dir.path;
-      if (hasParent) {
-        list.add(_Entry('↩ ..', dir.parent.path, _EntryType.up));
-      }
-
-      // Select current directory entry
-      list.add(
-          _Entry('✓ Select this directory', dir.path, _EntryType.confirmDir));
-
-      for (final e in filtered) {
-        if (e is Directory) {
-          list.add(
-              _Entry('▸ ${_basename(e.path)}', e.path, _EntryType.directory));
-        } else if (allowFiles && e is File) {
-          list.add(_Entry('· ${_basename(e.path)}', e.path, _EntryType.file));
+      onPrimary: (entry, index) {
+        switch (entry.type) {
+          case _EntryType.up:
+            current = Directory(entry.path);
+            return DynamicAction.rebuildAndReset;
+          case _EntryType.confirmDir:
+            selectedPath = current.path;
+            return DynamicAction.confirm;
+          case _EntryType.directory:
+            current = Directory(entry.path);
+            return DynamicAction.rebuildAndReset;
+          case _EntryType.file:
+            if (allowFiles) {
+              selectedPath = entry.path;
+              return DynamicAction.confirm;
+            }
+            return DynamicAction.none;
         }
-      }
-      return list;
-    }
+      },
 
-    String shortPath(String path) {
-      return path.length > 60 ? '...${path.substring(path.length - 57)}' : path;
-    }
+      onSecondary: (entry, index) {
+        // Go to parent
+        if (current.parent.path != current.path) {
+          current = current.parent;
+          return DynamicAction.rebuildAndReset;
+        }
+        return DynamicAction.none;
+      },
 
-    // Use KeyBindings for declarative key handling
-    final bindings = KeyBindings.verticalNavigation(
-          onUp: () => nav.moveUp(),
-          onDown: () => nav.moveDown(),
-        ) +
-        KeyBindings([
-          // Left - parent directory
-          KeyBinding.single(
-            KeyEventType.arrowLeft,
-            (event) {
-              if (current.parent.path != current.path) {
-                current = current.parent;
-                nav.reset();
-              }
-              return KeyActionResult.handled;
-            },
-            hintLabel: '←',
-            hintDescription: 'Parent directory',
-          ),
-          // Right / Enter - enter directory or select
-          KeyBinding.multi(
-            {KeyEventType.arrowRight, KeyEventType.enter},
-            (event) {
-              final entries = readEntries(current);
-              if (entries.isEmpty) return KeyActionResult.ignored;
-              nav.itemCount = entries.length;
-              final cur = entries[nav.selectedIndex];
-              if (cur.type == _EntryType.up) {
-                current = Directory(cur.path);
-                nav.reset();
-              } else if (cur.type == _EntryType.confirmDir) {
-                selectedPath = current.path;
-                return KeyActionResult.confirmed;
-              } else if (cur.type == _EntryType.directory) {
-                current = Directory(cur.path);
-                nav.reset();
-              } else if (cur.type == _EntryType.file && allowFiles) {
-                selectedPath = cur.path;
-                return KeyActionResult.confirmed;
-              }
-              return KeyActionResult.handled;
-            },
-            hintLabel: '→ / Enter',
-            hintDescription: 'Enter directory / Select',
-          ),
-        ]) +
-        KeyBindings.cancel();
-
-    // Use WidgetFrame for consistent frame rendering
-    final frame = WidgetFrame(
-      title: label,
-      theme: theme,
-      bindings: bindings,
-      showConnector: true,
-      hintStyle: HintStyle.grid,
-    );
-
-    void render(RenderOutput out) {
-      frame.render(out, (ctx) {
-        // Current path line
-        ctx.headerLine('Path', shortPath(current.path));
-
-        // Connector after path
+      beforeItems: (ctx) {
+        final shortPath = current.path.length > 60
+            ? '...${current.path.substring(current.path.length - 57)}'
+            : current.path;
+        ctx.headerLine('Path', shortPath);
         ctx.writeConnector();
+      },
 
-        final entries = readEntries(current);
-        nav.itemCount = entries.length;
-
-        if (entries.isEmpty) {
-          ctx.emptyMessage('empty');
-        }
-
-        // Use ListNavigation's viewport
-        final window = nav.visibleWindow(entries);
-
-        ctx.listWindow(
-          window,
-          selectedIndex: nav.selectedIndex,
-          renderItem: (entry, index, isFocused) {
-            final prefix = ctx.lb.arrow(isFocused);
-            final lineText = '$prefix ${entry.label}';
-            ctx.highlightedLine(lineText, highlighted: isFocused);
-          },
-        );
-      });
-    }
-
-    final runner = PromptRunner(hideCursor: true);
-    final result = runner.runWithBindings(
-      render: render,
-      bindings: bindings,
+      renderItem: (ctx, entry, index, isFocused) {
+        final arrow = ctx.lb.arrow(isFocused);
+        ctx.highlightedLine('$arrow ${entry.label}', highlighted: isFocused);
+      },
     );
 
-    return (result == PromptResult.confirmed && selectedPath != null)
-        ? selectedPath!
-        : '';
+    if (result == null) return '';
+    return selectedPath ?? '';
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// INTERNAL HELPERS
+// ════════════════════════════════════════════════════════════════════════════
 
 class _Entry {
   final String label;
   final String path;
   final _EntryType type;
+
   _Entry(this.label, this.path, this.type);
 }
 
 enum _EntryType { up, confirmDir, directory, file }
+
+List<_Entry> _readEntries(Directory dir, bool showHidden, bool allowFiles) {
+  final List<_Entry> list = [];
+
+  // Parent navigation
+  final hasParent = dir.parent.path != dir.path;
+  if (hasParent) {
+    list.add(_Entry('↩ ..', dir.parent.path, _EntryType.up));
+  }
+
+  // Select current directory
+  list.add(_Entry('✓ Select this directory', dir.path, _EntryType.confirmDir));
+
+  // List directory contents
+  try {
+    final raw = dir.listSync(followLinks: false);
+    raw.sort((a, b) {
+      final aDir = a is Directory;
+      final bDir = b is Directory;
+      if (aDir != bDir) return aDir ? -1 : 1;
+      return _basename(a.path)
+          .toLowerCase()
+          .compareTo(_basename(b.path).toLowerCase());
+    });
+
+    final filtered = raw
+        .where((e) => showHidden || !_basename(e.path).startsWith('.'))
+        .toList();
+
+    for (final e in filtered) {
+      if (e is Directory) {
+        list.add(_Entry('▸ ${_basename(e.path)}', e.path, _EntryType.directory));
+      } else if (allowFiles && e is File) {
+        list.add(_Entry('· ${_basename(e.path)}', e.path, _EntryType.file));
+      }
+    }
+  } catch (_) {
+    // Handle permission errors silently
+  }
+
+  return list;
+}
 
 String _basename(String path) {
   final parts = path.split(Platform.pathSeparator);
