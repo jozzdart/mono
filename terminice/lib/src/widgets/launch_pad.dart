@@ -6,6 +6,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text;
 
 /// LaunchPad – grid of big icons/buttons for actions.
 ///
@@ -209,9 +210,9 @@ class LaunchPad {
 
   int _computeCellWidth() {
     if (cellWidth > 0) return cellWidth;
-    final maxLabel = actions.fold<int>(0, (w, a) => math.max(w, _visible(a.label).length));
+    final maxLabel = actions.fold<int>(0, (w, a) => math.max(w, text.visibleLength(a.label)));
     final maxDesc = showDescriptions
-        ? actions.fold<int>(0, (w, a) => math.max(w, _visible(a.description ?? '').length))
+        ? actions.fold<int>(0, (w, a) => math.max(w, text.visibleLength(a.description ?? '')))
         : 0;
     final base = math.max(maxLabel, maxDesc);
     return base.clamp(12, 26) + 6; // padding for icon and breathing room
@@ -309,20 +310,16 @@ LaunchAction? launchPad(
   ).run(executeOnEnter: executeOnEnter);
 }
 
-// Helpers
-String _visible(String s) {
-  return s.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '');
-}
-
-String _clip(String text, int width) {
-  final plain = _visible(text);
+// Helpers using centralized text_utils
+String _clip(String content, int width) {
+  final plain = text.stripAnsi(content);
   if (plain.length <= width) return plain;
   if (width <= 0) return '';
   return '${plain.substring(0, math.max(0, width - 1))}…';
 }
 
-String _center(String text, int width) {
-  final visible = _visible(text);
+String _center(String content, int width) {
+  final visible = text.stripAnsi(content);
   if (visible.length >= width) return visible.substring(0, width);
   final totalPad = width - visible.length;
   final left = totalPad ~/ 2;

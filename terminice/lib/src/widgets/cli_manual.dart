@@ -6,6 +6,7 @@ import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/highlighter.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text_utils;
 
 class ManualOption {
   final String flag; // e.g. "-f, --force"
@@ -107,21 +108,14 @@ class CLIManual {
       pageScroll = 0;
     }
 
-    String truncate(String text, int max) {
-      if (text.length <= max) return text;
-      if (max <= 3) return text.substring(0, max);
-      return '${text.substring(0, max - 3)}...';
-    }
-
     List<String> wrap(String text, int width) {
       if (width <= 0) return [text];
       final words = text.split(RegExp(r"\s+"));
       final lines = <String>[];
       var current = StringBuffer();
-      int visibleLen(String s) => s.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '').length;
       for (final w in words) {
         final candidate = current.isEmpty ? w : '$current $w';
-        if (visibleLen(candidate) <= width) {
+        if (text_utils.visibleLength(candidate) <= width) {
           if (current.isEmpty) {
             current.write(w);
           } else {
@@ -176,7 +170,7 @@ class CLIManual {
       if (page.options.isNotEmpty) {
         lines.add(header('OPTIONS'));
         final leftWidth = page.options.fold<int>(0,
-            (w, o) => max(w, o.flag.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '').length));
+            (w, o) => max(w, text_utils.visibleLength(o.flag)));
         for (final opt in page.options) {
           final left = opt.flag.padRight(leftWidth + 2);
           final wrapped = wrap(opt.description, max(10, width - (leftWidth + 2)));
@@ -284,7 +278,7 @@ class CLIManual {
         final startLine = min(pageScroll, max(0, all.length - 1));
         final endLine = min(startLine + previewRows, all.length);
         for (var i = startLine; i < endLine; i++) {
-          final ln = truncate(all[i], contentWidth);
+          final ln = text_utils.truncate(all[i], contentWidth);
           out.writeln('$framePrefix$ln');
         }
         for (var i = endLine; i < startLine + previewRows; i++) {

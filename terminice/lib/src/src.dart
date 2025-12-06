@@ -5,6 +5,7 @@ export 'system/hints.dart';
 export 'system/key_events.dart';
 export 'system/prompt_runner.dart';
 export 'system/terminal.dart';
+export 'system/text_utils.dart';
 export 'widgets/confirm_prompt.dart';
 export 'widgets/password.dart';
 export 'widgets/search_select.dart';

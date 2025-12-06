@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text;
 
 /// Colorful table rendering with alignment and borders, aligned with ThemeDemo styling.
 ///
@@ -44,27 +45,23 @@ class TableView {
 
     // Compute column widths based on visible (ANSI-stripped) content
     final widths =
-        List<int>.generate(columns.length, (i) => _visible(columns[i]).length);
+        List<int>.generate(columns.length, (i) => text.visibleLength(columns[i]));
     for (final row in rows) {
       for (var i = 0; i < columns.length; i++) {
         final cell = (i < row.length) ? row[i] : '';
-        widths[i] = max(widths[i], _visible(cell).length);
+        widths[i] = max(widths[i], text.visibleLength(cell));
       }
     }
 
     // Rendering helpers
-    String pad(String text, int width, TableAlign align) {
-      final visible = _visible(text);
-      final padCount = max(0, width - visible.length);
+    String pad(String content, int width, TableAlign align) {
       switch (align) {
         case TableAlign.left:
-          return text + ' ' * padCount;
+          return text.padVisibleRight(content, width);
         case TableAlign.center:
-          final left = padCount ~/ 2;
-          final right = padCount - left;
-          return (' ' * left) + text + (' ' * right);
+          return text.padVisibleCenter(content, width);
         case TableAlign.right:
-          return (' ' * padCount) + text;
+          return text.padVisibleLeft(content, width);
       }
     }
 
@@ -132,7 +129,4 @@ class TableView {
 
 enum TableAlign { left, center, right }
 
-String _visible(String s) {
-  // Remove ANSI escape sequences like \x1B[...m
-  return s.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '');
-}
+// Uses text.visibleLength and text.stripAnsi from text_utils.dart

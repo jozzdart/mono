@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/rendering.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text;
 
 /// BarChartWidget – colored horizontal bar chart in the terminal.
 ///
@@ -49,7 +50,7 @@ class BarChartWidget {
       return;
     }
 
-    final nameW = _cap(_maxLen(items.map((e) => e.label.length)), 6, 24);
+    final nameW = text.clampInt(text.maxOf(items.map((e) => e.label.length)), 6, 24);
     final maxVal =
         items.map((e) => e.value).fold<double>(0, (a, b) => a > b ? a : b);
 
@@ -61,7 +62,7 @@ class BarChartWidget {
 
       final bar = _renderBar(baseColor, barWidth, filled, i);
 
-      final labelStr = _pad(_truncate(it.label, nameW), nameW);
+      final labelStr = text.truncatePad(it.label, nameW);
       final valueStr = showValues
           ? '  ${theme.selection}${_formatValue(it.value)}${theme.reset}'
           : '';
@@ -176,30 +177,6 @@ class BarChartWidget {
     }
   }
 
-  int _maxLen(Iterable<int> lengths) {
-    var max = 0;
-    for (final l in lengths) {
-      if (l > max) max = l;
-    }
-    return max;
-  }
-
-  int _cap(int value, int min, int max) {
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
-  }
-
-  String _pad(String text, int width) {
-    if (text.length >= width) return text;
-    return text + ' ' * (width - text.length);
-  }
-
-  String _truncate(String text, int width) {
-    if (text.length <= width) return text;
-    if (width <= 1) return text.substring(0, width);
-    return '${text.substring(0, width - 1)}…';
-  }
 }
 
 /// Styles for rendering the bar fill.

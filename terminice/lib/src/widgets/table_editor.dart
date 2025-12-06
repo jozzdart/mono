@@ -5,6 +5,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text;
 
 /// Interactive CSV-like grid editor.
 ///
@@ -57,11 +58,12 @@ class TableEditor {
     final String colSep = '${theme.gray}${style.borderVertical}${theme.reset}';
 
     List<int> computeWidths() {
-      final widths = List<int>.generate(columns.length, (i) => _visible(columns[i]).length);
+      final widths = List<int>.generate(
+          columns.length, (i) => text.visibleLength(columns[i]));
       for (final row in data) {
         for (var i = 0; i < columns.length; i++) {
           final cell = (i < row.length) ? row[i] : '';
-          widths[i] = max(widths[i], _visible(cell).length);
+          widths[i] = max(widths[i], text.visibleLength(cell));
         }
       }
       // Pad a bit; clamp to a reasonable max to limit overly wide cells.
@@ -71,10 +73,11 @@ class TableEditor {
       return widths;
     }
 
-    String renderCell(String text, int width, bool isSelected, bool isEditing) {
+    String renderCell(
+        String content, int width, bool isSelected, bool isEditing) {
       // Truncate with ellipsis if needed
       final maxText = max(0, width - 1);
-      String visible = _visible(text);
+      String visible = text.stripAnsi(content);
       if (visible.length > maxText) {
         visible = '${visible.substring(0, max(0, maxText - 1))}…';
       }
@@ -84,13 +87,17 @@ class TableEditor {
         final cursor = '${theme.accent}|${theme.reset}';
         final base = visible + cursor;
         final padded = base.padRight(width);
-        if (style.useInverseHighlight) return '${theme.inverse}$padded${theme.reset}';
+        if (style.useInverseHighlight) {
+          return '${theme.inverse}$padded${theme.reset}';
+        }
         return '${theme.selection}$padded${theme.reset}';
       }
 
       final padded = visible.padRight(width);
       if (isSelected) {
-        if (style.useInverseHighlight) return '${theme.inverse}$padded${theme.reset}';
+        if (style.useInverseHighlight) {
+          return '${theme.inverse}$padded${theme.reset}';
+        }
         return '${theme.selection}$padded${theme.reset}';
       }
       return padded;
@@ -188,7 +195,8 @@ class TableEditor {
           final cell = (c < row.length) ? row[c] : '';
           final isSel = r == selectedRow && c == selectedCol;
           final isEdit = isSel && editing;
-          final rendered = renderCell(isEdit ? editBuffer : cell, widths[c], isSel, isEdit);
+          final rendered =
+              renderCell(isEdit ? editBuffer : cell, widths[c], isSel, isEdit);
           rowBuf.write(prefix);
           rowBuf.write(rendered);
           rowBuf.write(suffix);
@@ -201,7 +209,8 @@ class TableEditor {
       }
 
       // Status line
-      final status = '${theme.info}Row ${selectedRow + 1}/${data.length} · Col ${selectedCol + 1}/${columns.length}${theme.reset}';
+      final status =
+          '${theme.info}Row ${selectedRow + 1}/${data.length} · Col ${selectedCol + 1}/${columns.length}${theme.reset}';
       out.writeln(status);
 
       // Hints
@@ -236,7 +245,8 @@ class TableEditor {
             selectedRow = (selectedRow + 1) % data.length;
           } else if (ev.type == KeyEventType.arrowLeft) {
             selectedCol = (selectedCol - 1 + columns.length) % columns.length;
-          } else if (ev.type == KeyEventType.arrowRight || ev.type == KeyEventType.tab) {
+          } else if (ev.type == KeyEventType.arrowRight ||
+              ev.type == KeyEventType.tab) {
             selectedCol = (selectedCol + 1) % columns.length;
             if (selectedCol == 0) {
               selectedRow = (selectedRow + 1) % data.length;
@@ -266,7 +276,8 @@ class TableEditor {
             if (selectedCol == 0) {
               selectedRow = (selectedRow + 1) % data.length;
             }
-          } else if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
+          } else if (ev.type == KeyEventType.esc ||
+              ev.type == KeyEventType.ctrlC) {
             cancelEdit();
           } else if (ev.type == KeyEventType.backspace) {
             if (editBuffer.isNotEmpty) {
@@ -310,7 +321,4 @@ class TableEditor {
   }
 }
 
-String _visible(String s) {
-  // Remove ANSI escape sequences like \x1B[...m
-  return s.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '');
-}
+// Uses text.stripAnsi from text_utils.dart

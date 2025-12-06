@@ -4,6 +4,7 @@ import 'dart:async';
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text;
 
 class ServiceEndpoint {
   final String name;
@@ -45,16 +46,16 @@ class ServiceMonitor {
     final results = await _runPings();
 
     // Column widths
-    final nameW = _cap(_maxLen(endpoints.map((e) => e.name.length)), 8, 24);
-    final urlW = _cap(
-        _maxLen(endpoints.map((e) => e.url.toString().length)), 20, 48);
+    final nameW = text.clampInt(text.maxOf(endpoints.map((e) => e.name.length)), 8, 24);
+    final urlW = text.clampInt(
+        text.maxOf(endpoints.map((e) => e.url.toString().length)), 20, 48);
 
     // Header line
     final header = StringBuffer()
-      ..write('${_pad('Name', nameW)}  ')
-      ..write('${_pad('URL', urlW)}  ')
-      ..write('${_pad('Code', 4)}  ')
-      ..write(_pad('Latency', 8));
+      ..write('${text.padRight('Name', nameW)}  ')
+      ..write('${text.padRight('URL', urlW)}  ')
+      ..write('${text.padRight('Code', 4)}  ')
+      ..write(text.padRight('Latency', 8));
     out.writeln(
         '${theme.gray}${style.borderVertical}${theme.reset} '
         '${theme.bold}${theme.gray}$header${theme.reset}');
@@ -78,14 +79,14 @@ class ServiceMonitor {
       }
 
       final icon = _statusIcon(status);
-      final name = _pad(r.endpoint.name, nameW);
-      final urlStr = _truncate(r.endpoint.url.toString(), urlW);
+      final name = text.padRight(r.endpoint.name, nameW);
+      final urlStr = text.truncatePad(r.endpoint.url.toString(), urlW);
       final code = r.code != null
-          ? '${r.ok ? theme.info : (r.code! < 500 ? theme.warn : theme.error)}${_pad(r.code.toString(), 4)}${theme.reset}'
-          : '${theme.warn}${_pad('—', 4)}${theme.reset}';
+          ? '${r.ok ? theme.info : (r.code! < 500 ? theme.warn : theme.error)}${text.padRight(r.code.toString(), 4)}${theme.reset}'
+          : '${theme.warn}${text.padRight('—', 4)}${theme.reset}';
       final latency = r.elapsed != null
-          ? '${theme.selection}${_pad('${r.elapsed!.inMilliseconds} ms', 8)}${theme.reset}'
-          : '${theme.warn}${_pad('timeout', 8)}${theme.reset}';
+          ? '${theme.selection}${text.padRight('${r.elapsed!.inMilliseconds} ms', 8)}${theme.reset}'
+          : '${theme.warn}${text.padRight('timeout', 8)}${theme.reset}';
       final note = r.errorMessage != null
           ? ' ${theme.gray}(${r.errorMessage})${theme.reset}'
           : '';
@@ -201,31 +202,6 @@ class ServiceMonitor {
       return _PingResult(endpoint,
           elapsed: null, code: null, errorMessage: e.toString());
     }
-  }
-
-  String _pad(String text, int width) {
-    if (text.length >= width) return text;
-    return text + ' ' * (width - text.length);
-  }
-
-  String _truncate(String text, int width) {
-    if (text.length <= width) return _pad(text, width);
-    if (width <= 1) return text.substring(0, width);
-    return '${text.substring(0, width - 1)}…';
-  }
-
-  int _cap(int value, int min, int max) {
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
-  }
-
-  int _maxLen(Iterable<int> lengths) {
-    var max = 0;
-    for (final l in lengths) {
-      if (l > max) max = l;
-    }
-    return max;
   }
 
   _LineStatus _statusOf(_PingResult r) {

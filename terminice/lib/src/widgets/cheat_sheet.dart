@@ -3,6 +3,7 @@ import 'dart:math';
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text;
 
 /// CheatSheet – command list with shortcuts and usage.
 ///
@@ -39,45 +40,48 @@ class CheatSheet {
     final style = theme.style;
     final columns = const ['Command', 'Shortcut', 'Usage'];
 
-    // Compute column widths
-    int visibleLen(String s) => s.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '').length;
+    // Compute column widths using centralized text utilities
     final widths = <int>[
-      visibleLen(columns[0]),
-      visibleLen(columns[1]),
-      visibleLen(columns[2]),
+      text.visibleLength(columns[0]),
+      text.visibleLength(columns[1]),
+      text.visibleLength(columns[2]),
     ];
     for (final row in entries) {
       if (row.isEmpty) continue;
-      widths[0] = max(widths[0], visibleLen(row[0]));
-      widths[1] = max(widths[1], visibleLen(row.length > 1 ? row[1] : ''));
-      widths[2] = max(widths[2], visibleLen(row.length > 2 ? row[2] : ''));
+      widths[0] = max(widths[0], text.visibleLength(row[0]));
+      widths[1] =
+          max(widths[1], text.visibleLength(row.length > 1 ? row[1] : ''));
+      widths[2] =
+          max(widths[2], text.visibleLength(row.length > 2 ? row[2] : ''));
     }
 
     String padLeftAlign(String s, int w) {
-      final pad = max(0, w - visibleLen(s));
-      return s + ' ' * pad;
+      return text.padVisibleRight(s, w);
     }
 
     String padCenter(String s, int w) {
-      final pad = max(0, w - visibleLen(s));
-      final left = pad ~/ 2;
-      final right = pad - left;
-      return (' ' * left) + s + (' ' * right);
+      return text.padVisibleCenter(s, w);
     }
 
     // Header row
     final header = StringBuffer();
     header.write('${theme.gray}${style.borderVertical}${theme.reset} ');
-    header.write('${theme.bold}${theme.accent}${padLeftAlign(columns[0], widths[0])}${theme.reset}');
+    header.write(
+        '${theme.bold}${theme.accent}${padLeftAlign(columns[0], widths[0])}${theme.reset}');
     header.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
-    header.write('${theme.bold}${theme.accent}${padCenter(columns[1], widths[1])}${theme.reset}');
+    header.write(
+        '${theme.bold}${theme.accent}${padCenter(columns[1], widths[1])}${theme.reset}');
     header.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
-    header.write('${theme.bold}${theme.accent}${padLeftAlign(columns[2], widths[2])}${theme.reset}');
+    header.write(
+        '${theme.bold}${theme.accent}${padLeftAlign(columns[2], widths[2])}${theme.reset}');
     out.writeln(header.toString());
 
     // Connector line (sized to table width)
-    final tableWidth = 2 + widths.fold<int>(0, (sum, w) => sum + w) + 2 * 3; // 3 cols => 2 separators
-    out.writeln('${theme.gray}${style.borderConnector}${'─' * tableWidth}${theme.reset}');
+    final tableWidth = 2 +
+        widths.fold<int>(0, (sum, w) => sum + w) +
+        2 * 3; // 3 cols => 2 separators
+    out.writeln(
+        '${theme.gray}${style.borderConnector}${'─' * tableWidth}${theme.reset}');
 
     // Rows (zebra stripes)
     for (var i = 0; i < entries.length; i++) {
@@ -109,5 +113,3 @@ class CheatSheet {
   /// Convenience: alias to [show].
   void run() => show();
 }
-
-

@@ -6,6 +6,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text;
 
 /// Represents a command in the palette.
 class CommandEntry {
@@ -140,7 +141,7 @@ class CommandPalette {
         final subtitle = rankedItem.entry.subtitle;
         final subtitlePart = subtitle == null
             ? ''
-            : '  ${theme.dim}${_truncate(subtitle, cols ~/ 2)}${theme.reset}';
+            : '  ${theme.dim}${text.truncate(subtitle, cols ~/ 2)}${theme.reset}';
 
         final lineCore = '$prefixSel $highlightedTitle$subtitlePart';
 
@@ -341,8 +342,4 @@ String _highlightSpans(String text, List<int> indices, PromptTheme theme) {
   return buf.toString();
 }
 
-String _truncate(String text, int max) {
-  if (text.length <= max) return text;
-  if (max <= 3) return text.substring(0, max);
-  return '${text.substring(0, max - 3)}...';
-}
+// Uses text.truncate from text_utils.dart

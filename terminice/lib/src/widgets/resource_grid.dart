@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text;
 
 /// ResourceGrid – tabular boxes with CPU/Memory/IO graphs.
 ///
@@ -153,16 +154,16 @@ class ResourceGrid {
     return _clipPad(text, width);
   }
 
-  String _clipPad(String text, int width) {
-    final visible = _visible(text);
-    if (visible.length == width) return text;
-    if (visible.length < width) {
-      return text + (' ' * (width - visible.length));
+  String _clipPad(String styledText, int width) {
+    final visible = text.visibleLength(styledText);
+    if (visible == width) return styledText;
+    if (visible < width) {
+      return styledText + (' ' * (width - visible));
     }
     // Clip while preserving ANSI codes – we trim raw, but add ellipsis.
     // We approximate by clipping the visible content, which is sufficient
     // for our short strings here.
-    final plain = visible;
+    final plain = text.stripAnsi(styledText);
     final clipped = '${plain.substring(0, math.max(0, width - 1))}…';
     return clipped;
   }
@@ -235,9 +236,6 @@ class ResourceCell {
   });
 }
 
-String _visible(String s) {
-  // Remove ANSI escape sequences like \x1B[...m
-  return s.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '');
-}
+// Uses text.stripAnsi and text.visibleLength from text_utils.dart
 
 

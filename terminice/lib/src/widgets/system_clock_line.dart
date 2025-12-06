@@ -1,6 +1,7 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text;
 
 /// Describes an upcoming cron-style task/event.
 class CronEvent {
@@ -80,8 +81,8 @@ class SystemClockLine {
     }
 
     // Column widths
-    final nameWidth = _cap(_maxLen(upcoming.map((e) => e.name.length)), 12, 36);
-    final srcWidth = _cap(_maxLen(upcoming.map((e) => (e.source ?? '').length)), 0, 18);
+    final nameWidth = text.clampInt(text.maxOf(upcoming.map((e) => e.name.length)), 12, 36);
+    final srcWidth = text.clampInt(text.maxOf(upcoming.map((e) => (e.source ?? '').length)), 0, 18);
 
     int printed = 0;
     for (final e in upcoming) {
@@ -92,9 +93,9 @@ class SystemClockLine {
       final delta = e.scheduledAt.difference(now);
       final til = _fmtDelta(delta);
       final icon = _timeIcon(delta);
-      final name = _pad(e.name, nameWidth);
+      final name = text.padRight(e.name, nameWidth);
       final src = (e.source != null && e.source!.isNotEmpty)
-          ? ' ${theme.gray}[${_pad(e.source!, srcWidth)}]${theme.reset}'
+          ? ' ${theme.gray}[${text.padRight(e.source!, srcWidth)}]${theme.reset}'
           : '';
 
       // Primary info line
@@ -118,7 +119,7 @@ class SystemClockLine {
       }
       out.writeln(
         '${theme.gray}${style.borderVertical}${theme.reset} '
-        '${theme.dim}${_pad('', at.length)}${theme.reset}  ' // align under time
+        '${theme.dim}${text.padRight('', at.length)}${theme.reset}  ' // align under time
         '$track',
       );
     }
@@ -147,25 +148,6 @@ class SystemClockLine {
     if (d.inHours >= 1 && d.inMinutes % 60 == 0) return '${d.inHours}h';
     if (d.inHours >= 1) return '${d.inHours}h ${d.inMinutes % 60}m';
     return '${d.inMinutes}m';
-  }
-
-  int _maxLen(Iterable<int> lengths) {
-    var max = 0;
-    for (final l in lengths) {
-      if (l > max) max = l;
-    }
-    return max;
-  }
-
-  int _cap(int value, int min, int max) {
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
-  }
-
-  String _pad(String text, int width) {
-    if (text.length >= width) return text;
-    return text + ' ' * (width - text.length);
   }
 
   String _timeIcon(Duration until) {

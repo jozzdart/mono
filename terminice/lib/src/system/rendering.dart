@@ -1,4 +1,5 @@
 import '../style/theme.dart';
+import 'text_utils.dart' as text_utils;
 
 /// Returns a line prefixed with the themed gutter.
 /// If [content] is empty/whitespace, only the gutter is returned.
@@ -27,12 +28,11 @@ String metric(
 }
 
 /// Removes ANSI escape codes from [input].
-String stripAnsi(String input) {
-  final ansi = RegExp(r'\x1B\[[0-9;]*m');
-  return input.replaceAll(ansi, '');
-}
+///
+/// @Deprecated('Use text_utils.stripAnsi instead')
+String stripAnsi(String input) => text_utils.stripAnsi(input);
 
 /// Returns the visible (printable) character count of [s] after stripping ANSI.
-int visibleLength(String s) {
-  return stripAnsi(s).runes.length;
-}
+///
+/// @Deprecated('Use text_utils.visibleLength instead')
+int visibleLength(String s) => text_utils.visibleLength(s);
