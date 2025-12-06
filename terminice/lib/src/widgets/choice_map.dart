@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import '../style/theme.dart';
+import '../system/grid_navigation.dart';
 import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/selection_controller.dart';
 import '../system/terminal.dart';
 import '../system/widget_frame.dart';
 
@@ -82,58 +84,21 @@ List<String> _choiceMap(
   }
   final rows = (total + cols - 1) ~/ cols;
 
-  // State
-  int focused = 0;
-  final selected = <int>{};
+  // Use GridNavigation for 2D navigation
+  final grid = GridNavigation(itemCount: total, columns: cols);
+
+  // Use SelectionController for selection state
+  final selection = SelectionController(multiSelect: multiSelect);
+
   bool cancelled = false;
-
-  // Grid navigation helpers
-  int moveUp(int idx) {
-    final col = idx % cols;
-    final row = idx ~/ cols;
-    var r = row - 1;
-    for (int i = 0; i < rows; i++) {
-      if (r < 0) {
-        r = rows - 1;
-      } else {
-        r -= 0; // normalize
-      }
-      final cand = r * cols + col;
-      if (cand < total) return cand;
-      r -= 1;
-    }
-    return idx;
-  }
-
-  int moveDown(int idx) {
-    final col = idx % cols;
-    var r = idx ~/ cols;
-    for (int i = 0; i < rows; i++) {
-      r = (r + 1) % rows;
-      final cand = r * cols + col;
-      if (cand < total) return cand;
-    }
-    return idx;
-  }
-
-  int moveLeft(int idx) => idx == 0 ? total - 1 : idx - 1;
-  int moveRight(int idx) => idx == total - 1 ? 0 : idx + 1;
 
   // Use KeyBindings for declarative key handling
   final bindings = KeyBindings.gridSelection(
-    onUp: () => focused = moveUp(focused),
-    onDown: () => focused = moveDown(focused),
-    onLeft: () => focused = moveLeft(focused),
-    onRight: () => focused = moveRight(focused),
-    onToggle: multiSelect
-        ? () {
-            if (selected.contains(focused)) {
-              selected.remove(focused);
-            } else {
-              selected.add(focused);
-            }
-          }
-        : null,
+    onUp: () => grid.moveUp(),
+    onDown: () => grid.moveDown(),
+    onLeft: () => grid.moveLeft(),
+    onRight: () => grid.moveRight(),
+    onToggle: multiSelect ? () => selection.toggle(grid.focusedIndex) : null,
     showToggleHint: multiSelect,
     onCancel: () => cancelled = true,
   );
@@ -198,8 +163,8 @@ List<String> _choiceMap(
           } else {
             final card = renderCard(
               items[idx],
-              highlighted: idx == focused,
-              checked: selected.contains(idx),
+              highlighted: grid.isFocused(idx),
+              checked: selection.isSelected(idx),
             );
             line1.write(card.top);
             line2.write(card.bottom);
@@ -231,10 +196,11 @@ List<String> _choiceMap(
   );
 
   if (cancelled || result == PromptResult.cancelled) return [];
-  if (multiSelect) {
-    if (selected.isEmpty) selected.add(focused);
-    final indices = selected.toList()..sort();
-    return indices.map((i) => items[i].label).toList();
-  }
-  return [items[focused].label];
+
+  // Use SelectionController's result extraction
+  final selectedItems = selection.getSelectedMany(
+    items,
+    fallbackIndex: grid.focusedIndex,
+  );
+  return selectedItems.map((item) => item.label).toList();
 }

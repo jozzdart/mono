@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/key_bindings.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
+import '../system/selection_controller.dart';
 import '../system/terminal.dart';
 import '../system/widget_frame.dart';
 
@@ -37,29 +38,11 @@ class CheckboxMenu {
       maxVisible: maxVisible,
     );
 
-    final selected = <int>{
-      ...initialSelected.where((i) => i >= 0 && i < options.length)
-    };
+    // Use SelectionController for selection state management
+    final selection = SelectionController.multi(
+      initialSelection: initialSelected.where((i) => i >= 0 && i < options.length).toSet(),
+    );
     bool cancelled = false;
-
-    void toggle(int index) {
-      if (index < 0 || index >= options.length) return;
-      if (selected.contains(index)) {
-        selected.remove(index);
-      } else {
-        selected.add(index);
-      }
-    }
-
-    void selectAllOrClear() {
-      if (selected.length == options.length) {
-        selected.clear();
-      } else {
-        selected
-          ..clear()
-          ..addAll(List<int>.generate(options.length, (i) => i));
-      }
-    }
 
     // Use KeyBindings for declarative, composable key handling
     final bindings = KeyBindings.verticalNavigation(
@@ -67,12 +50,12 @@ class CheckboxMenu {
           onDown: () => nav.moveDown(),
         ) +
         KeyBindings.toggle(
-          onToggle: () => toggle(nav.selectedIndex),
+          onToggle: () => selection.toggle(nav.selectedIndex),
           hintDescription: 'toggle',
         ) +
         KeyBindings.letter(
           char: 'A',
-          onPress: selectAllOrClear,
+          onPress: () => selection.toggleAll(options.length),
           hintDescription: 'select all / clear',
         ) +
         KeyBindings.prompt(
@@ -81,12 +64,12 @@ class CheckboxMenu {
 
     String summaryLine() {
       final total = options.length;
-      final count = selected.length;
+      final count = selection.count;
       if (count == 0) {
         return '${theme.dim}(none selected)${theme.reset}';
       }
       // render up to 3 selections by label, then "+N"
-      final indices = selected.toList()..sort();
+      final indices = selection.getSelectedIndices();
       final names = <String>[];
       for (var i = 0; i < indices.length && i < 3; i++) {
         final name = options[indices[i]];
@@ -130,7 +113,7 @@ class CheckboxMenu {
         for (var i = 0; i < window.items.length; i++) {
           final absoluteIdx = window.start + i;
           final isFocused = nav.isSelected(absoluteIdx);
-          final isChecked = selected.contains(absoluteIdx);
+          final isChecked = selection.isSelected(absoluteIdx);
 
           // Use LineBuilder for arrow and checkbox
           final arrow = ctx.lb.arrow(isFocused);
@@ -163,8 +146,11 @@ class CheckboxMenu {
     );
 
     if (cancelled || result == PromptResult.cancelled) return <String>[];
-    if (selected.isEmpty) selected.add(nav.selectedIndex);
-    final sortedIndices = selected.toList()..sort();
-    return sortedIndices.map((i) => options[i]).toList(growable: false);
+    
+    // Use SelectionController's result extraction with fallback
+    return selection.getSelectedMany(
+      options,
+      fallbackIndex: nav.selectedIndex,
+    );
   }
 }

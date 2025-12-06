@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../style/theme.dart';
+import '../system/grid_navigation.dart';
 import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
@@ -53,55 +54,24 @@ class LaunchPad {
     // Layout
     final int computedCellWidth = _computeCellWidth();
     final int cols = _computeColumns(computedCellWidth);
-    final int rows = (actions.length + cols - 1) ~/ cols;
-    final String colSep = ' ${theme.gray}${style.borderVertical}${theme.reset} ';
+    final String colSep =
+        ' ${theme.gray}${style.borderVertical}${theme.reset} ';
 
-    // State
-    int selected = 0;
+    // Use GridNavigation for 2D navigation
+    final grid = GridNavigation(itemCount: actions.length, columns: cols);
+
     LaunchAction? result;
-
-    int moveUp(int idx) {
-      final col = idx % cols;
-      var row = idx ~/ cols;
-      for (int i = 0; i < rows; i++) {
-        row = (row - 1 + rows) % rows;
-        final cand = row * cols + col;
-        if (cand < actions.length) return cand;
-      }
-      return idx;
-    }
-
-    int moveDown(int idx) {
-      final col = idx % cols;
-      var row = idx ~/ cols;
-      for (int i = 0; i < rows; i++) {
-        row = (row + 1) % rows;
-        final cand = row * cols + col;
-        if (cand < actions.length) return cand;
-      }
-      return idx;
-    }
-
-    int moveLeft(int idx) {
-      if (idx == 0) return actions.length - 1;
-      return idx - 1;
-    }
-
-    int moveRight(int idx) {
-      if (idx == actions.length - 1) return 0;
-      return idx + 1;
-    }
 
     // Use KeyBindings for declarative key handling
     final bindings = KeyBindings.directionalNavigation(
-          onUp: () => selected = moveUp(selected),
-          onDown: () => selected = moveDown(selected),
-          onLeft: () => selected = moveLeft(selected),
-          onRight: () => selected = moveRight(selected),
+          onUp: () => grid.moveUp(),
+          onDown: () => grid.moveDown(),
+          onLeft: () => grid.moveLeft(),
+          onRight: () => grid.moveRight(),
         ) +
         KeyBindings.confirm(
           onConfirm: () {
-            result = actions[selected];
+            result = actions[grid.focusedIndex];
             return KeyActionResult.confirmed;
           },
           hintDescription: executeOnEnter ? 'launch' : 'select',
@@ -117,23 +87,20 @@ class LaunchPad {
       );
 
       widgetFrame.render(out, (ctx) {
-        // Render row-by-row; each tile expands to the same number of lines
-        for (int r = 0; r < rows; r++) {
-          final start = r * cols;
-          final end = math.min(start + cols, actions.length);
-          final slice = actions.sublist(start, end);
-
+        // Render row-by-row using GridNavigation's rowsOf helper
+        for (final row in grid.rowsOf(actions)) {
           final tiles = <List<String>>[];
-          for (int i = 0; i < slice.length; i++) {
-            final idx = start + i;
-            tiles.add(_renderTile(slice[i],
-                width: computedCellWidth, height: tileHeight, highlighted: idx == selected));
+          for (int i = 0; i < row.items.length; i++) {
+            final idx = row.startIndex + i;
+            tiles.add(_renderTile(row.items[i],
+                width: computedCellWidth,
+                height: tileHeight,
+                highlighted: grid.isFocused(idx)));
           }
 
           // Normalize height across tiles in this row
-          final int linesPerTile = tiles
-              .map((t) => t.length)
-              .fold<int>(0, (a, b) => math.max(a, b));
+          final int linesPerTile =
+              tiles.map((t) => t.length).fold<int>(0, (a, b) => math.max(a, b));
           for (final t in tiles) {
             while (t.length < linesPerTile) {
               t.add(' '.padRight(computedCellWidth));
@@ -151,9 +118,10 @@ class LaunchPad {
           }
 
           // Connector between rows
-          if (r < rows - 1) {
+          if (!row.isLastRow) {
             final connector = StringBuffer();
-            connector.write('${theme.gray}${style.borderConnector}${theme.reset}');
+            connector
+                .write('${theme.gray}${style.borderConnector}${theme.reset}');
             connector.write(
                 '${theme.gray}${'─' * _rowContentWidth(tiles.length, computedCellWidth)}${theme.reset}');
             ctx.line(connector.toString());
@@ -183,17 +151,21 @@ class LaunchPad {
     const leftPrefix = 2;
     const sepWidth = 3;
     final unit = width + sepWidth;
-    final colsByWidth = math.max(1, ((termWidth - leftPrefix) + sepWidth) ~/ unit);
+    final colsByWidth =
+        math.max(1, ((termWidth - leftPrefix) + sepWidth) ~/ unit);
     // Aim for a balanced grid roughly sqrt(n)
-    final desired = math.max(2, math.min(actions.length, math.sqrt(actions.length).ceil()));
+    final desired =
+        math.max(2, math.min(actions.length, math.sqrt(actions.length).ceil()));
     return math.min(colsByWidth, desired);
   }
 
   int _computeCellWidth() {
     if (cellWidth > 0) return cellWidth;
-    final maxLabel = actions.fold<int>(0, (w, a) => math.max(w, text.visibleLength(a.label)));
+    final maxLabel = actions.fold<int>(
+        0, (w, a) => math.max(w, text.visibleLength(a.label)));
     final maxDesc = showDescriptions
-        ? actions.fold<int>(0, (w, a) => math.max(w, text.visibleLength(a.description ?? '')))
+        ? actions.fold<int>(
+            0, (w, a) => math.max(w, text.visibleLength(a.description ?? '')))
         : 0;
     final base = math.max(maxLabel, maxDesc);
     return base.clamp(12, 26) + 6; // padding for icon and breathing room
@@ -221,7 +193,9 @@ class LaunchPad {
 
     // Description or spacer
     String middle;
-    if (showDescriptions && (action.description != null) && action.description!.trim().isNotEmpty) {
+    if (showDescriptions &&
+        (action.description != null) &&
+        action.description!.trim().isNotEmpty) {
       final descVisible = _clip(action.description!, width - 2);
       middle = _center('${theme.dim}$descVisible${theme.reset}', width);
     } else {
@@ -230,7 +204,8 @@ class LaunchPad {
 
     // Label line (accent + bold)
     final labelVisible = _clip(action.label, width - 2);
-    final labelFramed = '[ ${theme.bold}${theme.accent}$labelVisible${theme.reset} ]';
+    final labelFramed =
+        '[ ${theme.bold}${theme.accent}$labelVisible${theme.reset} ]';
     final label = _center(labelFramed, width);
 
     lines.add(icon);
@@ -250,7 +225,9 @@ class LaunchPad {
     // Apply highlighted style per line
     final useInverse = theme.style.useInverseHighlight;
     return lines
-        .map((l) => useInverse ? '${theme.inverse}$l${theme.reset}' : '${theme.selection}$l${theme.reset}')
+        .map((l) => useInverse
+            ? '${theme.inverse}$l${theme.reset}'
+            : '${theme.selection}$l${theme.reset}')
         .toList(growable: false);
   }
 }
@@ -321,7 +298,8 @@ String _tileStripe(PromptTheme theme, int width, {bool subtle = false}) {
   // Alternating accent/highlight dashes for punchy top stripes; dim for subtle
   final buf = StringBuffer();
   for (int i = 0; i < width; i++) {
-    final color = subtle ? theme.dim : (i % 2 == 0 ? theme.accent : theme.highlight);
+    final color =
+        subtle ? theme.dim : (i % 2 == 0 ? theme.accent : theme.highlight);
     buf.write('$color─${theme.reset}');
   }
   return buf.toString();

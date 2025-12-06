@@ -1,7 +1,9 @@
 import '../style/theme.dart';
+import '../system/grid_navigation.dart';
 import '../system/hints.dart';
 import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/selection_controller.dart';
 import '../system/terminal.dart';
 import '../system/widget_frame.dart';
 
@@ -36,13 +38,8 @@ class TagSelector {
   List<String> run() {
     if (tags.isEmpty) return [];
 
-    // State
-    int focusedIndex = 0;
-    final selected = <int>{};
-    bool cancelled = false;
-
     // Layout calculator for snapping to grid
-    ({int contentWidth, int colWidth, int cols, int rows}) layout() {
+    ({int contentWidth, int colWidth, int cols, int rows}) computeLayout() {
       // Rough left frame prefix width: border + space
       const framePrefix = 2; // visual columns ignoring color codes
 
@@ -73,61 +70,34 @@ class TagSelector {
       );
     }
 
-    void moveLeft() {
-      if (focusedIndex == 0) {
-        focusedIndex = tags.length - 1;
-      } else {
-        focusedIndex -= 1;
-      }
-    }
+    // Initial layout calculation
+    final initialLayout = computeLayout();
 
-    void moveRight() {
-      if (focusedIndex == tags.length - 1) {
-        focusedIndex = 0;
-      } else {
-        focusedIndex += 1;
-      }
-    }
+    // Use GridNavigation for 2D navigation
+    final grid = GridNavigation(
+      itemCount: tags.length,
+      columns: initialLayout.cols,
+    );
 
-    void moveUp() {
-      final l = layout();
-      final idx = focusedIndex - l.cols;
-      if (idx < 0) {
-        // Wrap to same column in last row if exists
-        final col = focusedIndex % l.cols;
-        final lastRowStart = (l.rows - 1) * l.cols;
-        final lastRowLen = tags.length - lastRowStart;
-        final targetCol = col.clamp(0, (lastRowLen - 1).clamp(0, l.cols - 1));
-        focusedIndex = lastRowStart + targetCol;
-      } else {
-        focusedIndex = idx;
-      }
-    }
+    // Use SelectionController for selection state (always multi-select for tags)
+    final selection = SelectionController.multi();
 
-    void moveDown() {
-      final l = layout();
-      final idx = focusedIndex + l.cols;
-      if (idx >= tags.length) {
-        // Wrap to same column in first row
-        focusedIndex = focusedIndex % l.cols;
-      } else {
-        focusedIndex = idx;
-      }
-    }
+    bool cancelled = false;
 
     // Use KeyBindings for declarative key handling
     final bindings = KeyBindings.gridSelection(
-      onUp: moveUp,
-      onDown: moveDown,
-      onLeft: moveLeft,
-      onRight: moveRight,
-      onToggle: () {
-        if (selected.contains(focusedIndex)) {
-          selected.remove(focusedIndex);
-        } else {
-          selected.add(focusedIndex);
-        }
+      onUp: () {
+        // Update columns in case terminal resized
+        grid.columns = computeLayout().cols;
+        grid.moveUp();
       },
+      onDown: () {
+        grid.columns = computeLayout().cols;
+        grid.moveDown();
+      },
+      onLeft: () => grid.moveLeft(),
+      onRight: () => grid.moveRight(),
+      onToggle: () => selection.toggle(grid.focusedIndex),
       showToggleHint: true,
       onCancel: () => cancelled = true,
     );
@@ -162,7 +132,7 @@ class TagSelector {
     void render(RenderOutput out) {
       frame.render(out, (ctx) {
         // Selected summary
-        final count = selected.length;
+        final count = selection.count;
         final summary = count == 0
             ? ctx.lb.emptyMessage('none selected')
             : '${theme.accent}$count selected${theme.reset}';
@@ -175,7 +145,10 @@ class TagSelector {
         // Connector after summary
         ctx.writeConnector();
 
-        final l = layout();
+        final l = computeLayout();
+        // Update grid columns in case terminal resized
+        grid.columns = l.cols;
+
         for (var r = 0; r < l.rows; r++) {
           final pieces = <String>[];
           for (var c = 0; c < l.cols; c++) {
@@ -183,7 +156,11 @@ class TagSelector {
             if (idx >= tags.length) break;
             pieces.add(
               renderChip(
-                  idx, idx == focusedIndex, selected.contains(idx), l.colWidth),
+                idx,
+                grid.isFocused(idx),
+                selection.isSelected(idx),
+                l.colWidth,
+              ),
             );
           }
           ctx.gutterLine(pieces.join(' '));
@@ -198,6 +175,8 @@ class TagSelector {
     );
 
     if (cancelled || result == PromptResult.cancelled) return [];
-    return selected.map((i) => tags[i]).toList(growable: false);
+
+    // Use SelectionController's result extraction
+    return selection.getSelectedMany(tags);
   }
 }

@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import '../style/theme.dart';
+import '../system/grid_navigation.dart';
 import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/selection_controller.dart';
 import '../system/terminal.dart';
 import '../system/widget_frame.dart';
 
@@ -79,52 +81,21 @@ List<String> _gridSelect(
   final int rows = (total + cols - 1) ~/ cols;
   final String colSep = '${theme.gray}│${theme.reset}';
 
-  // Selection state
-  int selected = 0;
-  final selectedSet = <int>{};
+  // Use GridNavigation for 2D navigation
+  final grid = GridNavigation(itemCount: total, columns: cols);
+
+  // Use SelectionController for selection state
+  final selection = SelectionController(multiSelect: multiSelect);
+
   bool cancelled = false;
-
-  // Grid navigation helpers
-  int moveUp(int idx) {
-    final col = idx % cols;
-    var row = idx ~/ cols;
-    for (int i = 0; i < rows; i++) {
-      row = (row - 1 + rows) % rows;
-      final cand = row * cols + col;
-      if (cand < total) return cand;
-    }
-    return idx;
-  }
-
-  int moveDown(int idx) {
-    final col = idx % cols;
-    var row = idx ~/ cols;
-    for (int i = 0; i < rows; i++) {
-      row = (row + 1) % rows;
-      final cand = row * cols + col;
-      if (cand < total) return cand;
-    }
-    return idx;
-  }
-
-  int moveLeft(int idx) => idx == 0 ? total - 1 : idx - 1;
-  int moveRight(int idx) => idx == total - 1 ? 0 : idx + 1;
 
   // Use KeyBindings for declarative key handling
   final bindings = KeyBindings.gridSelection(
-    onUp: () => selected = moveUp(selected),
-    onDown: () => selected = moveDown(selected),
-    onLeft: () => selected = moveLeft(selected),
-    onRight: () => selected = moveRight(selected),
-    onToggle: multiSelect
-        ? () {
-            if (selectedSet.contains(selected)) {
-              selectedSet.remove(selected);
-            } else {
-              selectedSet.add(selected);
-            }
-          }
-        : null,
+    onUp: () => grid.moveUp(),
+    onDown: () => grid.moveDown(),
+    onLeft: () => grid.moveLeft(),
+    onRight: () => grid.moveRight(),
+    onToggle: multiSelect ? () => selection.toggle(grid.focusedIndex) : null,
     showToggleHint: multiSelect,
     onCancel: () => cancelled = true,
   );
@@ -169,8 +140,8 @@ List<String> _gridSelect(
             // Fill empty slots for alignment
             buffer.write(''.padRight(computedCellWidth));
           } else {
-            final highlighted = idx == selected;
-            final checked = selectedSet.contains(idx);
+            final highlighted = grid.isFocused(idx);
+            final checked = selection.isSelected(idx);
             buffer.write(renderCell(options[idx],
                 highlighted: highlighted, checked: checked));
           }
@@ -198,11 +169,9 @@ List<String> _gridSelect(
 
   if (cancelled || result == PromptResult.cancelled) return [];
 
-  if (multiSelect) {
-    if (selectedSet.isEmpty) selectedSet.add(selected);
-    final indices = selectedSet.toList()..sort();
-    return indices.map((i) => options[i]).toList();
-  }
-
-  return [options[selected]];
+  // Use SelectionController's result extraction
+  return selection.getSelectedMany(
+    options,
+    fallbackIndex: grid.focusedIndex,
+  );
 }

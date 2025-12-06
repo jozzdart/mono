@@ -8,6 +8,8 @@ export 'system/key_events.dart';
 export 'system/line_builder.dart';
 export 'system/list_navigation.dart';
 export 'system/prompt_runner.dart';
+export 'system/selection_controller.dart';
+export 'system/grid_navigation.dart';
 export 'system/table_renderer.dart';
 export 'system/terminal.dart';
 export 'system/text_input_buffer.dart';

@@ -3,6 +3,7 @@ import '../system/highlighter.dart';
 import '../system/key_bindings.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
+import '../system/selection_controller.dart';
 import '../system/text_input_buffer.dart';
 import '../system/widget_frame.dart';
 
@@ -48,7 +49,6 @@ List<String> _searchSelect(
   final queryInput = TextInputBuffer();
   bool searchEnabled = showSearch;
   List<String> filtered = List.from(allOptions);
-  final selectedSet = <String>{};
   bool cancelled = false;
 
   // Use centralized list navigation for selection & scrolling
@@ -56,6 +56,9 @@ List<String> _searchSelect(
     itemCount: filtered.length,
     maxVisible: maxVisible,
   );
+
+  // Use SelectionController for selection state management
+  final selection = SelectionController(multiSelect: multiSelect);
 
   void updateFilter() {
     if (!searchEnabled || queryInput.isEmpty) {
@@ -67,6 +70,8 @@ List<String> _searchSelect(
     }
     nav.itemCount = filtered.length;
     nav.reset();
+    // Constrain selection to new filtered list
+    selection.constrainTo(filtered.length);
   }
 
   // Use KeyBindings for declarative key handling
@@ -82,14 +87,7 @@ List<String> _searchSelect(
     isSearchEnabled: () => searchEnabled,
     onSearchInput: updateFilter,
     onToggle: multiSelect && filtered.isNotEmpty
-        ? () {
-            final current = filtered[nav.selectedIndex];
-            if (selectedSet.contains(current)) {
-              selectedSet.remove(current);
-            } else {
-              selectedSet.add(current);
-            }
-          }
+        ? () => selection.toggle(nav.selectedIndex)
         : null,
     hasMultiSelect: multiSelect,
     onCancel: () => cancelled = true,
@@ -118,7 +116,7 @@ List<String> _searchSelect(
         window,
         selectedIndex: nav.selectedIndex,
         renderItem: (item, index, isFocused) {
-          final isChecked = selectedSet.contains(item);
+          final isChecked = selection.isSelected(index);
           // Use LineBuilder for arrow and checkbox
           final checkbox = multiSelect ? ctx.lb.checkbox(isChecked) : ' ';
           final prefix = ctx.lb.arrow(isFocused);
@@ -147,10 +145,9 @@ List<String> _searchSelect(
     return [];
   }
 
-  if (multiSelect) {
-    if (selectedSet.isEmpty) selectedSet.add(filtered[nav.selectedIndex]);
-    return selectedSet.toList();
-  } else {
-    return [filtered[nav.selectedIndex]];
-  }
+  // Use SelectionController's result extraction
+  return selection.getSelectedMany(
+    filtered,
+    fallbackIndex: nav.selectedIndex,
+  );
 }
