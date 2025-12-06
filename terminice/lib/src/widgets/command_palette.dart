@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 import '../system/text_utils.dart' as text;
@@ -47,34 +48,19 @@ class CommandPalette {
 
     String query = '';
     bool useFuzzy = true;
-    int selectedIndex = 0;
-    int scrollOffset = 0;
     bool cancelled = false;
-    int visibleRows = maxVisible;
 
     List<_RankedCommand> ranked = _rank(commands, query, useFuzzy);
 
+    // Use centralized list navigation for selection & scrolling
+    final nav = ListNavigation(
+      itemCount: ranked.length,
+      maxVisible: maxVisible,
+    );
 
     void updateRanking() {
       ranked = _rank(commands, query, useFuzzy);
-      if (ranked.isEmpty) {
-        selectedIndex = 0;
-        scrollOffset = 0;
-      } else {
-        selectedIndex = min(selectedIndex, ranked.length - 1);
-        if (selectedIndex < 0) selectedIndex = 0;
-      }
-    }
-
-    void moveSelection(int delta) {
-      if (ranked.isEmpty) return;
-      final len = ranked.length;
-      selectedIndex = (selectedIndex + delta + len) % len;
-      if (selectedIndex < scrollOffset) {
-        scrollOffset = selectedIndex;
-      } else if (selectedIndex >= scrollOffset + visibleRows) {
-        scrollOffset = selectedIndex - visibleRows + 1;
-      }
+      nav.itemCount = ranked.length;
     }
 
     void render(RenderOutput out) {
@@ -82,7 +68,7 @@ class CommandPalette {
       final cols = TerminalInfo.columns;
       final lines = TerminalInfo.rows;
       // Reserve: 1 title + 1 query + 1 connector + 1 mode line + 1 bottom + 4 hints ≈ 8
-      visibleRows = (lines - 8).clamp(5, maxVisible);
+      nav.maxVisible = (lines - 8).clamp(5, maxVisible);
 
       final frame = FramedLayout(label, theme: theme);
       final title = frame.top();
@@ -103,23 +89,21 @@ class CommandPalette {
       final infoLine = '$mode   $countText';
       out.writeln('$framePrefix${theme.dim}$infoLine${theme.reset}');
 
-      // Visible window
-      final end = min(scrollOffset + visibleRows, ranked.length);
-      final start = scrollOffset;
-      final window = ranked.sublist(start, end);
+      // Use ListNavigation's viewport for visible window
+      final window = nav.visibleWindow(ranked);
 
-      if (start > 0 && window.isNotEmpty) {
+      if (window.hasOverflowAbove) {
         out.writeln('$framePrefix${theme.dim}...${theme.reset}');
       }
 
-      for (var i = 0; i < window.length; i++) {
-        final idx = start + i;
-        final isHighlighted = idx == selectedIndex;
+      for (var i = 0; i < window.items.length; i++) {
+        final absoluteIdx = window.start + i;
+        final isHighlighted = nav.isSelected(absoluteIdx);
         final prefixSel =
             isHighlighted ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
 
         // Compose display text with highlighted match spans
-        final rankedItem = window[i];
+        final rankedItem = window.items[i];
         final highlightedTitle = _highlightSpans(
           rankedItem.entry.title,
           rankedItem.titleSpans,
@@ -139,7 +123,7 @@ class CommandPalette {
         }
       }
 
-      if (end < ranked.length && window.isNotEmpty) {
+      if (window.hasOverflowBelow) {
         out.writeln('$framePrefix${theme.dim}...${theme.reset}');
       }
 
@@ -177,12 +161,12 @@ class CommandPalette {
         }
 
         if (ev.type == KeyEventType.arrowUp) {
-          moveSelection(-1);
+          nav.moveUp();
         } else if (ev.type == KeyEventType.arrowDown) {
-          moveSelection(1);
+          nav.moveDown();
         } else if (ev.type == KeyEventType.enter) {
           if (ranked.isNotEmpty) {
-            result = ranked[selectedIndex].entry;
+            result = ranked[nav.selectedIndex].entry;
           }
           return PromptResult.confirmed;
         } else if (ev.type == KeyEventType.esc) {

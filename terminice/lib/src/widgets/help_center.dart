@@ -5,6 +5,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/highlighter.dart';
+import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 
@@ -51,12 +52,16 @@ class HelpCenter {
     final style = theme.style;
 
     String query = '';
-    int selectedIndex = 0;
-    int listScroll = 0;
     int previewScroll = 0;
     bool cancelled = false;
 
     List<HelpDoc> filtered = List.from(docs);
+
+    // Use centralized list navigation for selection & scrolling
+    final nav = ListNavigation(
+      itemCount: filtered.length,
+      maxVisible: maxVisibleResults,
+    );
 
     // Note: compact mode ignores terminal height to avoid expansion
 
@@ -79,8 +84,8 @@ class HelpCenter {
           return a.title.toLowerCase().compareTo(b.title.toLowerCase());
         });
       }
-      selectedIndex = filtered.isEmpty ? 0 : min(selectedIndex, filtered.length - 1);
-      listScroll = 0;
+      nav.itemCount = filtered.length;
+      nav.reset();
       previewScroll = 0;
     }
 
@@ -103,63 +108,42 @@ class HelpCenter {
       out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      out.writeln(
-          '$framePrefix${theme.accent}Search:${theme.reset} $query');
+      out.writeln('$framePrefix${theme.accent}Search:${theme.reset} $query');
 
       if (style.showBorder) {
         out.writeln(frame.connector());
       }
 
-      // Compact layout: never expand to terminal height. Use caps only.
-      final listRows = max(1, min(maxVisibleResults, max(1, filtered.length)));
-
       // Results header
       final header = '${theme.dim}Results (${filtered.length})${theme.reset}';
       out.writeln('$framePrefix$header');
 
-      // Results window
+      // Results window using ListNavigation
       if (filtered.isEmpty) {
         out.writeln('$framePrefix${theme.dim}(no matches)${theme.reset}');
       } else {
-        final total = filtered.length;
-        // Determine if top/bottom ellipses are needed within listRows budget
-        final needTop = listScroll > 0;
-        final needBottom = (listScroll + listRows) < total;
-        final visibleBudget = max(1, listRows - (needTop ? 1 : 0) - (needBottom ? 1 : 0));
-        // Compute window indices
-        int start = listScroll;
-        int count = max(0, min(visibleBudget, total - start));
-        // If we don't have enough items to fill, backfill from end
-        if (count < visibleBudget) {
-          start = max(0, total - visibleBudget);
-          count = min(visibleBudget, total - start);
-        }
-        final end = start + count;
-        final showTopEllipsis = start > 0 && listRows > 0;
-        final showBottomEllipsis = end < total && listRows > 1;
+        final window = nav.visibleWindow(filtered);
 
-        int printed = 0;
-        if (showTopEllipsis) {
+        if (window.hasOverflowAbove) {
           out.writeln('$framePrefix${theme.dim}...${theme.reset}');
-          printed++;
         }
 
-        for (var idx = start; idx < end && printed < listRows - (showBottomEllipsis ? 1 : 0); idx++) {
-          final isSel = idx == selectedIndex;
-          final prefix = isSel ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
-          final label = labelFor(filtered[idx]);
+        for (var i = 0; i < window.items.length; i++) {
+          final absoluteIdx = window.start + i;
+          final isSel = nav.isSelected(absoluteIdx);
+          final prefix =
+              isSel ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+          final label = labelFor(window.items[i]);
           final line = '$prefix ${highlightSubstring(label, query, theme)}';
           if (isSel && style.useInverseHighlight) {
             out.writeln('$framePrefix${theme.inverse}$line${theme.reset}');
           } else {
             out.writeln('$framePrefix$line');
           }
-          printed++;
         }
 
-        if (showBottomEllipsis && printed < listRows) {
+        if (window.hasOverflowBelow) {
           out.writeln('$framePrefix${theme.dim}...${theme.reset}');
-          printed++;
         }
       }
 
@@ -169,9 +153,7 @@ class HelpCenter {
       }
 
       // Preview header
-      final selected = filtered.isEmpty
-          ? null
-          : filtered[selectedIndex];
+      final selected = filtered.isEmpty ? null : filtered[nav.selectedIndex];
       final previewTitle = selected == null
           ? '${theme.dim}(no selection)${theme.reset}'
           : '${theme.accent}Preview:${theme.reset} ${selected.title}';
@@ -183,12 +165,14 @@ class HelpCenter {
       } else {
         final rawLines = selected.content.split('\n');
         final viewportStart = min(previewScroll, max(0, rawLines.length - 1));
-        final viewportEnd = min(viewportStart + maxPreviewLines, rawLines.length);
+        final viewportEnd =
+            min(viewportStart + maxPreviewLines, rawLines.length);
         final contentWidth = max(10, cols - 4); // rough padding
 
         for (var i = viewportStart; i < viewportEnd; i++) {
           final ln = rawLines[i];
-          final highlighted = highlightSubstring(truncate(ln, contentWidth), query, theme);
+          final highlighted =
+              highlightSubstring(truncate(ln, contentWidth), query, theme);
           out.writeln('$framePrefix$highlighted');
         }
         // Compact: no filler beyond content
@@ -209,14 +193,7 @@ class HelpCenter {
     }
 
     void moveSelection(int delta) {
-      if (filtered.isEmpty) return;
-      final len = filtered.length;
-      selectedIndex = (selectedIndex + delta + len) % len;
-      if (selectedIndex < listScroll) {
-        listScroll = selectedIndex;
-      } else if (selectedIndex >= listScroll + maxVisibleResults) {
-        listScroll = selectedIndex - maxVisibleResults + 1;
-      }
+      nav.moveBy(delta);
       previewScroll = 0; // reset preview to top of new selection
     }
 
@@ -234,7 +211,7 @@ class HelpCenter {
         }
 
         if (ev.type == KeyEventType.enter) {
-          if (filtered.isNotEmpty) result = filtered[selectedIndex];
+          if (filtered.isNotEmpty) result = filtered[nav.selectedIndex];
           return PromptResult.confirmed;
         }
 
@@ -246,7 +223,7 @@ class HelpCenter {
           previewScroll = max(0, previewScroll - 1);
         } else if (ev.type == KeyEventType.arrowRight) {
           if (filtered.isNotEmpty) {
-            final lines = filtered[selectedIndex].content.split('\n');
+            final lines = filtered[nav.selectedIndex].content.split('\n');
             previewScroll = min(previewScroll + 1, max(0, lines.length - 1));
           }
         } else if (ev.type == KeyEventType.backspace) {
@@ -266,5 +243,3 @@ class HelpCenter {
     return cancelled ? null : result;
   }
 }
-
-

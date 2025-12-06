@@ -5,6 +5,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/highlighter.dart';
+import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_utils.dart' as text_utils;
 
@@ -66,12 +67,16 @@ class CLIManual {
     final style = theme.style;
 
     String query = '';
-    int selectedIndex = 0;
-    int listScroll = 0;
     int pageScroll = 0;
     bool cancelled = false;
 
     List<ManualPage> filtered = List.from(pages);
+
+    // Use centralized list navigation for selection & scrolling
+    final nav = ListNavigation(
+      itemCount: filtered.length,
+      maxVisible: maxVisibleResults,
+    );
 
     // Fixed-size: do not expand to the full terminal
     int cols0() => width;
@@ -103,8 +108,8 @@ class CLIManual {
         filtered = pages.where(matchPage).toList();
         filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       }
-      selectedIndex = filtered.isEmpty ? 0 : min(selectedIndex, filtered.length - 1);
-      listScroll = 0;
+      nav.itemCount = filtered.length;
+      nav.reset();
       pageScroll = 0;
     }
 
@@ -234,16 +239,15 @@ class CLIManual {
       final headerText = '${theme.dim}Results (${filtered.length})${theme.reset}';
       out.writeln('$framePrefix$headerText');
 
-      // Result window
-      final end = filtered.isEmpty ? 0 : min(listScroll + listRows, filtered.length);
-      final start = listScroll;
-      final window = filtered.isEmpty ? const <ManualPage>[] : filtered.sublist(start, end);
+      // Result window using ListNavigation
+      nav.maxVisible = listRows;
+      final window = nav.visibleWindow(filtered);
 
-      for (var i = 0; i < window.length; i++) {
-        final idx = start + i;
-        final isSel = idx == selectedIndex;
+      for (var i = 0; i < window.items.length; i++) {
+        final absoluteIdx = window.start + i;
+        final isSel = nav.isSelected(absoluteIdx);
         final prefix = isSel ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
-        final label = _labelFor(window[i]);
+        final label = _labelFor(window.items[i]);
         final line = '$prefix ${highlightSubstring(label, query, theme)}';
         if (isSel && style.useInverseHighlight) {
           out.writeln('$framePrefix${theme.inverse}$line${theme.reset}');
@@ -252,7 +256,7 @@ class CLIManual {
         }
       }
 
-      for (var pad = (window.length); pad < listRows; pad++) {
+      for (var pad = (window.items.length); pad < listRows; pad++) {
         out.writeln('$framePrefix${theme.dim}·${theme.reset}');
       }
 
@@ -261,7 +265,7 @@ class CLIManual {
       }
 
       // Preview header
-      final selected = filtered.isEmpty ? null : filtered[selectedIndex];
+      final selected = filtered.isEmpty ? null : filtered[nav.selectedIndex];
       final previewTitle = selected == null
           ? '${theme.dim}(no selection)${theme.reset}'
           : '${theme.accent}Manual:${theme.reset} ${_labelFor(selected)}';
@@ -312,14 +316,7 @@ class CLIManual {
     }
 
     void moveSelection(int delta) {
-      if (filtered.isEmpty) return;
-      final len = filtered.length;
-      selectedIndex = (selectedIndex + delta + len) % len;
-      if (selectedIndex < listScroll) {
-        listScroll = selectedIndex;
-      } else if (selectedIndex >= listScroll + maxVisibleResults) {
-        listScroll = selectedIndex - maxVisibleResults + 1;
-      }
+      nav.moveBy(delta);
       pageScroll = 0;
     }
 
@@ -337,7 +334,7 @@ class CLIManual {
         }
 
         if (ev.type == KeyEventType.enter) {
-          if (filtered.isNotEmpty) result = filtered[selectedIndex];
+          if (filtered.isNotEmpty) result = filtered[nav.selectedIndex];
           return PromptResult.confirmed;
         }
 

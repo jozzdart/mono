@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 
 class TreeNode {
@@ -39,8 +40,13 @@ class TreeExplorer {
       _initExpanded(r, expanded);
     }
 
-    int selectedIndex = 0;
-    int scrollOffset = 0;
+    // Use centralized list navigation for selection & scrolling
+    // Note: itemCount will be dynamically updated as tree expands/collapses
+    final nav = ListNavigation(
+      itemCount: 0, // Will be set after first visible() call
+      maxVisible: maxVisible,
+    );
+
     bool cancelled = false;
     bool confirmed = false;
 
@@ -83,7 +89,7 @@ class TreeExplorer {
         // If already collapsed, move focus to parent
         final v = visible();
         final parentIndex = v.indexWhere((x) => x == e.parent);
-        if (parentIndex >= 0) selectedIndex = parentIndex;
+        if (parentIndex >= 0) nav.jumpTo(parentIndex);
       }
     }
 
@@ -103,23 +109,21 @@ class TreeExplorer {
       }
 
       final list = visible();
-      // Keep selection within viewport
-      if (selectedIndex < scrollOffset) scrollOffset = selectedIndex;
-      if (selectedIndex >= scrollOffset + maxVisible) {
-        scrollOffset = selectedIndex - maxVisible + 1;
-      }
-      final start = scrollOffset.clamp(0, list.length);
-      final end = (scrollOffset + maxVisible).clamp(0, list.length);
-      final window = list.sublist(start, end);
+      // Update nav's item count as tree structure changes
+      nav.itemCount = list.length;
 
-      if (start > 0) {
+      // Use ListNavigation's viewport
+      final window = nav.visibleWindow(list);
+
+      if (window.hasOverflowAbove) {
         out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
-      for (var i = 0; i < window.length; i++) {
-        final e = window[i];
-        final isHighlighted = (start + i) == selectedIndex;
+      for (var i = 0; i < window.items.length; i++) {
+        final e = window.items[i];
+        final absoluteIdx = window.start + i;
+        final isHighlighted = nav.isSelected(absoluteIdx);
         final prefix = isHighlighted ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
         final branch = _treeBranchGlyph(e, theme);
         final toggleGlyph = e.node.isLeaf
@@ -137,7 +141,7 @@ class TreeExplorer {
         }
       }
 
-      if (end < list.length) {
+      if (window.hasOverflowBelow) {
         out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
@@ -174,12 +178,13 @@ class TreeExplorer {
 
         final list = visible();
         if (list.isEmpty) return null;
-        final current = list[selectedIndex.clamp(0, list.length - 1)];
+        nav.itemCount = list.length; // Keep in sync
+        final current = list[nav.selectedIndex];
 
         if (ev.type == KeyEventType.arrowUp) {
-          selectedIndex = (selectedIndex - 1 + list.length) % list.length;
+          nav.moveUp();
         } else if (ev.type == KeyEventType.arrowDown) {
-          selectedIndex = (selectedIndex + 1) % list.length;
+          nav.moveDown();
         } else if (ev.type == KeyEventType.arrowRight || ev.type == KeyEventType.enter || ev.type == KeyEventType.space) {
           if (current.node.isLeaf) {
             confirmed = true;
@@ -202,7 +207,7 @@ class TreeExplorer {
     if (cancelled) return null;
     final v = visible();
     if (v.isEmpty) return null;
-    final selected = v[selectedIndex.clamp(0, v.length - 1)];
+    final selected = v[nav.selectedIndex];
     return confirmed ? entryToPath(selected) : null;
   }
 

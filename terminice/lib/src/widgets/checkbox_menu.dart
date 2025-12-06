@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
+import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 
@@ -33,27 +34,16 @@ class CheckboxMenu {
 
     final style = theme.style;
 
-    // State
-    int focused = 0;
-    int scroll = 0;
-    int visibleRows = maxVisible;
+    // Use centralized list navigation for selection & scrolling
+    final nav = ListNavigation(
+      itemCount: options.length,
+      maxVisible: maxVisible,
+    );
+
     final selected = <int>{
       ...initialSelected.where((i) => i >= 0 && i < options.length)
     };
     bool cancelled = false;
-
-
-    void move(int delta) {
-      if (options.isEmpty) return;
-      final len = options.length;
-      focused = (focused + delta + len) % len;
-      // maintain focus within viewport
-      if (focused < scroll) {
-        scroll = focused;
-      } else if (focused >= scroll + visibleRows) {
-        scroll = focused - visibleRows + 1;
-      }
-    }
 
     void toggle(int index) {
       if (index < 0 || index >= options.length) return;
@@ -101,7 +91,7 @@ class CheckboxMenu {
 
     void render(RenderOutput out) {
       // Responsive rows from terminal lines: reserve around 7 for chrome/hints
-      visibleRows = (TerminalInfo.rows - 7).clamp(5, maxVisible);
+      nav.maxVisible = (TerminalInfo.rows - 7).clamp(5, maxVisible);
 
       final frame = FramedLayout(label, theme: theme);
       final title = frame.top();
@@ -116,22 +106,20 @@ class CheckboxMenu {
         out.writeln(frame.connector());
       }
 
-      // Compute viewport
-      var end = scroll + visibleRows;
-      if (end > options.length) end = options.length;
-      final visible = options.sublist(scroll, end);
+      // Use ListNavigation's viewport for visible window
+      final window = nav.visibleWindow(options);
 
       // Optional overflow indicator (top)
-      if (scroll > 0 && visible.isNotEmpty) {
+      if (window.hasOverflowAbove) {
         out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
       final cols = TerminalInfo.columns;
-      for (var i = 0; i < visible.length; i++) {
-        final idx = scroll + i;
-        final isFocused = idx == focused;
-        final isChecked = selected.contains(idx);
+      for (var i = 0; i < window.items.length; i++) {
+        final absoluteIdx = window.start + i;
+        final isFocused = nav.isSelected(absoluteIdx);
+        final isChecked = selected.contains(absoluteIdx);
 
         final check = checkbox(isChecked);
         final arrow =
@@ -140,7 +128,7 @@ class CheckboxMenu {
             '${theme.gray}${style.borderVertical}${theme.reset} ';
 
         // Construct core line and fit within terminal width with graceful truncation
-        var core = '$arrow $check ${options[idx]}';
+        var core = '$arrow $check ${window.items[i]}';
         final reserve = 0; // no trailing widget for now
         final maxLabel =
             (cols - framePrefix.length - 1 - reserve).clamp(8, cols);
@@ -156,7 +144,7 @@ class CheckboxMenu {
       }
 
       // Optional overflow indicator (bottom)
-      if (end < options.length && visible.isNotEmpty) {
+      if (window.hasOverflowBelow) {
         out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
@@ -185,11 +173,11 @@ class CheckboxMenu {
         }
 
         if (ev.type == KeyEventType.arrowUp) {
-          move(-1);
+          nav.moveUp();
         } else if (ev.type == KeyEventType.arrowDown) {
-          move(1);
+          nav.moveDown();
         } else if (ev.type == KeyEventType.space) {
-          toggle(focused);
+          toggle(nav.selectedIndex);
         } else if (ev.type == KeyEventType.char && ev.char != null) {
           final ch = ev.char!;
           if (ch.toLowerCase() == 'a') {
@@ -207,7 +195,7 @@ class CheckboxMenu {
     );
 
     if (cancelled || result == PromptResult.cancelled) return <String>[];
-    if (selected.isEmpty) selected.add(focused);
+    if (selected.isEmpty) selected.add(nav.selectedIndex);
     final out = selected.toList()..sort();
     return out.map((i) => options[i]).toList(growable: false);
   }

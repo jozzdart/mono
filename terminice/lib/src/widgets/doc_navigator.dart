@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
 import '../system/key_events.dart';
+import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import 'markdown_viewer.dart';
 
@@ -35,8 +36,12 @@ class DocNavigator {
     // Expanded state is tracked by absolute path
     final Map<String, bool> expanded = {root.path: true};
 
-    int selectedIndex = 0;
-    int scrollOffset = 0;
+    // Use centralized list navigation for selection & scrolling
+    final nav = ListNavigation(
+      itemCount: 0, // Will be set after first visible() call
+      maxVisible: maxVisible,
+    );
+
     bool cancelled = false;
     String? result;
 
@@ -102,7 +107,7 @@ class DocNavigator {
       } else if (e.parent != null) {
         final v = visible();
         final pIndex = v.indexWhere((x) => x == e.parent);
-        if (pIndex >= 0) selectedIndex = pIndex;
+        if (pIndex >= 0) nav.jumpTo(pIndex);
       }
     }
 
@@ -114,7 +119,7 @@ class DocNavigator {
 
     String selectedPath(List<_Entry> list) {
       if (list.isEmpty) return root.path;
-      final s = list[selectedIndex.clamp(0, list.length - 1)];
+      final s = list[nav.selectedIndex];
       return s.path;
     }
 
@@ -148,23 +153,21 @@ class DocNavigator {
         out.writeln(frame.connector());
       }
 
-      // Keep selection within viewport
-      if (selectedIndex < scrollOffset) scrollOffset = selectedIndex;
-      if (selectedIndex >= scrollOffset + maxVisible) {
-        scrollOffset = selectedIndex - maxVisible + 1;
-      }
-      final start = scrollOffset.clamp(0, currentList.length);
-      final end = (scrollOffset + maxVisible).clamp(0, currentList.length);
-      final window = currentList.sublist(start, end);
+      // Update nav's item count as tree structure changes
+      nav.itemCount = currentList.length;
 
-      if (start > 0) {
+      // Use ListNavigation's viewport
+      final window = nav.visibleWindow(currentList);
+
+      if (window.hasOverflowAbove) {
         out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
-      for (var i = 0; i < window.length; i++) {
-        final e = window[i];
-        final isHighlighted = (start + i) == selectedIndex;
+      for (var i = 0; i < window.items.length; i++) {
+        final e = window.items[i];
+        final absoluteIdx = window.start + i;
+        final isHighlighted = nav.isSelected(absoluteIdx);
         final prefix =
             isHighlighted ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
         final branch = _treeBranchGlyph(e, theme);
@@ -190,7 +193,7 @@ class DocNavigator {
         }
       }
 
-      if (end < currentList.length) {
+      if (window.hasOverflowBelow) {
         out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
@@ -235,12 +238,13 @@ class DocNavigator {
         if (list.isEmpty) {
           return null;
         }
-        final current = list[selectedIndex.clamp(0, list.length - 1)];
+        nav.itemCount = list.length; // Keep in sync
+        final current = list[nav.selectedIndex];
 
         if (ev.type == KeyEventType.arrowUp) {
-          selectedIndex = (selectedIndex - 1 + list.length) % list.length;
+          nav.moveUp();
         } else if (ev.type == KeyEventType.arrowDown) {
-          selectedIndex = (selectedIndex + 1) % list.length;
+          nav.moveDown();
         } else if (ev.type == KeyEventType.arrowRight) {
           expand(current);
         } else if (ev.type == KeyEventType.arrowLeft) {
@@ -260,13 +264,6 @@ class DocNavigator {
             result = current.path;
             return PromptResult.confirmed;
           }
-        }
-
-        // Maintain viewport
-        if (selectedIndex < scrollOffset) {
-          scrollOffset = selectedIndex;
-        } else if (selectedIndex >= scrollOffset + maxVisible) {
-          scrollOffset = selectedIndex - maxVisible + 1;
         }
 
         return null;

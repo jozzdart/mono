@@ -1,10 +1,9 @@
-import 'dart:math';
-
 import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/highlighter.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 
 class SearchSelectPrompt {
@@ -50,10 +49,14 @@ List<String> _searchSelect(
   String query = '';
   bool searchEnabled = showSearch;
   List<String> filtered = List.from(allOptions);
-  int selectedIndex = 0;
   final selectedSet = <String>{};
-  int scrollOffset = 0;
   bool cancelled = false;
+
+  // Use centralized list navigation for selection & scrolling
+  final nav = ListNavigation(
+    itemCount: filtered.length,
+    maxVisible: maxVisible,
+  );
 
   void updateFilter() {
     if (!searchEnabled || query.isEmpty) {
@@ -63,8 +66,8 @@ List<String> _searchSelect(
           .where((o) => o.toLowerCase().contains(query.toLowerCase()))
           .toList();
     }
-    selectedIndex = 0;
-    scrollOffset = 0;
+    nav.itemCount = filtered.length;
+    nav.reset();
   }
 
   void render(RenderOutput out) {
@@ -88,14 +91,13 @@ List<String> _searchSelect(
       out.writeln(frame.connector());
     }
 
-    final end = min(scrollOffset + maxVisible, filtered.length);
-    final start = scrollOffset;
-    final visible = filtered.sublist(start, end);
+    // Use ListNavigation's viewport for visible window
+    final window = nav.visibleWindow(filtered);
 
-    for (var i = 0; i < visible.length; i++) {
-      final idx = start + i;
-      final isHighlighted = idx == selectedIndex;
-      final isChecked = selectedSet.contains(visible[i]);
+    for (var i = 0; i < window.items.length; i++) {
+      final absoluteIdx = window.start + i;
+      final isHighlighted = nav.isSelected(absoluteIdx);
+      final isChecked = selectedSet.contains(window.items[i]);
       final checkbox = multiSelect
           ? (isChecked
               ? '${theme.checkboxOn}${style.checkboxOnSymbol}${theme.reset}'
@@ -104,7 +106,7 @@ List<String> _searchSelect(
       final prefix =
           isHighlighted ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
       final lineText =
-          '$prefix $checkbox ${highlightSubstring(visible[i], query, theme, enabled: searchEnabled)}';
+          '$prefix $checkbox ${highlightSubstring(window.items[i], query, theme, enabled: searchEnabled)}';
       final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
       if (isHighlighted && style.useInverseHighlight) {
         out.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
@@ -146,7 +148,7 @@ List<String> _searchSelect(
 
       // Space
       if (multiSelect && ev.type == KeyEventType.space && filtered.isNotEmpty) {
-        final current = filtered[selectedIndex];
+        final current = filtered[nav.selectedIndex];
         if (selectedSet.contains(current)) {
           selectedSet.remove(current);
         } else {
@@ -162,18 +164,13 @@ List<String> _searchSelect(
       }
 
       // Arrows / ESC
-      else if (ev.type == KeyEventType.arrowUp ||
-          ev.type == KeyEventType.arrowDown ||
-          ev.type == KeyEventType.esc) {
-        if (ev.type == KeyEventType.arrowUp && filtered.isNotEmpty) {
-          selectedIndex =
-              (selectedIndex - 1 + filtered.length) % filtered.length;
-        } else if (ev.type == KeyEventType.arrowDown && filtered.isNotEmpty) {
-          selectedIndex = (selectedIndex + 1) % filtered.length;
-        } else if (ev.type == KeyEventType.esc) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
+      else if (ev.type == KeyEventType.arrowUp) {
+        nav.moveUp();
+      } else if (ev.type == KeyEventType.arrowDown) {
+        nav.moveDown();
+      } else if (ev.type == KeyEventType.esc) {
+        cancelled = true;
+        return PromptResult.cancelled;
       }
 
       // Backspace
@@ -192,13 +189,6 @@ List<String> _searchSelect(
         updateFilter();
       }
 
-      // Scroll
-      if (selectedIndex < scrollOffset) {
-        scrollOffset = selectedIndex;
-      } else if (selectedIndex >= scrollOffset + maxVisible) {
-        scrollOffset = selectedIndex - maxVisible + 1;
-      }
-
       return null;
     },
   );
@@ -208,9 +198,9 @@ List<String> _searchSelect(
   }
 
   if (multiSelect) {
-    if (selectedSet.isEmpty) selectedSet.add(filtered[selectedIndex]);
+    if (selectedSet.isEmpty) selectedSet.add(filtered[nav.selectedIndex]);
     return selectedSet.toList();
   } else {
-    return [filtered[selectedIndex]];
+    return [filtered[nav.selectedIndex]];
   }
 }

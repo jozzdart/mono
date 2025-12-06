@@ -3,6 +3,7 @@ export 'system/frame_renderer.dart';
 export 'system/highlighter.dart';
 export 'system/hints.dart';
 export 'system/key_events.dart';
+export 'system/list_navigation.dart';
 export 'system/prompt_runner.dart';
 export 'system/table_renderer.dart';
 export 'system/terminal.dart';

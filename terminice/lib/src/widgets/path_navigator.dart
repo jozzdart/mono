@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 
 /// PathNavigator – interactive directory (and optional file) navigation.
@@ -35,9 +36,13 @@ class PathNavigator {
     final style = theme.style;
 
     Directory current = startDir;
-    int selectedIndex = 0;
-    int scrollOffset = 0;
     String? selectedPath;
+
+    // Use centralized list navigation for selection & scrolling
+    final nav = ListNavigation(
+      itemCount: 0, // Will be set after first readEntries() call
+      maxVisible: maxVisible,
+    );
 
     List<_Entry> readEntries(Directory dir) {
       final raw = dir.listSync(followLinks: false);
@@ -91,29 +96,24 @@ class PathNavigator {
       }
 
       final entries = readEntries(current);
+      nav.itemCount = entries.length;
+
       if (entries.isEmpty) {
         out.writeln(
             '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(empty)${theme.reset}');
       }
 
-      // Keep selection within viewport
-      if (selectedIndex < scrollOffset) scrollOffset = selectedIndex;
-      if (selectedIndex >= scrollOffset + maxVisible) {
-        scrollOffset = selectedIndex - maxVisible + 1;
-      }
+      // Use ListNavigation's viewport
+      final window = nav.visibleWindow(entries);
 
-      final start = scrollOffset.clamp(0, entries.length);
-      final end = (scrollOffset + maxVisible).clamp(0, entries.length);
-      final window = entries.sublist(start, end);
-
-      if (start > 0) {
+      if (window.hasOverflowAbove) {
         out.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
-      for (var i = 0; i < window.length; i++) {
-        final idx = start + i;
-        final e = entries[idx];
-        final isHighlighted = idx == selectedIndex;
+      for (var i = 0; i < window.items.length; i++) {
+        final absoluteIdx = window.start + i;
+        final e = window.items[i];
+        final isHighlighted = nav.isSelected(absoluteIdx);
         final prefix = isHighlighted ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
         final lineText = '$prefix ${e.label}';
         final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
@@ -124,7 +124,7 @@ class PathNavigator {
         }
       }
 
-      if (end < entries.length) {
+      if (window.hasOverflowBelow) {
         out.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
       }
 
@@ -152,42 +152,33 @@ class PathNavigator {
         if (entries.isEmpty) {
           return null;
         }
+        nav.itemCount = entries.length; // Keep in sync
 
         if (ev.type == KeyEventType.arrowUp) {
-          selectedIndex = (selectedIndex - 1 + entries.length) % entries.length;
+          nav.moveUp();
         } else if (ev.type == KeyEventType.arrowDown) {
-          selectedIndex = (selectedIndex + 1) % entries.length;
+          nav.moveDown();
         } else if (ev.type == KeyEventType.arrowLeft) {
           // go to parent
           if (current.parent.path != current.path) {
             current = current.parent;
-            selectedIndex = 0;
-            scrollOffset = 0;
+            nav.reset();
           }
         } else if (ev.type == KeyEventType.arrowRight || ev.type == KeyEventType.enter) {
-          final cur = entries[selectedIndex];
+          final cur = entries[nav.selectedIndex];
           if (cur.type == _EntryType.up) {
             current = Directory(cur.path);
-            selectedIndex = 0;
-            scrollOffset = 0;
+            nav.reset();
           } else if (cur.type == _EntryType.confirmDir) {
             selectedPath = current.path;
             return PromptResult.confirmed;
           } else if (cur.type == _EntryType.directory) {
             current = Directory(cur.path);
-            selectedIndex = 0;
-            scrollOffset = 0;
+            nav.reset();
           } else if (cur.type == _EntryType.file && allowFiles) {
             selectedPath = cur.path;
             return PromptResult.confirmed;
           }
-        }
-
-        // Scroll window
-        if (selectedIndex < scrollOffset) {
-          scrollOffset = selectedIndex;
-        } else if (selectedIndex >= scrollOffset + maxVisible) {
-          scrollOffset = selectedIndex - maxVisible + 1;
         }
 
         return null;
