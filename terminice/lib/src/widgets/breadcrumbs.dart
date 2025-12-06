@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/rendering.dart';
+import '../system/prompt_runner.dart';
 
 /// Breadcrumbs – file path navigation line.
 ///
@@ -26,17 +25,22 @@ class Breadcrumbs {
   });
 
   void show() {
+    final out = RenderOutput();
+    _render(out);
+  }
+
+  void _render(RenderOutput out) {
     final style = theme.style;
     final titleText = label ?? 'Breadcrumbs';
 
     final frame = FramedLayout(titleText, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final rendered = _renderBreadcrumbLine();
-    stdout.writeln(gutterLine(theme, rendered));
+    out.writeln(gutterLine(theme, rendered));
 
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
   }
 
@@ -84,7 +88,8 @@ class Breadcrumbs {
 
     // Try to keep as many trailing segments as possible.
     while (idx >= 0) {
-      final candidate = '${coloredParts[idx]}$sep${kept.isEmpty ? '' : ' '}${kept.join(' $sep ')}';
+      final candidate =
+          '${coloredParts[idx]}$sep${kept.isEmpty ? '' : ' '}${kept.join(' $sep ')}';
       final full = '$ellipsis $sep $candidate';
       if (_visibleLength(full) <= width) {
         kept.insert(0, coloredParts[idx]);
@@ -117,7 +122,8 @@ class Breadcrumbs {
       final drive = norm.substring(0, 2); // e.g., C:
       out.add(drive);
       // remaining segments already include the first folder
-      if (segments.isNotEmpty && segments.first.toUpperCase() == drive.toUpperCase()) {
+      if (segments.isNotEmpty &&
+          segments.first.toUpperCase() == drive.toUpperCase()) {
         segments.removeAt(0);
       }
     } else if (isUnixRoot) {
@@ -147,5 +153,3 @@ void breadcrumbs(
     separator: separator,
   ).show();
 }
-
-

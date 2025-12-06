@@ -3,9 +3,6 @@ import 'dart:io';
 import 'package:terminice/terminice.dart';
 
 void main() {
-  // Ensure a clean area
-  Terminal.clearAndHome();
-
   // Info
   InfoBox('Operation completed successfully.',
       type: InfoBoxType.info, theme: PromptTheme.dark)

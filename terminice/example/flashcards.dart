@@ -1,8 +1,6 @@
 import 'package:terminice/terminice.dart';
 
 void main() {
-  Terminal.clearAndHome();
-
   final cards = <CardItem>[
     CardItem(
       front: 'What is the capital of France?',
@@ -33,8 +31,7 @@ void main() {
     ),
   ];
 
-  Flashcards(cards: cards, theme: PromptTheme.pastel, title: 'Flashcards – Demo')
+  Flashcards(
+      cards: cards, theme: PromptTheme.pastel, title: 'Flashcards – Demo')
     ..run();
 }
-
-

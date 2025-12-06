@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/frame_renderer.dart';
+import '../system/prompt_runner.dart';
 
 enum InfoBoxType { info, warn, error }
 
@@ -31,6 +30,11 @@ class InfoBox {
 
   /// Render the box to stdout.
   void show() {
+    final out = RenderOutput();
+    _render(out);
+  }
+
+  void _render(RenderOutput out) {
     final style = theme.style;
 
     final label = title ?? _defaultTitle(type);
@@ -40,16 +44,15 @@ class InfoBox {
     final top = style.showBorder
         ? FrameRenderer.titleWithBordersColored(label, theme, statusColor)
         : FrameRenderer.plainTitleColored(label, theme, statusColor);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    out.writeln('${theme.bold}$top${theme.reset}');
 
     for (final line in content) {
-      stdout.writeln(
+      out.writeln(
           '$statusColor${style.borderVertical}${theme.reset} $statusColor$line${theme.reset}');
     }
 
     if (style.showBorder) {
-      stdout
-          .writeln(FrameRenderer.bottomLineColored(label, theme, statusColor));
+      out.writeln(FrameRenderer.bottomLineColored(label, theme, statusColor));
     }
   }
 }

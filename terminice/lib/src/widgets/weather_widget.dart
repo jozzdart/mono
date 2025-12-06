@@ -5,6 +5,7 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/frame_renderer.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// Temperature units supported by the widget.
 enum TemperatureUnit { celsius, fahrenheit }
@@ -38,6 +39,7 @@ class WeatherWidget {
 
   /// Fetches and renders the weather box.
   Future<void> show() async {
+    final out = RenderOutput();
     final style = theme.style;
 
     try {
@@ -48,26 +50,26 @@ class WeatherWidget {
       final iconDesc = _iconAndDescription(weather.weatherCode);
 
       final frame = FramedLayout('$title – ${loc.displayName}', theme: theme);
-      stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+      out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.info}Now${theme.reset}: ${iconDesc.icon} ${iconDesc.description}');
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}${weather.temperature.toStringAsFixed(1)}$unitSymbol${theme.reset}  •  Wind ${weather.windSpeed.toStringAsFixed(0)} km/h ${_arrowForWind(weather.windDirection)}');
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}lat ${loc.latitude.toStringAsFixed(2)}, lon ${loc.longitude.toStringAsFixed(2)}${theme.reset}');
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
     } catch (e) {
       final label = '$title – Error';
       final top = FrameRenderer.titleWithBordersColored(label, theme, theme.error);
-      stdout.writeln('${theme.bold}$top${theme.reset}');
-      stdout.writeln(
+      out.writeln('${theme.bold}$top${theme.reset}');
+      out.writeln(
           '${theme.error}${style.borderVertical}${theme.reset} ${theme.error}Failed to load weather: $e${theme.reset}');
       if (style.showBorder) {
-        stdout.writeln(FrameRenderer.bottomLineColored(label, theme, theme.error));
+        out.writeln(FrameRenderer.bottomLineColored(label, theme, theme.error));
       }
     }
   }

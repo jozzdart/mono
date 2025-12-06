@@ -1,8 +1,9 @@
-import 'dart:io';
+import 'dart:io' show File;
 
 import '../style/theme.dart';
 import '../system/frame_renderer.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// ChangeLogViewer – parse and display a Markdown CHANGELOG nicely.
 ///
@@ -16,6 +17,8 @@ class ChangeLogViewer {
   final int maxReleases;
   final bool color;
 
+  late RenderOutput _out;
+
   ChangeLogViewer({
     this.theme = PromptTheme.dark,
     this.filePath,
@@ -26,12 +29,17 @@ class ChangeLogViewer {
   }) : assert(filePath != null || content != null,
             'Provide either filePath or content');
 
-  /// Parse, format and print to stdout.
+  /// Parse, format and print.
   void show() {
+    _out = RenderOutput();
+    _render(_out);
+  }
+
+  void _render(RenderOutput out) {
     final style = theme.style;
     final label = title;
     final frame = FramedLayout(label, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final raw = content ?? _readFile(filePath!);
     final releases = _parse(raw);
@@ -50,7 +58,7 @@ class ChangeLogViewer {
           ..write('  ')
           ..write('${theme.gray}— ${r.date}${theme.reset}');
       }
-      stdout.writeln(header.toString());
+      out.writeln(header.toString());
 
       // Optional summary notes without section
       for (final note in r.notes) {
@@ -59,7 +67,7 @@ class ChangeLogViewer {
 
       // Sections
       for (final section in r.sections) {
-        stdout.writeln(
+        out.writeln(
             '$gutter${theme.dim}${section.name.toUpperCase()}${theme.reset}');
         for (final item in section.items) {
           _wrapBulleted(item, gutter,
@@ -68,8 +76,8 @@ class ChangeLogViewer {
       }
 
       // Spacing and subtle connector
-      stdout.writeln(gutter);
-      stdout.writeln(FrameRenderer.bottomLine(r.version, theme));
+      out.writeln(gutter);
+      out.writeln(FrameRenderer.bottomLine(r.version, theme));
     }
   }
 
@@ -88,9 +96,9 @@ class ChangeLogViewer {
     final wrapPrefix = '$gutter$lead  ';
     for (final line in _wrap(text, width - _visibleLength(prefix))) {
       if (identical(line, text)) {
-        stdout.writeln('$prefix${textColor ?? ''}$line${theme.reset}');
+        _out.writeln('$prefix${textColor ?? ''}$line${theme.reset}');
       } else {
-        stdout.writeln('$wrapPrefix${textColor ?? ''}$line${theme.reset}');
+        _out.writeln('$wrapPrefix${textColor ?? ''}$line${theme.reset}');
       }
     }
   }

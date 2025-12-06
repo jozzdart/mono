@@ -43,5 +43,3 @@ void main() {
     Terminal.showCursor();
   }
 }
-
-

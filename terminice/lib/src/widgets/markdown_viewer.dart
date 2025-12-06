@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/rendering.dart';
+import '../system/prompt_runner.dart';
 
 /// MarkdownViewer – renders markdown with colors and headers
 ///
@@ -16,6 +15,8 @@ class MarkdownViewer {
   final String? title;
   final bool color;
 
+  late RenderOutput _out;
+
   MarkdownViewer(
     this.markdown, {
     this.theme = const PromptTheme(),
@@ -24,10 +25,15 @@ class MarkdownViewer {
   });
 
   void show() {
+    _out = RenderOutput();
+    _render(_out);
+  }
+
+  void _render(RenderOutput out) {
     final style = theme.style;
     final label = title ?? 'Markdown';
     final frame = FramedLayout(label, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final lines = markdown.split('\n');
     bool inCode = false;
@@ -140,13 +146,13 @@ class MarkdownViewer {
     }
 
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
   }
 
   void _gutter(String content) {
-    final out = color ? content : stripAnsi(content);
-    stdout.writeln(gutterLine(theme, out));
+    final text = color ? content : stripAnsi(content);
+    _out.writeln(gutterLine(theme, text));
   }
 
   String _heading(String text, int level) {

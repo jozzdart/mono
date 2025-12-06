@@ -5,7 +5,7 @@ import 'dart:async';
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// ClockWidget – analog/digital terminal clock.
 ///
@@ -42,12 +42,9 @@ class ClockWidget {
     int r = radius;
     ClockLayout mode = layout;
 
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
+    final session = TerminalSession(hideCursor: true, rawMode: true);
+    session.start();
+    final out = RenderOutput();
 
     String modeLabel() {
       final s = showAnalog && showDigital
@@ -60,7 +57,8 @@ class ClockWidget {
     }
 
     String topTitle() {
-      final frame = FramedLayout('$title · ${modeLabel()}', theme: currentTheme);
+      final frame =
+          FramedLayout('$title · ${modeLabel()}', theme: currentTheme);
       return frame.top();
     }
 
@@ -97,7 +95,9 @@ class ClockWidget {
       // Circle outline
       for (var y = 0; y < d; y++) {
         for (var x = 0; x < d; x++) {
-          if (onCircle(x, y)) plot(x, y, '${currentTheme.gray}·${currentTheme.reset}');
+          if (onCircle(x, y)) {
+            plot(x, y, '${currentTheme.gray}·${currentTheme.reset}');
+          }
         }
       }
 
@@ -176,7 +176,8 @@ class ClockWidget {
       }
 
       // Center cap
-      plot(cx, cy, '${currentTheme.bold}${currentTheme.accent}•${currentTheme.reset}');
+      plot(cx, cy,
+          '${currentTheme.bold}${currentTheme.accent}•${currentTheme.reset}');
 
       return grid.map((row) => row.join()).toList();
     }
@@ -191,9 +192,11 @@ class ClockWidget {
 
       final line = StringBuffer();
       line
-        ..write('${currentTheme.bold}${currentTheme.accent}$hh${currentTheme.reset}')
+        ..write(
+            '${currentTheme.bold}${currentTheme.accent}$hh${currentTheme.reset}')
         ..write('${currentTheme.dim}:${currentTheme.reset}')
-        ..write('${currentTheme.bold}${currentTheme.highlight}$mm${currentTheme.reset}');
+        ..write(
+            '${currentTheme.bold}${currentTheme.highlight}$mm${currentTheme.reset}');
       if (withSeconds) {
         line
           ..write('${currentTheme.dim}:${currentTheme.reset}')
@@ -205,16 +208,17 @@ class ClockWidget {
 
     void render() {
       final style = currentTheme.style;
-      Terminal.clearAndHome();
+      out.clear();
       final top = topTitle();
-      stdout.writeln('${currentTheme.bold}$top${currentTheme.reset}');
+      out.writeln('${currentTheme.bold}$top${currentTheme.reset}');
 
       if (style.showBorder) {
         final frame = FramedLayout(title, theme: currentTheme);
-        stdout.writeln(frame.connector());
+        out.writeln(frame.connector());
       }
 
-      final left = '${currentTheme.gray}${style.borderVertical}${currentTheme.reset} ';
+      final left =
+          '${currentTheme.gray}${style.borderVertical}${currentTheme.reset} ';
       final now = DateTime.now();
 
       if (showAnalog && showDigital && mode == ClockLayout.sideBySide) {
@@ -227,30 +231,30 @@ class ClockWidget {
           final a = analogLines[i];
           final dLine = i < digitalLines.length ? digitalLines[i] : '';
           final pad = ' ' * (analogWidth - a.length);
-          stdout.writeln('$left$a$pad${' ' * gap}$dLine');
+          out.writeln('$left$a$pad${' ' * gap}$dLine');
         }
       } else {
         if (showAnalog) {
           final lines = renderAnalog(now);
           for (final l in lines) {
-            stdout.writeln('$left$l');
+            out.writeln('$left$l');
           }
         }
         if (showDigital) {
-          if (showAnalog) stdout.writeln(left);
+          if (showAnalog) out.writeln(left);
           final lines = renderDigital(now);
           for (final l in lines) {
-            stdout.writeln('$left$l');
+            out.writeln('$left$l');
           }
         }
       }
 
       if (style.showBorder) {
         final frame = FramedLayout(title, theme: currentTheme);
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.grid([
+      out.writeln(Hints.grid([
         [Hints.key('A', currentTheme), 'toggle analog'],
         [Hints.key('D', currentTheme), 'toggle digital'],
         [Hints.key('B', currentTheme), 'both'],
@@ -302,8 +306,8 @@ class ClockWidget {
             ? ClockLayout.sideBySide
             : ClockLayout.stacked;
       }
-      if (byte == 43 /*+*/ ) r = (r + 1).clamp(4, 12);
-      if (byte == 45 /*-*/ ) r = (r - 1).clamp(4, 12);
+      if (byte == 43 /*+*/) r = (r + 1).clamp(4, 12);
+      if (byte == 45 /*-*/) r = (r - 1).clamp(4, 12);
     }
 
     try {
@@ -331,12 +335,11 @@ class ClockWidget {
     } finally {
       timer?.cancel();
       awaitFuture(sub?.cancel());
-      cleanup();
-      Terminal.clearAndHome();
+      session.end();
+      out.clear();
     }
   }
 }
-
 
 enum ClockLayout { stacked, sideBySide }
 
@@ -347,4 +350,3 @@ Future<void> awaitFuture(Future<void>? f) async {
     } catch (_) {}
   }
 }
-

@@ -3,8 +3,6 @@ import 'dart:io';
 import 'package:terminice/terminice.dart';
 
 void main() {
-  Terminal.clearAndHome();
-
   final dartSample = '''
 import 'dart:math';
 

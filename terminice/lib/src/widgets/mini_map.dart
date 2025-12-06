@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// MiniMap – ASCII representation of document position.
 ///
@@ -44,11 +43,16 @@ class MiniMap {
         markers = markers ?? const [];
 
   void show() {
+    final out = RenderOutput();
+    _render(out);
+  }
+
+  void _render(RenderOutput out) {
     final style = theme.style;
     final title = (label == null || label!.isEmpty) ? 'Mini Map' : label!;
 
     final frame = FramedLayout(title, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     // Render the map area
     for (int row = 0; row < height; row++) {
@@ -56,7 +60,7 @@ class MiniMap {
       // Left gutter aligned with ThemeDemo
       line.write('${theme.gray}${style.borderVertical}${theme.reset} ');
       line.write(_rowChunk(row));
-      stdout.writeln(line.toString());
+      out.writeln(line.toString());
     }
 
     // Metrics line beneath the map
@@ -70,10 +74,10 @@ class MiniMap {
         '${theme.dim}View:${theme.reset} ${theme.selection}${_padInt(viewportStart + 1)}${theme.reset}-${theme.selection}${_padInt((viewportStart + viewportSize).clamp(1, totalLines))}${theme.reset}   ');
     metrics.write(
         '${theme.dim}Pos:${theme.reset} ${theme.info}$percentTop%${theme.reset}-${theme.info}$percentBottom%${theme.reset}');
-    stdout.writeln(metrics.toString());
+    out.writeln(metrics.toString());
 
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
   }
 

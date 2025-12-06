@@ -3,8 +3,6 @@ import 'dart:io';
 import 'package:terminice/terminice.dart';
 
 void main() {
-  Terminal.clearAndHome();
-
   final series = <num>[
     12,
     13,

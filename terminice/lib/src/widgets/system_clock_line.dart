@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// Describes an upcoming cron-style task/event.
 class CronEvent {
@@ -41,6 +40,11 @@ class SystemClockLine {
   }) : _clock = now ?? DateTime.now;
 
   void run() {
+    final out = RenderOutput();
+    _render(out);
+  }
+
+  void _render(RenderOutput out) {
     final label = title ?? 'System Clock Line';
     final style = theme.style;
     final now = _clock();
@@ -54,23 +58,23 @@ class SystemClockLine {
 
     // Header
     final frame = FramedLayout(label, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     // Legend + connector
     final nowStr = _fmtTime(now);
-    stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset} '
+    out.writeln('${theme.gray}${style.borderVertical}${theme.reset} '
         '${theme.gray}Window:${theme.reset} ${theme.selection}${_fmtWindow(window)}${theme.reset}  '
         '${theme.gray}Events:${theme.reset} ${theme.accent}${upcoming.length}${theme.reset}  '
         '${theme.gray}Now:${theme.reset} ${theme.accent}$nowStr${theme.reset}');
-    stdout.writeln(frame.connector());
+    out.writeln(frame.connector());
 
     if (upcoming.isEmpty) {
-      stdout.writeln(
+      out.writeln(
         '${theme.gray}${style.borderVertical}${theme.reset} '
         '${theme.dim}No upcoming tasks in next ${_fmtWindow(window)}${theme.reset}',
       );
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
       return;
     }
@@ -94,7 +98,7 @@ class SystemClockLine {
           : '';
 
       // Primary info line
-      stdout.writeln(
+      out.writeln(
         '${theme.gray}${style.borderVertical}${theme.reset} '
         '$icon ${theme.accent}$at${theme.reset}  '
         '${theme.bold}${theme.selection}$name${theme.reset}  '
@@ -112,7 +116,7 @@ class SystemClockLine {
           track.write('${theme.gray}─${theme.reset}');
         }
       }
-      stdout.writeln(
+      out.writeln(
         '${theme.gray}${style.borderVertical}${theme.reset} '
         '${theme.dim}${_pad('', at.length)}${theme.reset}  ' // align under time
         '$track',
@@ -120,7 +124,7 @@ class SystemClockLine {
     }
 
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
   }
 

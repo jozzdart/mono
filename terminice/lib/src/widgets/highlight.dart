@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/rendering.dart';
+import '../system/prompt_runner.dart';
 
 /// Pretty-prints text with simple syntax and color rules.
 ///
@@ -27,28 +26,33 @@ class Highlight {
 
   /// Render highlighted output within a themed frame.
   void show() {
+    final out = RenderOutput();
+    _render(out);
+  }
+
+  void _render(RenderOutput out) {
     final style = theme.style;
     final label = title ?? _defaultTitle(language);
 
     final frame = FramedLayout(label, theme: theme);
     final top = frame.top();
     if (color) {
-      stdout.writeln('${theme.bold}$top${theme.reset}');
+      out.writeln('${theme.bold}$top${theme.reset}');
     } else {
-      stdout.writeln(stripAnsi(top));
+      out.writeln(stripAnsi(top));
     }
 
     for (final line in text.split('\n')) {
       final lang = _resolveLanguage(line);
       final colored = color ? _highlightLine(line, lang) : line;
       if (color) {
-        stdout.writeln('${theme.gray}${style.borderVertical}${theme.reset} $colored');
+        out.writeln('${theme.gray}${style.borderVertical}${theme.reset} $colored');
       } else {
-        stdout.writeln('${style.borderVertical} $colored');
+        out.writeln('${style.borderVertical} $colored');
         if (guides) {
           final guide = _guideLine(line, lang);
           if (guide.trim().isNotEmpty) {
-            stdout.writeln('${style.borderVertical} $guide');
+            out.writeln('${style.borderVertical} $guide');
           }
         }
       }
@@ -56,7 +60,7 @@ class Highlight {
 
     if (style.showBorder) {
       final bottom = FramedLayout(label, theme: theme).bottom();
-      stdout.writeln(color ? bottom : stripAnsi(bottom));
+      out.writeln(color ? bottom : stripAnsi(bottom));
     }
   }
 

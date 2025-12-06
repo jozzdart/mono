@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/rendering.dart';
+import '../system/prompt_runner.dart';
 
 /// BarChartWidget – colored horizontal bar chart in the terminal.
 ///
@@ -30,17 +29,22 @@ class BarChartWidget {
   }) : assert(barWidth >= 6);
 
   void show() {
+    final out = RenderOutput();
+    _render(out);
+  }
+
+  void _render(RenderOutput out) {
     final style = theme.style;
     final label = (title == null || title!.isEmpty) ? 'Bar Chart' : title!;
 
     final frame = FramedLayout(label, theme: theme);
     final top = frame.top();
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    out.writeln('${theme.bold}$top${theme.reset}');
 
     if (items.isEmpty) {
-      stdout.writeln(gutterLine(theme, '${theme.dim}(no data)${theme.reset}'));
+      out.writeln(gutterLine(theme, '${theme.dim}(no data)${theme.reset}'));
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
       return;
     }
@@ -62,12 +66,12 @@ class BarChartWidget {
           ? '  ${theme.selection}${_formatValue(it.value)}${theme.reset}'
           : '';
 
-      stdout.writeln(gutterLine(theme,
+      out.writeln(gutterLine(theme,
           '${theme.bold}${theme.accent}$labelStr${theme.reset}  $bar$valueStr'));
     }
 
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
   }
 

@@ -2,9 +2,9 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// SystemDashboard – themed, real-time CPU / Memory / Disk bars.
 ///
@@ -28,31 +28,25 @@ class SystemDashboard {
 
   void run() {
     final style = theme.style;
-
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
     final frame = FramedLayout('System Dashboard', theme: theme);
 
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
+    final session = TerminalSession(hideCursor: true, rawMode: true);
+    session.start();
+    final out = RenderOutput();
 
     int frameIdx = 0;
-    bool firstFrame = true;
 
     try {
       while (true) {
         final stats = _SystemStats.fetch(diskMount: diskMount);
 
-        final lines = <String>[];
+        out.clear();
 
         // Top line
-        final top = frame.top();
-        lines.add('${theme.bold}$top${theme.reset}');
+        out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
         // CPU
-        lines.add(_renderMetricLine(
+        out.writeln(_renderMetricLine(
           label: 'CPU',
           percent: stats.cpuPercent,
           extra: stats.cpuDetail,
@@ -60,7 +54,7 @@ class SystemDashboard {
         ));
 
         // Memory
-        lines.add(_renderMetricLine(
+        out.writeln(_renderMetricLine(
           label: 'Memory',
           percent: stats.memPercent,
           extra: stats.memDetail,
@@ -68,7 +62,7 @@ class SystemDashboard {
         ));
 
         // Disk
-        lines.add(_renderMetricLine(
+        out.writeln(_renderMetricLine(
           label: 'Disk',
           percent: stats.diskPercent,
           extra: stats.diskDetail,
@@ -77,34 +71,21 @@ class SystemDashboard {
 
         // Bottom border
         if (style.showBorder) {
-          lines.add(frame.bottom());
+          out.writeln(frame.bottom());
         }
 
         // Hints
-        lines.add(Hints.bullets([
+        out.writeln(Hints.bullets([
           'Ctrl+C to exit',
           'Theme-aware accents',
         ], theme, dim: true));
-
-        // Buffered write to reduce tearing/flicker
-        final buffer = StringBuffer();
-        if (firstFrame) {
-          buffer.write('\x1B[2J\x1B[H'); // clear screen and home on first frame
-          firstFrame = false;
-        } else {
-          buffer.write('\x1B[H'); // home only on subsequent frames
-        }
-        for (final line in lines) {
-          buffer.write('\x1B[2K'); // clear entire line
-          buffer.writeln(line);
-        }
-        stdout.write(buffer.toString());
 
         frameIdx = (frameIdx + 1) % 10000;
         sleep(refresh);
       }
     } finally {
-      cleanup();
+      session.end();
+      out.clear();
     }
   }
 

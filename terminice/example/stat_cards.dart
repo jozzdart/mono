@@ -3,13 +3,15 @@ import 'dart:io';
 import 'package:terminice/terminice.dart';
 
 void main() {
-  Terminal.clearAndHome();
-
   final items = <StatCardItem>[
-    const StatCardItem(label: 'Tests', value: '98%', icon: '✔', tone: StatTone.info),
-    const StatCardItem(label: 'Builds', value: '12', icon: '⬤', tone: StatTone.accent),
-    const StatCardItem(label: 'Warnings', value: '2', icon: '⚠', tone: StatTone.warn),
-    const StatCardItem(label: 'Uptime', value: '24d', icon: '⏱', tone: StatTone.accent),
+    const StatCardItem(
+        label: 'Tests', value: '98%', icon: '✔', tone: StatTone.info),
+    const StatCardItem(
+        label: 'Builds', value: '12', icon: '⬤', tone: StatTone.accent),
+    const StatCardItem(
+        label: 'Warnings', value: '2', icon: '⚠', tone: StatTone.warn),
+    const StatCardItem(
+        label: 'Uptime', value: '24d', icon: '⏱', tone: StatTone.accent),
   ];
 
   // Dark theme
@@ -18,7 +20,8 @@ void main() {
   stdout.writeln();
 
   // Pastel theme
-  StatCards(items: items, theme: PromptTheme.pastel, title: 'Stat Cards · Pastel')
+  StatCards(
+      items: items, theme: PromptTheme.pastel, title: 'Stat Cards · Pastel')
     ..show();
   stdout.writeln();
 

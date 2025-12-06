@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:terminice/terminice.dart';
 
 Future<void> main() async {
-  Terminal.clearAndHome();
   stdout.writeln('Fetching weather...');
 
   final widget = WeatherWidget.city(
@@ -14,5 +13,3 @@ Future<void> main() async {
 
   await widget.show();
 }
-
-

@@ -3,8 +3,6 @@ import 'dart:io';
 import 'package:terminice/terminice.dart';
 
 void main() {
-  Terminal.clearAndHome();
-
   final initial = '''
 // Edit this Dart snippet. Press Ctrl+D to confirm, Esc to cancel.
 import 'dart:math';
@@ -39,5 +37,3 @@ class Demo {
     guides: true,
   ).show();
 }
-
-

@@ -3,6 +3,7 @@ import 'dart:async';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 class ServiceEndpoint {
   final String name;
@@ -34,11 +35,12 @@ class ServiceMonitor {
   });
 
   Future<void> run() async {
+    final out = RenderOutput();
     final style = theme.style;
     final label = title ?? 'Service Monitor';
 
     final frame = FramedLayout(label, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final results = await _runPings();
 
@@ -53,7 +55,7 @@ class ServiceMonitor {
       ..write('${_pad('URL', urlW)}  ')
       ..write('${_pad('Code', 4)}  ')
       ..write(_pad('Latency', 8));
-    stdout.writeln(
+    out.writeln(
         '${theme.gray}${style.borderVertical}${theme.reset} '
         '${theme.bold}${theme.gray}$header${theme.reset}');
 
@@ -88,7 +90,7 @@ class ServiceMonitor {
           ? ' ${theme.gray}(${r.errorMessage})${theme.reset}'
           : '';
 
-      stdout.writeln(
+      out.writeln(
         '${theme.gray}${style.borderVertical}${theme.reset} '
         '$icon ${theme.bold}${theme.accent}$name${theme.reset}  '
         '${theme.gray}$urlStr${theme.reset}  '
@@ -102,9 +104,9 @@ class ServiceMonitor {
           '${theme.warn}warn $warnCount${theme.reset}  •  '
           '${theme.error}error $errCount${theme.reset}  •  '
           '${theme.warn}timeout $timeoutCount${theme.reset}';
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} $summary');
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
   }
 

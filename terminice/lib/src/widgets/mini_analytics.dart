@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// MiniAnalytics – compact trend with growth percent and arrow.
 ///
@@ -34,20 +33,23 @@ class MiniAnalytics {
   });
 
   void show() {
+    final out = RenderOutput();
+    _render(out);
+  }
+
+  void _render(RenderOutput out) {
     final style = theme.style;
-    final headerLabel = (title == null || title!.isEmpty) ? 'Mini Analytics' : title!;
+    final headerLabel =
+        (title == null || title!.isEmpty) ? 'Mini Analytics' : title!;
 
     final frame = FramedLayout(headerLabel, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final growth = _computeGrowthPercent(series);
     final growthText = _formatPercent(growth);
-    final changeTone = growth > 0
-        ? theme.info
-        : (growth < 0 ? theme.error : theme.gray);
-    final arrow = growth > 0
-        ? '▲'
-        : (growth < 0 ? '▼' : style.arrow);
+    final changeTone =
+        growth > 0 ? theme.info : (growth < 0 ? theme.error : theme.gray);
+    final arrow = growth > 0 ? '▲' : (growth < 0 ? '▼' : style.arrow);
 
     final spark = _buildSparkline(series, sparklineWidth);
 
@@ -58,10 +60,10 @@ class MiniAnalytics {
     line.write('$changeTone$arrow${theme.reset} ');
     line.write('${theme.selection}${theme.bold}$growthText${theme.reset}');
 
-    stdout.writeln(line.toString());
+    out.writeln(line.toString());
 
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
   }
 
@@ -98,7 +100,9 @@ class MiniAnalytics {
     final buf = StringBuffer();
     for (final v in sampled) {
       final t = (v - minV) / (maxV - minV);
-      final idx = (t * (_levels.length - 1)).clamp(0, (_levels.length - 1).toDouble()).round();
+      final idx = (t * (_levels.length - 1))
+          .clamp(0, (_levels.length - 1).toDouble())
+          .round();
       buf.write(_levels[idx]);
     }
     return buf.toString();
@@ -133,7 +137,8 @@ class MiniAnalytics {
     final out = List<double>.filled(width, 0);
     for (int i = 0; i < width; i++) {
       final start = (i * bucketSize).floor();
-      final end = ((i + 1) * bucketSize).floor().clamp(start + 1, values.length);
+      final end =
+          ((i + 1) * bucketSize).floor().clamp(start + 1, values.length);
       double sum = 0;
       int count = 0;
       for (int j = start; j < end; j++) {
@@ -145,9 +150,7 @@ class MiniAnalytics {
     return out;
   }
 
-  static const List<String> _levels = [
-    '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'
-  ];
+  static const List<String> _levels = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 }
 
 /// Convenience wrapper mirroring other widgets.
@@ -166,5 +169,3 @@ void miniAnalytics(
     sparklineWidth: sparklineWidth,
   ).show();
 }
-
-

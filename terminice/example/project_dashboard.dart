@@ -3,8 +3,6 @@ import 'dart:io';
 import 'package:terminice/terminice.dart';
 
 void main() {
-  Terminal.clearAndHome();
-
   // Dark theme
   ProjectDashboard(
     projectName: 'mono',
@@ -14,7 +12,20 @@ void main() {
     buildsFailed: 3,
     latestBuildLabel: 'Success',
     buildDuration: '2m12s',
-    buildHistory: [true, true, true, false, true, true, true, true, true, false, true, true],
+    buildHistory: [
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true
+    ],
     testsPassed: 1540,
     testsFailed: 12,
     testsSkipped: 31,
@@ -63,7 +74,20 @@ void main() {
     buildsFailed: 0,
     latestBuildLabel: 'Success',
     buildDuration: '55s',
-    buildHistory: [true, true, true, true, true, true, true, true, true, true, true, true],
+    buildHistory: [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
     testsPassed: 2310,
     testsFailed: 0,
     testsSkipped: 9,
@@ -78,5 +102,3 @@ void main() {
     os: 'macOS 15',
   )..show();
 }
-
-

@@ -3,8 +3,6 @@ import 'dart:io';
 import 'package:terminice/terminice.dart';
 
 void main() {
-  Terminal.clearAndHome();
-
   const md = '''
 # Markdown Viewer
 
@@ -66,5 +64,3 @@ void main() {
     color: false, // demonstrate clean no-color rendering
   ).show();
 }
-
-

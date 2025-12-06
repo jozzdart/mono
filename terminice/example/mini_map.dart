@@ -22,5 +22,3 @@ void main() {
     sleep(const Duration(milliseconds: 260));
   }
 }
-
-

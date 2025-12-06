@@ -4,8 +4,9 @@ import 'dart:math';
 
 import '../style/theme.dart';
 import '../system/hints.dart';
-import '../system/terminal.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
+import '../system/terminal.dart';
 
 /// LineChartWidget – ASCII-based real-time line plot.
 ///
@@ -131,16 +132,20 @@ class LineChartWidget {
       return r.round().clamp(0, chartHeight - 1);
     }
 
+    final session = TerminalSession(hideCursor: true, rawMode: true);
+    session.start();
+    final out = RenderOutput();
+
     String leftGutter() =>
         '${currentTheme.gray}${currentTheme.style.borderVertical}${currentTheme.reset} ';
 
     void render() {
       final style = currentTheme.style;
-      Terminal.clearAndHome();
+      out.clear();
 
       final frame = FramedLayout(title, theme: currentTheme);
       final top = frame.top();
-      stdout.writeln('${currentTheme.bold}$top${currentTheme.reset}');
+      out.writeln('${currentTheme.bold}$top${currentTheme.reset}');
 
       // Determine range and zero line
       final (lo, hi) = range();
@@ -231,7 +236,7 @@ class LineChartWidget {
             row.write(' ');
           }
         }
-        stdout.writeln(row.toString());
+        out.writeln(row.toString());
       }
 
       // Summary line + bottom border
@@ -247,15 +252,14 @@ class LineChartWidget {
           '${currentTheme.gray}max ${currentTheme.reset}${currentTheme.info}$hiStr${currentTheme.reset}  '
           '${currentTheme.gray}last ${currentTheme.reset}${currentTheme.highlight}$lastStr${currentTheme.reset}  $rangeStr';
 
-      stdout.writeln(
+      out.writeln(
           '${currentTheme.gray}${style.borderVertical}${currentTheme.reset} $info');
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
       // Hints
-      final frame2 = frame;
-      frame2.printHintsGrid([
+      out.writeln(Hints.grid([
         [Hints.key('A', currentTheme), 'toggle autoscale'],
         [Hints.key('G', currentTheme), 'toggle grid'],
         [Hints.key('Z', currentTheme), 'toggle zero-line'],
@@ -263,7 +267,7 @@ class LineChartWidget {
         [Hints.key('←/→', currentTheme), 'width ±2'],
         [Hints.key('T', currentTheme), 'cycle theme'],
         [Hints.key('Ctrl+C / Esc', currentTheme), 'exit'],
-      ]);
+      ], currentTheme));
     }
 
     PromptTheme nextTheme(PromptTheme t) {
@@ -351,14 +355,6 @@ class LineChartWidget {
       if (ch == 's') chartHeight = (chartHeight - 1).clamp(6, 24);
     }
 
-    // Terminal session
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
     try {
       // Seed a few points for nicer initial picture
       for (int i = 0; i < min(12, chartWidth); i++) {
@@ -391,8 +387,8 @@ class LineChartWidget {
     } finally {
       timer?.cancel();
       await _awaitVoid(sub?.cancel());
-      cleanup();
-      Terminal.clearAndHome();
+      session.end();
+      out.clear();
     }
   }
 

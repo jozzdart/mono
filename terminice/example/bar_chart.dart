@@ -1,8 +1,6 @@
 import 'package:terminice/terminice.dart';
 
 void main() {
-  Terminal.clearAndHome();
-
   final items = <BarChartItem>[
     const BarChartItem('Alpha', 42),
     const BarChartItem('Beta', 67),
