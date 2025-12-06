@@ -47,6 +47,10 @@ class MiniMap {
     _render(out);
   }
 
+  /// Renders to the given [RenderOutput] for external line tracking.
+  /// Use this when animating or updating the widget repeatedly.
+  void showTo(RenderOutput out) => _render(out);
+
   void _render(RenderOutput out) {
     final style = theme.style;
     final title = (label == null || label!.isEmpty) ? 'Mini Map' : label!;
@@ -94,7 +98,8 @@ class MiniMap {
     final overlaps = (endLine > viewStart) && (startLine < viewEnd);
 
     // Count markers in this segment
-    final markerCount = markers.where((m) => m >= startLine && m < endLine).length;
+    final markerCount =
+        markers.where((m) => m >= startLine && m < endLine).length;
 
     // Build a horizontal micro-bar to represent density + viewport
     final buf = StringBuffer();
@@ -110,7 +115,8 @@ class MiniMap {
     // Use light shade for base, accent/highlight when in viewport, and dots for markers.
     for (int i = 0; i < barInner; i++) {
       final isViewport = overlaps;
-      final hasMarker = markerCount > 0 && (i % (barInner ~/ (markerCount.clamp(1, barInner))) == 0);
+      final hasMarker = markerCount > 0 &&
+          (i % (barInner ~/ (markerCount.clamp(1, barInner))) == 0);
 
       if (hasMarker && isViewport) {
         buf.write('${theme.inverse}${theme.highlight}●${theme.reset}');
@@ -139,5 +145,3 @@ class MiniMap {
     return s.padLeft(4, ' ');
   }
 }
-
-

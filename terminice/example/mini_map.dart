@@ -7,8 +7,11 @@ void main() {
   final view = 48;
   final marks = [42, 128, 256, 512, 777, 900, 940];
 
+  // Use RenderOutput for partial clearing (only clears our widget's lines)
+  final out = RenderOutput();
+
   for (final start in [0, 120, 240, 360, 480, 600, 720, 840, 952]) {
-    Terminal.clearAndHome();
+    out.clear(); // Clear only the previous MiniMap output
     MiniMap(
       totalLines: total,
       viewportStart: start,
@@ -18,7 +21,7 @@ void main() {
       label: 'Mini Map',
       theme: PromptTheme.pastel,
       markers: marks,
-    ).show();
+    ).showTo(out); // Render to our tracked output
     sleep(const Duration(milliseconds: 260));
   }
 }

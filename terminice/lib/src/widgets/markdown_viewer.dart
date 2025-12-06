@@ -29,6 +29,13 @@ class MarkdownViewer {
     _render(_out);
   }
 
+  /// Renders to the given [RenderOutput] for external line tracking.
+  /// Use this when animating or updating the widget repeatedly.
+  void showTo(RenderOutput out) {
+    _out = out;
+    _render(out);
+  }
+
   void _render(RenderOutput out) {
     final style = theme.style;
     final label = title ?? 'Markdown';

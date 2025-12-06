@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:terminice/terminice.dart';
 
 void main() {
@@ -14,16 +12,19 @@ void main() {
     [Hints.key('Ctrl+C', theme), 'Exit'],
   ], theme: theme, title: 'Hotkey Guide');
 
-  final term = Terminal.enterRaw();
-  Terminal.hideCursor();
+  // Use TerminalSession for raw mode + cursor, RenderOutput for partial clearing
+  final session = TerminalSession(hideCursor: true, rawMode: true);
+  session.start();
+
+  final out = RenderOutput();
 
   void renderBase() {
-    Terminal.clearAndHome();
+    out.clear(); // Only clears our output, preserves terminal history
     final top = FrameRenderer.titleWithBorders('Demo App', theme);
-    stdout.writeln('${theme.bold}$top${theme.reset}');
-    stdout.writeln(
+    out.writeln('${theme.bold}$top${theme.reset}');
+    out.writeln(
         '${theme.gray}${theme.style.borderVertical}${theme.reset} Press ${Hints.key('?', theme)} to view hotkeys');
-    stdout.writeln(FrameRenderer.bottomLine('Demo App', theme));
+    out.writeln(FrameRenderer.bottomLine('Demo App', theme));
   }
 
   try {
@@ -34,12 +35,13 @@ void main() {
         break;
       }
       if (ev.type == KeyEventType.char && ev.char == '?') {
+        out.clear(); // Clear base UI before showing guide
         guide.run();
-        renderBase();
+        renderBase(); // Redraw base UI after guide closes
       }
     }
   } finally {
-    term.restore();
-    Terminal.showCursor();
+    session.end();
+    out.clear(); // Clean exit
   }
 }

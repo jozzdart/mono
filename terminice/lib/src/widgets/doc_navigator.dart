@@ -5,7 +5,6 @@ import '../system/hints.dart';
 import '../system/framed_layout.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
-import '../system/terminal.dart';
 import 'markdown_viewer.dart';
 
 /// DocNavigator – navigate a Markdown docs tree.
@@ -283,17 +282,18 @@ class DocNavigator {
     final label = 'Doc · ${_basename(path)}';
     final content = _readFileSafe(path);
 
-    Terminal.clearAndHome();
+    // Use RenderOutput for partial clearing (only clears our output)
+    final viewerOut = RenderOutput();
+
     MarkdownViewer(
       content,
       theme: theme,
       title: label,
-    ).show();
+    ).showTo(viewerOut);
 
-    stdout.writeln(Hints.grid([
+    viewerOut.writeln(Hints.grid([
       [Hints.key('← / Esc / Enter', theme), 'Back to tree'],
     ], theme));
-    Terminal.hideCursor();
 
     while (true) {
       final ev = KeyEventReader.read();
@@ -304,6 +304,9 @@ class DocNavigator {
         break;
       }
     }
+
+    // Clear just the viewer content when returning to tree
+    viewerOut.clear();
   }
 
   List<FileSystemEntity> _listChildren(Directory dir) {

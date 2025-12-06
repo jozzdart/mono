@@ -5,7 +5,6 @@ import '../system/framed_layout.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/prompt_runner.dart';
-import '../system/terminal.dart';
 import 'text_prompt.dart';
 import 'confirm_prompt.dart';
 import 'search_select.dart';
@@ -63,8 +62,7 @@ class EnvManager {
       }
       // On back/delete/edit/new we simply loop to selection again
     }
-
-    Terminal.clearAndHome();
+    // Note: No full terminal clear - PromptRunner handles cleanup and preserves terminal history
   }
 
   Future<_PostAction> _actionsLoop(
