@@ -1,9 +1,9 @@
-import 'dart:io';
+import 'dart:io' show sleep;
 
 import '../style/theme.dart';
 import '../system/hints.dart';
-import '../system/terminal.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// Toast — a transient, theme-aware popup message that gently fades away.
 ///
@@ -30,15 +30,6 @@ class Toast {
 
   void run() {
     final style = theme.style;
-
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
-
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
     int frameMs = (1000 / fps).clamp(12, 200).round();
 
     String iconForVariant() {
@@ -67,9 +58,7 @@ class Toast {
       }
     }
 
-    void render(double opacity) {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out, double opacity) {
       final frame = FramedLayout(label, theme: theme);
       final top = frame.top();
 
@@ -85,29 +74,34 @@ class Toast {
         return s;
       }
 
-      stdout.writeln('${theme.bold}$top${theme.reset}');
+      out.writeln('${theme.bold}$top${theme.reset}');
 
       final line = StringBuffer();
       line.write('${theme.gray}${style.borderVertical}${theme.reset} ');
       line.write(applyFade('${theme.bold}$color$icon${theme.reset} '));
       line.write(applyFade(message));
-      stdout.writeln(line.toString());
+      out.writeln(line.toString());
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         'Fades automatically',
       ], theme, dim: true));
     }
 
-    try {
+    // Use TerminalSession for cursor hiding + RenderOutput for partial clearing
+    TerminalSession(hideCursor: true).runWithOutput((out) {
+      // Initial render
+      render(out, 1.0);
+
       // Hold phase
       final holdEnd = DateTime.now().add(duration);
       while (DateTime.now().isBefore(holdEnd)) {
-        render(1.0);
         sleep(Duration(milliseconds: frameMs));
+        out.clear();
+        render(out, 1.0);
       }
 
       // Fade-out phase
@@ -115,14 +109,11 @@ class Toast {
       for (int i = 0; i <= totalFrames; i++) {
         final t = i / totalFrames; // 0..1
         final eased = _easeOutCubic(1 - t); // 1..0
-        render(eased);
+        out.clear();
+        render(out, eased);
         sleep(Duration(milliseconds: frameMs));
       }
-    } finally {
-      cleanup();
-    }
-
-    Terminal.clearAndHome();
+    }, clearOnEnd: true);
   }
 }
 

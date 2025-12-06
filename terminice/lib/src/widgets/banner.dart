@@ -1,9 +1,7 @@
-import 'dart:io';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
-import '../system/terminal.dart';
 import '../system/hints.dart';
+import '../system/prompt_runner.dart';
 
 /// Renders a big ASCII banner aligned with ThemeDemo styling.
 ///
@@ -32,60 +30,46 @@ class Banner {
         assert(letterSpacing >= 0);
 
   void run() {
+    // Use TerminalSession for cursor hiding, RenderOutput for line tracking
+    TerminalSession(hideCursor: true).runWithOutput(
+      (out) => _render(out),
+      clearOnEnd: false, // Keep banner visible
+    );
+  }
+
+  void _render(RenderOutput out) {
     final s = theme.style;
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
 
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
+    final label = 'Banner';
+    final frame = FramedLayout(label, theme: theme);
+    if (s.boldPrompt) out.writeln('${theme.bold}${frame.top()}${theme.reset}');
+
+    // Content left border for alignment with other widgets
+    final borderLeft = '${theme.gray}${s.borderVertical}${theme.reset} ';
+
+    // Build mask lines once; use it to produce colored and shadow layers
+    final maskLines = _renderMaskLines(text);
+
+    // Primary colored banner lines
+    for (int i = 0; i < maskLines.length; i++) {
+      out.writeln('$borderLeft${_colorizeMask(maskLines[i], rowIndex: i)}');
     }
 
-    try {
-      Terminal.clearAndHome();
-
-      final label = 'Banner';
-      final frame = FramedLayout(label, theme: theme);
-      if (s.boldPrompt) stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-      // Content left border for alignment with other widgets
-      final borderLeft = '${theme.gray}${s.borderVertical}${theme.reset} ';
-
-      // Build mask lines once; use it to produce colored and shadow layers
-      final maskLines = _renderMaskLines(text);
-
-      // Primary colored banner lines
+    // Optional drop shadow block printed after the banner
+    if (showShadow) {
       for (int i = 0; i < maskLines.length; i++) {
-        final buf = StringBuffer();
-        buf.write(borderLeft);
-        buf.write(_colorizeMask(maskLines[i], rowIndex: i));
-        buf.write('\n');
-        stdout.write(buf.toString());
+        out.writeln('$borderLeft  ${_shadowizeMask(maskLines[i])}');
       }
-
-      // Optional drop shadow block printed after the banner
-      if (showShadow) {
-        for (int i = 0; i < maskLines.length; i++) {
-          final buf = StringBuffer();
-          buf.write(borderLeft);
-          buf.write('  '); // slight horizontal offset for the shadow
-          buf.write(_shadowizeMask(maskLines[i]));
-          buf.write('\n');
-          stdout.write(buf.toString());
-        }
-      }
-
-      if (s.showBorder) {
-        stdout.writeln(frame.bottom());
-      }
-
-      stdout.writeln(Hints.bullets([
-        'Use different themes for varied vibes',
-        'ASCII figlet-style banner',
-      ], theme, dim: true));
-    } finally {
-      cleanup();
     }
+
+    if (s.showBorder) {
+      out.writeln(frame.bottom());
+    }
+
+    out.writeln(Hints.bullets([
+      'Use different themes for varied vibes',
+      'ASCII figlet-style banner',
+    ], theme, dim: true));
   }
 
   /// Produces 5 mask lines where '1' means filled cell and '0' means empty.

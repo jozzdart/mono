@@ -1,9 +1,9 @@
-import 'dart:io';
+import 'dart:io' show sleep;
 
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// Theme-aware loading spinner with multiple visual styles.
 ///
@@ -41,27 +41,15 @@ class LoadingSpinner {
     final frames = _framesForStyle(style);
     final int frameMs = (1000 / fps).clamp(12, 200).round();
 
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
-
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    final sw = Stopwatch()..start();
-
     String colorForPhase(int i) {
       // Alternate between accent and highlight for gentle pulse
       return (i % 2 == 0) ? theme.accent : theme.highlight;
     }
 
-    void render(int frameIndex) {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out, int frameIndex) {
       final frame = FramedLayout(label, theme: theme);
       final top = frame.top();
-      stdout.writeln('${theme.bold}$top${theme.reset}');
+      out.writeln('${theme.bold}$top${theme.reset}');
 
       final spin = frames[frameIndex % frames.length];
       final color = colorForPhase(frameIndex);
@@ -70,30 +58,34 @@ class LoadingSpinner {
       line.write('${theme.gray}${styleCfg.borderVertical}${theme.reset} ');
       line.write('${theme.dim}$message${theme.reset}  ');
       line.write('${theme.bold}$color$spin${theme.reset}');
-      stdout.writeln(line.toString());
+      out.writeln(line.toString());
 
       if (styleCfg.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         'Theme-aware spinner',
         'Style: ${style.name}',
       ], theme, dim: true));
     }
 
-    try {
+    // Use TerminalSession for cursor hiding + RenderOutput for partial clearing
+    TerminalSession(hideCursor: true).runWithOutput((out) {
+      final sw = Stopwatch()..start();
       int frame = 0;
-      while (sw.elapsed < duration) {
-        render(frame);
-        frame++;
-        sleep(Duration(milliseconds: frameMs));
-      }
-    } finally {
-      cleanup();
-    }
 
-    Terminal.clearAndHome();
+      // Initial render
+      render(out, frame);
+      frame++;
+
+      while (sw.elapsed < duration) {
+        sleep(Duration(milliseconds: frameMs));
+        out.clear();
+        render(out, frame);
+        frame++;
+      }
+    }, clearOnEnd: true);
   }
 
   List<String> _framesForStyle(SpinnerStyle s) {

@@ -1,9 +1,8 @@
-import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// CheatSheet – command list with shortcuts and usage.
 ///
@@ -19,25 +18,22 @@ class CheatSheet {
   /// Visual theme.
   final PromptTheme theme;
 
-  /// If true, clears the screen before rendering.
-  final bool clearScreen;
-
   CheatSheet(
     this.entries, {
     this.title = 'Cheat Sheet',
     this.theme = PromptTheme.dark,
-    this.clearScreen = true,
   });
 
   /// Renders the cheat sheet once. Non-interactive.
   void show() {
-    if (clearScreen) {
-      Terminal.clearAndHome();
-    }
+    final out = RenderOutput();
+    _render(out);
+  }
 
+  void _render(RenderOutput out) {
     // Header
     final frame = FramedLayout(title, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     // Table body: Command | Shortcut | Usage (custom, inline rendering)
     final style = theme.style;
@@ -77,11 +73,11 @@ class CheatSheet {
     header.write('${theme.bold}${theme.accent}${padCenter(columns[1], widths[1])}${theme.reset}');
     header.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
     header.write('${theme.bold}${theme.accent}${padLeftAlign(columns[2], widths[2])}${theme.reset}');
-    stdout.writeln(header.toString());
+    out.writeln(header.toString());
 
     // Connector line (sized to table width)
     final tableWidth = 2 + widths.fold<int>(0, (sum, w) => sum + w) + 2 * 3; // 3 cols => 2 separators
-    stdout.writeln('${theme.gray}${style.borderConnector}${'─' * tableWidth}${theme.reset}');
+    out.writeln('${theme.gray}${style.borderConnector}${'─' * tableWidth}${theme.reset}');
 
     // Rows (zebra stripes)
     for (var i = 0; i < entries.length; i++) {
@@ -103,11 +99,11 @@ class CheatSheet {
       buf.write(prefix);
       buf.write(padLeftAlign(row.length > 2 ? row[2] : '', widths[2]));
       buf.write(suffix);
-      stdout.writeln(buf.toString());
+      out.writeln(buf.toString());
     }
 
     // Bottom border to balance the header line
-    stdout.writeln(frame.bottom());
+    out.writeln(frame.bottom());
   }
 
   /// Convenience: alias to [show].

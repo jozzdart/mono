@@ -1,10 +1,9 @@
 import 'dart:math';
-import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/prompt_runner.dart';
 
 /// Colorful table rendering with alignment and borders, aligned with ThemeDemo styling.
 ///
@@ -31,17 +30,21 @@ class TableView {
   }) : assert(columns.isNotEmpty, 'columns must not be empty');
 
   void run() {
-    Terminal.clearAndHome();
+    final out = RenderOutput();
+    _render(out);
+  }
 
+  void _render(RenderOutput out) {
     final style = theme.style;
 
     // Title
     final frame = FramedLayout(title, theme: theme);
     final top = frame.top();
-    stdout.writeln('${theme.bold}$top${theme.reset}');
+    out.writeln('${theme.bold}$top${theme.reset}');
 
     // Compute column widths based on visible (ANSI-stripped) content
-    final widths = List<int>.generate(columns.length, (i) => _visible(columns[i]).length);
+    final widths =
+        List<int>.generate(columns.length, (i) => _visible(columns[i]).length);
     for (final row in rows) {
       for (var i = 0; i < columns.length; i++) {
         final cell = (i < row.length) ? row[i] : '';
@@ -75,18 +78,20 @@ class TableView {
     final header = StringBuffer();
     header.write('${theme.gray}${style.borderVertical}${theme.reset} ');
     for (var i = 0; i < columns.length; i++) {
-      if (i > 0) header.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
+      if (i > 0) {
+        header.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
+      }
       header.write('${theme.bold}${theme.accent}');
       header.write(pad(columns[i], widths[i], alignmentFor(i)));
       header.write(theme.reset);
     }
-    stdout.writeln(header.toString());
+    out.writeln(header.toString());
 
     // Connector under header sized to the table content width
     final tableWidth = 2 + // left border + space
         widths.fold<int>(0, (sum, w) => sum + w) +
         (columns.length - 1) * 3; // separators ' │ '
-    stdout.writeln(
+    out.writeln(
         '${theme.gray}${style.borderConnector}${'─' * tableWidth}${theme.reset}');
 
     // Rows
@@ -100,22 +105,24 @@ class TableView {
       final suffix = stripe ? theme.reset : '';
 
       for (var i = 0; i < columns.length; i++) {
-        if (i > 0) rowBuf.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
+        if (i > 0) {
+          rowBuf.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
+        }
         final cell = (i < row.length) ? row[i] : '';
         rowBuf.write(prefix);
         rowBuf.write(pad(cell, widths[i], alignmentFor(i)));
         rowBuf.write(suffix);
       }
-      stdout.writeln(rowBuf.toString());
+      out.writeln(rowBuf.toString());
     }
 
     // Bottom border line to balance the title
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
 
     // Hints
-    stdout.writeln(Hints.bullets([
+    out.writeln(Hints.bullets([
       'Arrow-friendly styling',
       'Accent header',
       'Zebra rows',
@@ -129,5 +136,3 @@ String _visible(String s) {
   // Remove ANSI escape sequences like \x1B[...m
   return s.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), '');
 }
-
-

@@ -1,9 +1,9 @@
-import 'dart:io';
+import 'dart:io' show sleep;
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// ProgressDots – animated ellipsis while waiting.
 ///
@@ -30,52 +30,45 @@ class ProgressDots {
   /// Run the animated dots for the configured duration.
   void run() {
     final style = theme.style;
-    final term = Terminal.enterRaw();
-    Terminal.hideCursor();
 
-    void cleanup() {
-      term.restore();
-      Terminal.showCursor();
-    }
-
-    final sw = Stopwatch()..start();
-    int phase = 0;
-
-    void render() {
-      Terminal.clearAndHome();
-
+    void render(RenderOutput out, int phase) {
       final frame = FramedLayout(label, theme: theme);
       final top = frame.top();
-      stdout.writeln('${theme.bold}$top${theme.reset}');
+      out.writeln('${theme.bold}$top${theme.reset}');
 
       final dots = '.' * ((phase % (maxDots + 1)));
       final line = StringBuffer();
       line.write('${theme.gray}${style.borderVertical}${theme.reset} ');
       line.write('${theme.dim}$message${theme.reset} ');
       line.write('${theme.accent}$dots${theme.reset}');
-      stdout.writeln(line.toString());
+      out.writeln(line.toString());
 
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
 
-      stdout.writeln(Hints.bullets([
+      out.writeln(Hints.bullets([
         'Animated ellipsis',
         'Theme-aligned borders',
       ], theme, dim: true));
     }
 
-    try {
-      while (sw.elapsed < duration) {
-        render();
-        phase++;
-        sleep(interval);
-      }
-    } finally {
-      cleanup();
-    }
+    // Use TerminalSession for cursor hiding + RenderOutput for partial clearing
+    TerminalSession(hideCursor: true).runWithOutput((out) {
+      final sw = Stopwatch()..start();
+      int phase = 0;
 
-    Terminal.clearAndHome();
+      // Initial render
+      render(out, phase);
+      phase++;
+
+      while (sw.elapsed < duration) {
+        sleep(interval);
+        out.clear();
+        render(out, phase);
+        phase++;
+      }
+    }, clearOnEnd: true);
   }
 }
 

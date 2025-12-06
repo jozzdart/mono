@@ -1,9 +1,9 @@
-import 'dart:io';
+import 'dart:io' show stdout;
 import 'dart:math' as math;
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
-import '../system/terminal.dart';
+import '../system/prompt_runner.dart';
 
 /// ResourceGrid – tabular boxes with CPU/Memory/IO graphs.
 ///
@@ -36,19 +36,22 @@ class ResourceGrid {
   }) : assert(cellWidth >= 20, 'cellWidth must be at least 20');
 
   void show() {
-    Terminal.clearAndHome();
+    final out = RenderOutput();
+    _render(out);
+  }
 
+  void _render(RenderOutput out) {
     final style = theme.style;
 
     // Title
     final frame = FramedLayout(title, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     if (resources.isEmpty) {
-      stdout.writeln(
+      out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(no resources)${theme.reset}');
       if (style.showBorder) {
-        stdout.writeln(frame.bottom());
+        out.writeln(frame.bottom());
       }
       return;
     }
@@ -86,7 +89,7 @@ class ResourceGrid {
           if (i > 0) buf.write(colSep);
           buf.write(renderedCells[i][line]);
         }
-        stdout.writeln(buf.toString());
+        out.writeln(buf.toString());
       }
 
       // After each row of cells, print a subtle connector
@@ -94,13 +97,13 @@ class ResourceGrid {
         final connector = StringBuffer();
         connector.write('${theme.gray}${style.borderConnector}${theme.reset}');
         connector.write('${theme.gray}${'─' * _rowContentWidth(renderedCells.length)}${theme.reset}');
-        stdout.writeln(connector.toString());
+        out.writeln(connector.toString());
       }
     }
 
     // Bottom border line to balance the title
     if (style.showBorder) {
-      stdout.writeln(frame.bottom());
+      out.writeln(frame.bottom());
     }
   }
 

@@ -7,12 +7,34 @@ import 'key_events.dart';
 /// Result from a prompt indicating whether it was confirmed or cancelled.
 enum PromptResult { confirmed, cancelled }
 
+// ============================================================================
+// CORE COMPONENTS (can be used independently or composed)
+// ============================================================================
+
 /// A line-tracking output buffer that only clears what it wrote.
 ///
 /// Instead of clearing the entire terminal, this tracks how many lines
 /// were written and uses cursor movement to clear just those lines
 /// before re-rendering. This preserves any terminal content that existed
 /// before the widget started.
+///
+/// **Standalone usage** (for simple display widgets):
+/// ```dart
+/// final out = RenderOutput();
+/// out.writeln('Line 1');
+/// out.writeln('Line 2');
+/// // Content stays visible, terminal history preserved
+/// ```
+///
+/// **With updates** (for animated displays):
+/// ```dart
+/// final out = RenderOutput();
+/// for (int i = 0; i < 5; i++) {
+///   out.clear();  // Clears only our lines
+///   out.writeln('Frame $i');
+///   sleep(Duration(milliseconds: 100));
+/// }
+/// ```
 class RenderOutput {
   int _lineCount = 0;
 
@@ -46,6 +68,96 @@ class RenderOutput {
   }
 }
 
+/// Manages terminal session state (cursor visibility, raw mode).
+///
+/// This is a composable component that can be used:
+/// - Directly for display widgets that need cursor control
+/// - As part of [PromptRunner] for interactive prompts
+///
+/// **For display widgets** (no key input needed):
+/// ```dart
+/// final session = TerminalSession(hideCursor: true);
+/// final out = RenderOutput();
+///
+/// session.run(() {
+///   out.writeln('Loading...');
+///   sleep(Duration(seconds: 1));
+///   out.clear();
+///   out.writeln('Done!');
+/// });
+/// ```
+///
+/// **For animations**:
+/// ```dart
+/// TerminalSession(hideCursor: true).run(() {
+///   final out = RenderOutput();
+///   for (int i = 0; i < 10; i++) {
+///     out.clear();
+///     out.writeln('Progress: ${'█' * i}${'░' * (10 - i)}');
+///     sleep(Duration(milliseconds: 100));
+///   }
+/// });
+/// ```
+class TerminalSession {
+  /// Whether to hide the cursor during the session.
+  final bool hideCursor;
+
+  /// Whether to enter raw terminal mode (for key input).
+  final bool rawMode;
+
+  TerminalState? _termState;
+  bool _active = false;
+
+  TerminalSession({
+    this.hideCursor = false,
+    this.rawMode = false,
+  });
+
+  /// Whether the session is currently active.
+  bool get isActive => _active;
+
+  /// Starts the terminal session.
+  void start() {
+    if (_active) return;
+    _active = true;
+    if (rawMode) _termState = Terminal.enterRaw();
+    if (hideCursor) Terminal.hideCursor();
+  }
+
+  /// Ends the terminal session and restores state.
+  void end() {
+    if (!_active) return;
+    _termState?.restore();
+    if (hideCursor) Terminal.showCursor();
+    _active = false;
+  }
+
+  /// Runs [body] within this session, ensuring cleanup on exit.
+  T run<T>(T Function() body) {
+    start();
+    try {
+      return body();
+    } finally {
+      end();
+    }
+  }
+
+  /// Runs [body] with a [RenderOutput], clearing output at the end if requested.
+  T runWithOutput<T>(
+    T Function(RenderOutput out) body, {
+    bool clearOnEnd = false,
+  }) {
+    final out = RenderOutput();
+    start();
+    try {
+      return body(out);
+    } finally {
+      end();
+      if (clearOnEnd) out.clear();
+    }
+  }
+}
+
 /// Configuration for end-of-prompt behavior.
 class EndBehavior {
   /// Whether to clear the widget's output when the prompt ends.
@@ -61,15 +173,14 @@ class EndBehavior {
   static const EndBehavior persist = EndBehavior(clearOnEnd: false);
 }
 
+// ============================================================================
+// PROMPT RUNNER (composes TerminalSession + RenderOutput + key handling)
+// ============================================================================
+
 /// A centralized runner for interactive terminal prompts.
 ///
-/// This utility encapsulates the common lifecycle pattern used across all
-/// terminice widgets:
-/// 1. Enter raw terminal mode
-/// 2. Hide cursor (optional)
-/// 3. Run render/update loop (clearing only widget output between renders)
-/// 4. Cleanup on exit
-/// 5. Restore terminal state
+/// Composes [TerminalSession] + [RenderOutput] + key handling to provide
+/// a complete solution for interactive prompts.
 ///
 /// **Key feature**: Never clears the entire terminal. Only clears lines
 /// written by the widget itself, preserving any existing terminal content.
@@ -109,6 +220,12 @@ class PromptRunner {
     this.onAfterCleanup,
   });
 
+  /// Creates the terminal session for this runner.
+  TerminalSession _createSession() => TerminalSession(
+        hideCursor: hideCursor,
+        rawMode: true,
+      );
+
   /// Runs the prompt loop synchronously.
   ///
   /// [render] is called with a [RenderOutput] to write content.
@@ -120,17 +237,10 @@ class PromptRunner {
     required void Function(RenderOutput out) render,
     required PromptResult? Function(KeyEvent event) onKey,
   }) {
-    final term = Terminal.enterRaw();
+    final session = _createSession();
     final output = RenderOutput();
 
-    void cleanup() {
-      onBeforeCleanup?.call();
-      term.restore();
-      Terminal.showCursor();
-      onAfterCleanup?.call();
-    }
-
-    if (hideCursor) Terminal.hideCursor();
+    session.start();
 
     // Initial render (no clearing needed - nothing written yet)
     render(output);
@@ -152,7 +262,9 @@ class PromptRunner {
         render(output);
       }
     } finally {
-      cleanup();
+      onBeforeCleanup?.call();
+      session.end();
+      onAfterCleanup?.call();
     }
 
     // Optionally clear our final output
@@ -205,17 +317,16 @@ class PromptRunner {
   /// });
   /// ```
   T runCustom<T>(T Function(RenderOutput out) body) {
-    final term = Terminal.enterRaw();
+    final session = _createSession();
     final output = RenderOutput();
 
-    if (hideCursor) Terminal.hideCursor();
+    session.start();
 
     try {
       return body(output);
     } finally {
       onBeforeCleanup?.call();
-      term.restore();
-      Terminal.showCursor();
+      session.end();
       onAfterCleanup?.call();
 
       // Optionally clear our final output
@@ -235,7 +346,7 @@ class PromptRunner {
     required PromptResult? Function(KeyEvent event) onKey,
     CursorBlink? cursorBlink,
   }) async {
-    final term = Terminal.enterRaw();
+    final session = _createSession();
     final output = RenderOutput();
     Timer? blinkTimer;
 
@@ -244,15 +355,7 @@ class PromptRunner {
       render(output);
     }
 
-    void cleanup() {
-      blinkTimer?.cancel();
-      onBeforeCleanup?.call();
-      term.restore();
-      Terminal.showCursor();
-      onAfterCleanup?.call();
-    }
-
-    if (hideCursor) Terminal.hideCursor();
+    session.start();
 
     // Setup cursor blink timer if configured
     if (cursorBlink != null) {
@@ -293,7 +396,10 @@ class PromptRunner {
         doRender();
       }
     } finally {
-      cleanup();
+      blinkTimer?.cancel();
+      onBeforeCleanup?.call();
+      session.end();
+      onAfterCleanup?.call();
     }
 
     // Optionally clear our final output
