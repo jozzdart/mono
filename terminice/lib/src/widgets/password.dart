@@ -3,6 +3,7 @@ import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_input_buffer.dart';
 
 /// PasswordPrompt – secure masked input with toggle visibility (Ctrl+R)
 class PasswordPrompt {
@@ -20,7 +21,8 @@ class PasswordPrompt {
 
   String run() {
     final style = theme.style;
-    String buffer = '';
+    // Use centralized text input for buffer handling
+    final buffer = TextInputBuffer();
     bool showPlain = false;
     bool confirmed = false;
     final cursorBlink = CursorBlink();
@@ -36,10 +38,10 @@ class PasswordPrompt {
       }
 
       // Input display
-      final display = showPlain ? buffer : maskChar * buffer.length;
+      final display = showPlain ? buffer.text : maskChar * buffer.length;
       final cursor =
           cursorBlink.isVisible ? '${theme.accent}▋${theme.reset}' : ' ';
-      final content = display.isEmpty
+      final content = buffer.isEmpty
           ? '${theme.dim}(empty)${theme.reset}'
           : '$display$cursor';
 
@@ -75,12 +77,9 @@ class PasswordPrompt {
           return PromptResult.cancelled;
         } else if (event.type == KeyEventType.ctrlR) {
           showPlain = !showPlain;
-        } else if (event.type == KeyEventType.backspace) {
-          if (buffer.isNotEmpty) {
-            buffer = buffer.substring(0, buffer.length - 1);
-          }
-        } else if (event.type == KeyEventType.char && event.char != null) {
-          buffer += event.char!;
+        } else {
+          // Text input (typing, backspace) - handled by centralized TextInputBuffer
+          buffer.handleKey(event);
         }
 
         return null; // continue loop
@@ -88,6 +87,6 @@ class PasswordPrompt {
     );
 
     if (!confirmed) return '';
-    return buffer;
+    return buffer.text;
   }
 }

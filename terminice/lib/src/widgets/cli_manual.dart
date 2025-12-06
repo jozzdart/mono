@@ -7,6 +7,7 @@ import '../system/key_events.dart';
 import '../system/highlighter.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_input_buffer.dart';
 import '../system/text_utils.dart' as text_utils;
 
 class ManualOption {
@@ -66,7 +67,8 @@ class CLIManual {
 
     final style = theme.style;
 
-    String query = '';
+    // Use centralized text input for search query handling
+    final queryInput = TextInputBuffer();
     int pageScroll = 0;
     bool cancelled = false;
 
@@ -83,10 +85,10 @@ class CLIManual {
     int lines0() => height;
 
     void updateFilter() {
-      if (query.trim().isEmpty) {
+      if (queryInput.text.trim().isEmpty) {
         filtered = List.from(pages);
       } else {
-        final q = query.toLowerCase();
+        final q = queryInput.text.toLowerCase();
         bool matchPage(ManualPage p) {
           if (p.name.toLowerCase().contains(q)) return true;
           if ((p.section ?? '').toLowerCase().contains(q)) return true;
@@ -218,7 +220,7 @@ class CLIManual {
       out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
       final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      out.writeln('$framePrefix${theme.accent}Search:${theme.reset} $query');
+      out.writeln('$framePrefix${theme.accent}Search:${theme.reset} ${queryInput.text}');
 
       if (style.showBorder) {
         out.writeln(frame.connector());
@@ -248,7 +250,7 @@ class CLIManual {
         final isSel = nav.isSelected(absoluteIdx);
         final prefix = isSel ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
         final label = _labelFor(window.items[i]);
-        final line = '$prefix ${highlightSubstring(label, query, theme)}';
+        final line = '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
         if (isSel && style.useInverseHighlight) {
           out.writeln('$framePrefix${theme.inverse}$line${theme.reset}');
         } else {
@@ -346,13 +348,8 @@ class CLIManual {
           pageScroll = max(0, pageScroll - 1);
         } else if (ev.type == KeyEventType.arrowRight) {
           pageScroll = pageScroll + 1;
-        } else if (ev.type == KeyEventType.backspace) {
-          if (query.isNotEmpty) {
-            query = query.substring(0, query.length - 1);
-            updateFilter();
-          }
-        } else if (ev.type == KeyEventType.char && ev.char != null) {
-          query += ev.char!;
+        } else if (queryInput.handleKey(ev)) {
+          // Text input (typing, backspace) - handled by centralized TextInputBuffer
           updateFilter();
         }
 

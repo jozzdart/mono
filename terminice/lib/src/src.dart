@@ -7,6 +7,7 @@ export 'system/list_navigation.dart';
 export 'system/prompt_runner.dart';
 export 'system/table_renderer.dart';
 export 'system/terminal.dart';
+export 'system/text_input_buffer.dart';
 export 'system/text_utils.dart';
 export 'widgets/confirm_prompt.dart';
 export 'widgets/password.dart';

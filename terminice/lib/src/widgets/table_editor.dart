@@ -6,6 +6,7 @@ import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
 import '../system/table_renderer.dart';
+import '../system/text_input_buffer.dart';
 
 /// Interactive CSV-like grid editor.
 ///
@@ -44,7 +45,8 @@ class TableEditor {
     int selectedRow = data.isEmpty ? 0 : 0;
     int selectedCol = 0;
     bool editing = false;
-    String editBuffer = '';
+    // Use centralized text input for cell editing
+    final editBuffer = TextInputBuffer();
     bool cancelled = false;
 
     // Ensure at least one empty row to allow editing
@@ -73,9 +75,9 @@ class TableEditor {
       final row = data[selectedRow];
       final current = (selectedCol < row.length) ? row[selectedCol] : '';
       if (overwrite) {
-        editBuffer = firstChar ?? current;
+        editBuffer.setText(firstChar ?? current);
       } else {
-        editBuffer = current + (firstChar ?? '');
+        editBuffer.setText(current + (firstChar ?? ''));
       }
       editing = true;
     }
@@ -87,14 +89,14 @@ class TableEditor {
         // Expand row if somehow shorter
         row.addAll(List<String>.filled(selectedCol - row.length + 1, ''));
       }
-      row[selectedCol] = editBuffer;
+      row[selectedCol] = editBuffer.text;
       editing = false;
-      editBuffer = '';
+      editBuffer.clear();
     }
 
     void cancelEdit() {
       editing = false;
-      editBuffer = '';
+      editBuffer.clear();
     }
 
     void addRowBelow() {
@@ -133,7 +135,7 @@ class TableEditor {
             index: r,
             selectedColumn: selectedCol,
             isEditing: editing,
-            editBuffer: editBuffer,
+            editBuffer: editBuffer.text,
           ));
         } else {
           out.writeln(renderer.rowLine(row, index: r));
@@ -215,18 +217,14 @@ class TableEditor {
           } else if (ev.type == KeyEventType.esc ||
               ev.type == KeyEventType.ctrlC) {
             cancelEdit();
-          } else if (ev.type == KeyEventType.backspace) {
-            if (editBuffer.isNotEmpty) {
-              editBuffer = editBuffer.substring(0, editBuffer.length - 1);
-            }
           } else if (ev.type == KeyEventType.tab) {
             commitEdit();
             selectedCol = (selectedCol + 1) % columns.length;
             if (selectedCol == 0) {
               selectedRow = (selectedRow + 1) % data.length;
             }
-          } else if (ev.type == KeyEventType.char) {
-            editBuffer += ev.char!;
+          } else if (editBuffer.handleKey(ev)) {
+            // Text input (typing, backspace) - handled by centralized TextInputBuffer
           } else if (ev.type == KeyEventType.arrowLeft) {
             // Optional: left/right within cell could be supported; for simplicity, move cell
             commitEdit();

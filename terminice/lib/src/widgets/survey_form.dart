@@ -3,6 +3,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_input_buffer.dart';
 
 /// SurveyForm – interactive questionnaire builder.
 ///
@@ -132,7 +133,8 @@ class SurveyForm {
     required this.title,
     required this.questions,
     this.theme = PromptTheme.dark,
-  }) : assert(questions.isNotEmpty, 'SurveyForm requires at least one question');
+  }) : assert(
+            questions.isNotEmpty, 'SurveyForm requires at least one question');
 
   /// Runs the interactive survey. Returns null if cancelled.
   SurveyResult? run() {
@@ -141,11 +143,19 @@ class SurveyForm {
     // State per question
     int focused = 0;
     final innerCursor = List<int>.filled(questions.length, 0);
-    final textValues = List<String>.generate(questions.length, (i) => questions[i].initialText);
-    final singleValues = List<int?>.generate(questions.length, (i) => questions[i].initialChoiceIndex);
-    final multiValues = List<Set<int>>.generate(questions.length, (i) => {...questions[i].initialMulti});
-    final ratingValues = List<int?>.generate(questions.length, (i) => questions[i].initialRating);
-    final yesNoValues = List<bool?>.generate(questions.length, (i) => questions[i].initialYes);
+    // Use centralized text input for text questions
+    final textValues = List<TextInputBuffer>.generate(
+      questions.length,
+      (i) => TextInputBuffer(initialText: questions[i].initialText),
+    );
+    final singleValues = List<int?>.generate(
+        questions.length, (i) => questions[i].initialChoiceIndex);
+    final multiValues = List<Set<int>>.generate(
+        questions.length, (i) => {...questions[i].initialMulti});
+    final ratingValues = List<int?>.generate(
+        questions.length, (i) => questions[i].initialRating);
+    final yesNoValues =
+        List<bool?>.generate(questions.length, (i) => questions[i].initialYes);
     final errors = List<String?>.filled(questions.length, null);
     bool cancelled = false;
 
@@ -154,7 +164,7 @@ class SurveyForm {
       dynamic val;
       switch (q.type) {
         case SurveyQuestionType.text:
-          val = textValues[index];
+          val = textValues[index].text;
           break;
         case SurveyQuestionType.singleChoice:
           val = singleValues[index];
@@ -180,7 +190,9 @@ class SurveyForm {
       int? firstInvalid;
       for (var i = 0; i < questions.length; i++) {
         validate(i);
-        if (errors[i] != null && errors[i]!.isNotEmpty && firstInvalid == null) {
+        if (errors[i] != null &&
+            errors[i]!.isNotEmpty &&
+            firstInvalid == null) {
           firstInvalid = i;
         }
       }
@@ -192,7 +204,7 @@ class SurveyForm {
       final q = questions[index];
       switch (q.type) {
         case SurveyQuestionType.text:
-          final v = textValues[index];
+          final v = textValues[index].text;
           if (v.isEmpty && (q.placeholder?.isNotEmpty ?? false)) {
             return '${theme.dim}${q.placeholder}${theme.reset}';
           }
@@ -203,8 +215,11 @@ class SurveyForm {
           for (var i = 0; i < q.options.length; i++) {
             final isSel = sel == i;
             if (i > 0) buf.write('  ');
-            final content = isSel ? '${theme.bold}${q.options[i]}${theme.reset}' : q.options[i];
-            buf.write(isSel ? '${theme.accent}<$content>${theme.reset}' : content);
+            final content = isSel
+                ? '${theme.bold}${q.options[i]}${theme.reset}'
+                : q.options[i];
+            buf.write(
+                isSel ? '${theme.accent}<$content>${theme.reset}' : content);
           }
           return buf.toString();
         case SurveyQuestionType.multiChoice:
@@ -219,7 +234,8 @@ class SurveyForm {
             final sym = isOn ? style.checkboxOnSymbol : style.checkboxOffSymbol;
             final col = isOn ? theme.checkboxOn : theme.checkboxOff;
             final label = '$col$sym${theme.reset} ${q.options[i]}';
-            buf.write(isCursor ? '${theme.inverse}$label${theme.reset}' : label);
+            buf.write(
+                isCursor ? '${theme.inverse}$label${theme.reset}' : label);
           }
           return buf.toString();
         case SurveyQuestionType.rating:
@@ -238,8 +254,10 @@ class SurveyForm {
           final val = yesNoValues[index];
           final yes = val == true;
           final no = val == false;
-          final yesLabel = yes ? '${theme.accent}${theme.bold}<Yes>${theme.reset}' : 'Yes';
-          final noLabel = no ? '${theme.accent}${theme.bold}<No>${theme.reset}' : 'No';
+          final yesLabel =
+              yes ? '${theme.accent}${theme.bold}<Yes>${theme.reset}' : 'Yes';
+          final noLabel =
+              no ? '${theme.accent}${theme.bold}<No>${theme.reset}' : 'No';
           return '$yesLabel  ${theme.dim}|${theme.reset}  $noLabel';
       }
     }
@@ -247,7 +265,9 @@ class SurveyForm {
     void render(RenderOutput out) {
       final frame = FramedLayout(title, theme: theme);
       final baseTitle = frame.top();
-      final header = style.boldPrompt ? '${theme.bold}$baseTitle${theme.reset}' : baseTitle;
+      final header = style.boldPrompt
+          ? '${theme.bold}$baseTitle${theme.reset}'
+          : baseTitle;
       out.writeln(header);
 
       if (style.showBorder) {
@@ -257,7 +277,8 @@ class SurveyForm {
       for (var i = 0; i < questions.length; i++) {
         final isFocused = i == focused;
         final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-        final arrow = isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        final arrow =
+            isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
         final label = '${theme.selection}${questions[i].prompt}${theme.reset}';
         final value = renderValue(i);
         var line = '$arrow $label: $value';
@@ -295,7 +316,8 @@ class SurveyForm {
 
     void moveInner(int delta) {
       final q = questions[focused];
-      if (q.type == SurveyQuestionType.singleChoice || q.type == SurveyQuestionType.multiChoice) {
+      if (q.type == SurveyQuestionType.singleChoice ||
+          q.type == SurveyQuestionType.multiChoice) {
         final len = q.options.length;
         if (len == 0) return;
         innerCursor[focused] = (innerCursor[focused] + delta + len) % len;
@@ -336,7 +358,8 @@ class SurveyForm {
         validate(focused);
       } else if (q.type == SurveyQuestionType.singleChoice) {
         if (q.options.isEmpty) return;
-        singleValues[focused] = innerCursor[focused].clamp(0, q.options.length - 1);
+        singleValues[focused] =
+            innerCursor[focused].clamp(0, q.options.length - 1);
         validate(focused);
       } else if (q.type == SurveyQuestionType.yesNo) {
         yesNoValues[focused] = !(yesNoValues[focused] ?? false);
@@ -344,20 +367,12 @@ class SurveyForm {
       }
     }
 
-    void backspace() {
+    void handleTextInput(KeyEvent ev) {
       final q = questions[focused];
       if (q.type != SurveyQuestionType.text) return;
-      final curr = textValues[focused];
-      if (curr.isEmpty) return;
-      textValues[focused] = curr.substring(0, curr.length - 1);
-      validate(focused);
-    }
-
-    void appendChar(String ch) {
-      final q = questions[focused];
-      if (q.type != SurveyQuestionType.text) return;
-      textValues[focused] = textValues[focused] + ch;
-      validate(focused);
+      if (textValues[focused].handleKey(ev)) {
+        validate(focused);
+      }
     }
 
     // Initial validation pass and cursor sync from initial values
@@ -365,7 +380,8 @@ class SurveyForm {
       final q = questions[i];
       if (q.type == SurveyQuestionType.singleChoice) {
         final idx = (singleValues[i] ?? 0);
-        innerCursor[i] = q.options.isNotEmpty ? idx.clamp(0, q.options.length - 1) : 0;
+        innerCursor[i] =
+            q.options.isNotEmpty ? idx.clamp(0, q.options.length - 1) : 0;
       } else if (q.type == SurveyQuestionType.multiChoice) {
         if (q.options.isNotEmpty) {
           final first = multiValues[i].isNotEmpty
@@ -395,7 +411,8 @@ class SurveyForm {
           }
         } else if (ev.type == KeyEventType.arrowUp) {
           moveFocus(-1);
-        } else if (ev.type == KeyEventType.arrowDown || ev.type == KeyEventType.tab) {
+        } else if (ev.type == KeyEventType.arrowDown ||
+            ev.type == KeyEventType.tab) {
           moveFocus(1);
         } else if (ev.type == KeyEventType.arrowLeft) {
           moveInner(-1);
@@ -403,10 +420,9 @@ class SurveyForm {
           moveInner(1);
         } else if (ev.type == KeyEventType.space) {
           toggleOrSelect();
-        } else if (ev.type == KeyEventType.backspace) {
-          backspace();
-        } else if (ev.type == KeyEventType.char && ev.char != null) {
-          appendChar(ev.char!);
+        } else {
+          // Text input (typing, backspace) - handled by centralized TextInputBuffer
+          handleTextInput(ev);
         }
 
         return null;
@@ -419,7 +435,7 @@ class SurveyForm {
       final q = questions[i];
       switch (q.type) {
         case SurveyQuestionType.text:
-          out[q.name] = textValues[i];
+          out[q.name] = textValues[i].text;
           break;
         case SurveyQuestionType.singleChoice:
           final idx = singleValues[i];
@@ -429,7 +445,8 @@ class SurveyForm {
           break;
         case SurveyQuestionType.multiChoice:
           final indices = multiValues[i].toList()..sort();
-          out[q.name] = indices.map((j) => q.options[j]).toList(growable: false);
+          out[q.name] =
+              indices.map((j) => q.options[j]).toList(growable: false);
           break;
         case SurveyQuestionType.rating:
           out[q.name] = ratingValues[i];
@@ -450,5 +467,3 @@ SurveyResult? surveyForm({
   PromptTheme theme = PromptTheme.dark,
 }) =>
     SurveyForm(title: title, questions: questions, theme: theme).run();
-
-

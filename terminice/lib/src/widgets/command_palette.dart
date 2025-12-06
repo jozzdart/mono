@@ -7,6 +7,7 @@ import '../system/key_events.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
+import '../system/text_input_buffer.dart';
 import '../system/text_utils.dart' as text;
 
 /// Represents a command in the palette.
@@ -46,11 +47,12 @@ class CommandPalette {
 
     final style = theme.style;
 
-    String query = '';
+    // Use centralized text input for query handling
+    final queryInput = TextInputBuffer();
     bool useFuzzy = true;
     bool cancelled = false;
 
-    List<_RankedCommand> ranked = _rank(commands, query, useFuzzy);
+    List<_RankedCommand> ranked = _rank(commands, queryInput.text, useFuzzy);
 
     // Use centralized list navigation for selection & scrolling
     final nav = ListNavigation(
@@ -59,7 +61,7 @@ class CommandPalette {
     );
 
     void updateRanking() {
-      ranked = _rank(commands, query, useFuzzy);
+      ranked = _rank(commands, queryInput.text, useFuzzy);
       nav.itemCount = ranked.length;
     }
 
@@ -77,7 +79,7 @@ class CommandPalette {
       // Query line
       final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
       out.writeln(
-          '$framePrefix${theme.accent}Command:${theme.reset} $query');
+          '$framePrefix${theme.accent}Command:${theme.reset} ${queryInput.text}');
 
       if (style.showBorder) {
         out.writeln(frame.connector());
@@ -172,16 +174,11 @@ class CommandPalette {
         } else if (ev.type == KeyEventType.esc) {
           cancelled = true;
           return PromptResult.cancelled;
-        } else if (ev.type == KeyEventType.backspace) {
-          if (query.isNotEmpty) {
-            query = query.substring(0, query.length - 1);
-            updateRanking();
-          }
         } else if (ev.type == KeyEventType.ctrlR) {
           useFuzzy = !useFuzzy;
           updateRanking();
-        } else if (ev.type == KeyEventType.char && ev.char != null) {
-          query += ev.char!;
+        } else if (queryInput.handleKey(ev)) {
+          // TextInputBuffer handled the key (typing, backspace, etc.)
           updateRanking();
         }
 

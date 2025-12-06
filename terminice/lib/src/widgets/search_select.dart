@@ -5,6 +5,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_input_buffer.dart';
 
 class SearchSelectPrompt {
   final List<String> allOptions;
@@ -46,7 +47,8 @@ List<String> _searchSelect(
 }) {
   final style = theme.style;
 
-  String query = '';
+  // Use centralized text input for search query handling
+  final queryInput = TextInputBuffer();
   bool searchEnabled = showSearch;
   List<String> filtered = List.from(allOptions);
   final selectedSet = <String>{};
@@ -59,11 +61,12 @@ List<String> _searchSelect(
   );
 
   void updateFilter() {
-    if (!searchEnabled || query.isEmpty) {
+    if (!searchEnabled || queryInput.isEmpty) {
       filtered = List.from(allOptions);
     } else {
+      final query = queryInput.text.toLowerCase();
       filtered = allOptions
-          .where((o) => o.toLowerCase().contains(query.toLowerCase()))
+          .where((o) => o.toLowerCase().contains(query))
           .toList();
     }
     nav.itemCount = filtered.length;
@@ -81,7 +84,7 @@ List<String> _searchSelect(
 
     if (searchEnabled) {
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Search:${theme.reset} $query');
+          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Search:${theme.reset} ${queryInput.text}');
     } else {
       out.writeln(
           '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(Search disabled — press / to enable)${theme.reset}');
@@ -106,7 +109,7 @@ List<String> _searchSelect(
       final prefix =
           isHighlighted ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
       final lineText =
-          '$prefix $checkbox ${highlightSubstring(window.items[i], query, theme, enabled: searchEnabled)}';
+          '$prefix $checkbox ${highlightSubstring(window.items[i], queryInput.text, theme, enabled: searchEnabled)}';
       final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
       if (isHighlighted && style.useInverseHighlight) {
         out.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
@@ -159,7 +162,7 @@ List<String> _searchSelect(
       // Toggle search
       else if (ev.type == KeyEventType.slash) {
         searchEnabled = !searchEnabled;
-        if (!searchEnabled) query = '';
+        if (!searchEnabled) queryInput.clear();
         updateFilter();
       }
 
@@ -173,19 +176,8 @@ List<String> _searchSelect(
         return PromptResult.cancelled;
       }
 
-      // Backspace
-      else if (searchEnabled && ev.type == KeyEventType.backspace) {
-        if (query.isNotEmpty) {
-          query = query.substring(0, query.length - 1);
-          updateFilter();
-        }
-      }
-
-      // Typing
-      else if (searchEnabled &&
-          ev.type == KeyEventType.char &&
-          ev.char != null) {
-        query += ev.char!;
+      // Text input (typing, backspace) - handled by centralized TextInputBuffer
+      else if (searchEnabled && queryInput.handleKey(ev)) {
         updateFilter();
       }
 

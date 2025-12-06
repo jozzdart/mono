@@ -6,6 +6,7 @@ import '../system/rendering.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_input_buffer.dart';
 
 /// UnitConverter – quick conversion panel (cm↔in, USD↔EUR)
 ///
@@ -115,7 +116,8 @@ class UnitConverter {
 
     int mode = 0; // which converter
     bool inputLeft = true; // which side is active input
-    String buffer = _initialBuffer(mode, inputLeft);
+    // Use centralized text input for numeric input handling
+    final buffer = TextInputBuffer(initialText: _initialBuffer(mode, inputLeft));
 
     void render(RenderOutput out) {
       final style = theme.style;
@@ -132,7 +134,7 @@ class UnitConverter {
       }
 
       // Compute values based on buffer and active side
-      final inputValue = _parseNum(buffer) ?? 0.0;
+      final inputValue = _parseNum(buffer.text) ?? 0.0;
       final leftVal = inputLeft ? inputValue : conv.bToA(inputValue);
       final rightVal = inputLeft ? conv.aToB(inputValue) : inputValue;
 
@@ -183,19 +185,19 @@ class UnitConverter {
           return PromptResult.confirmed;
         }
         if (ev.type == KeyEventType.backspace) {
-          if (buffer.isNotEmpty) buffer = buffer.substring(0, buffer.length - 1);
+          buffer.backspace();
         } else if (ev.type == KeyEventType.char && ev.char != null) {
           final ch = ev.char!;
           if (RegExp(r'[0-9]').hasMatch(ch)) {
-            buffer += ch;
-          } else if (ch == '.' && !buffer.contains('.')) {
-            buffer += ch;
+            buffer.insert(ch);
+          } else if (ch == '.' && !buffer.text.contains('.')) {
+            buffer.insert(ch);
           } else if ((ch == 't' || ch == 'T')) {
             inputLeft = !inputLeft;
           } else if ((ch == 'r' || ch == 'R')) {
             mode = (mode + 1) % converters.length;
             // Reset buffer to keep the same physical quantity when switching
-            buffer = _initialBuffer(mode, inputLeft, fallback: buffer);
+            buffer.setText(_initialBuffer(mode, inputLeft, fallback: buffer.text));
           }
         }
 

@@ -1,9 +1,9 @@
-import 'dart:math' as math;
 import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_input_buffer.dart';
 
 /// A text input prompt with blinking cursor, placeholder, and validation.
 ///
@@ -36,7 +36,8 @@ class TextPrompt {
 
   Future<String?> run() async {
     final style = theme.style;
-    final buffer = StringBuffer();
+    // Use centralized text input for buffer handling
+    final buffer = TextInputBuffer();
     bool confirmed = false;
     bool valid = true;
     String? error;
@@ -54,7 +55,7 @@ class TextPrompt {
       // Input line
       final text = buffer.isEmpty
           ? '${theme.dim}${placeholder ?? ''}${theme.reset}'
-          : buffer.toString();
+          : buffer.text;
       final cursor =
           cursorBlink.isVisible ? '${theme.accent}▌${theme.reset}' : ' ';
       final validatedColor = valid ? theme.accent : theme.checkboxOn;
@@ -87,7 +88,7 @@ class TextPrompt {
       onKey: (event) {
         // ENTER → Validate & exit if valid
         if (event.type == KeyEventType.enter) {
-          final text = buffer.toString().trim();
+          final text = buffer.text.trim();
           if (required && text.isEmpty) {
             valid = false;
             error = 'Input cannot be empty.';
@@ -116,18 +117,9 @@ class TextPrompt {
           return PromptResult.cancelled;
         }
 
-        // BACKSPACE
-        else if (event.type == KeyEventType.backspace) {
-          if (buffer.isNotEmpty) {
-            final text = buffer.toString();
-            buffer.clear();
-            buffer.write(text.substring(0, math.max(0, text.length - 1)));
-          }
-        }
-
-        // Regular character
-        else if (event.type == KeyEventType.char && event.char != null) {
-          buffer.write(event.char!);
+        // Text input (typing, backspace) - handled by centralized TextInputBuffer
+        else if (buffer.handleKey(event)) {
+          // Input was modified
         }
 
         valid = true;
@@ -136,6 +128,6 @@ class TextPrompt {
       },
     );
 
-    return confirmed ? buffer.toString().trim() : null;
+    return confirmed ? buffer.text.trim() : null;
   }
 }

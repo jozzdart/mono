@@ -1,10 +1,9 @@
-import 'dart:math' as math;
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_input_buffer.dart';
 
 /// Form – multi-field form builder for CLI with auto validation and Tab navigation.
 ///
@@ -59,15 +58,18 @@ class Form {
 
     // State
     int focusedIndex = 0;
-    final values =
-        List<String>.generate(fields.length, (i) => fields[i].initialValue);
+    // Use centralized text input for each field
+    final values = List<TextInputBuffer>.generate(
+      fields.length,
+      (i) => TextInputBuffer(initialText: fields[i].initialValue),
+    );
     final errors = List<String?>.filled(fields.length, null);
     bool cancelled = false;
     bool submitted = false;
 
     void validateField(int index) {
       final spec = fields[index];
-      final val = values[index];
+      final val = values[index].text;
       if (spec.validator != null) {
         errors[index] = spec.validator!(val);
       } else {
@@ -89,7 +91,8 @@ class Form {
       return firstInvalid == null;
     }
 
-    String renderValue(String value, FormFieldSpec spec) {
+    String renderValue(TextInputBuffer buffer, FormFieldSpec spec) {
+      final value = buffer.text;
       if (value.isEmpty && (spec.placeholder?.isNotEmpty ?? false)) {
         return '${theme.dim}${spec.placeholder}${theme.reset}';
       }
@@ -157,17 +160,10 @@ class Form {
       focusedIndex = (focusedIndex + delta + len) % len;
     }
 
-    void backspace() {
-      final current = values[focusedIndex];
-      if (current.isEmpty) return;
-      values[focusedIndex] =
-          current.substring(0, math.max(0, current.length - 1));
-      validateField(focusedIndex);
-    }
-
-    void appendChar(String ch) {
-      values[focusedIndex] = values[focusedIndex] + ch;
-      validateField(focusedIndex);
+    void handleTextInput(KeyEvent ev) {
+      if (values[focusedIndex].handleKey(ev)) {
+        validateField(focusedIndex);
+      }
     }
 
     // Initial validation pass for placeholders/initial
@@ -194,10 +190,9 @@ class Form {
           moveFocus(1);
         } else if (ev.type == KeyEventType.arrowUp) {
           moveFocus(-1);
-        } else if (ev.type == KeyEventType.backspace) {
-          backspace();
-        } else if (ev.type == KeyEventType.char && ev.char != null) {
-          appendChar(ev.char!);
+        } else {
+          // Text input (typing, backspace) - handled by centralized TextInputBuffer
+          handleTextInput(ev);
         }
 
         return null;
@@ -207,7 +202,7 @@ class Form {
     if (cancelled || !submitted) return null;
     final result = <String, String>{};
     for (var i = 0; i < fields.length; i++) {
-      result[fields[i].name] = values[i];
+      result[fields[i].name] = values[i].text;
     }
     return FormResult(result);
   }
