@@ -1,9 +1,7 @@
-import 'dart:math';
-
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
-import '../system/text_utils.dart' as text;
+import '../system/table_renderer.dart';
 
 /// CheatSheet – command list with shortcuts and usage.
 ///
@@ -36,74 +34,24 @@ class CheatSheet {
     final frame = FramedLayout(title, theme: theme);
     out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
-    // Table body: Command | Shortcut | Usage (custom, inline rendering)
-    final style = theme.style;
-    final columns = const ['Command', 'Shortcut', 'Usage'];
+    // Create table renderer with Command (left), Shortcut (center), Usage (left)
+    final renderer = TableRenderer.withAlignments(
+      const ['Command', 'Shortcut', 'Usage'],
+      const [ColumnAlign.left, ColumnAlign.center, ColumnAlign.left],
+      theme: theme,
+      zebraStripes: true,
+    );
 
-    // Compute column widths using centralized text utilities
-    final widths = <int>[
-      text.visibleLength(columns[0]),
-      text.visibleLength(columns[1]),
-      text.visibleLength(columns[2]),
-    ];
-    for (final row in entries) {
-      if (row.isEmpty) continue;
-      widths[0] = max(widths[0], text.visibleLength(row[0]));
-      widths[1] =
-          max(widths[1], text.visibleLength(row.length > 1 ? row[1] : ''));
-      widths[2] =
-          max(widths[2], text.visibleLength(row.length > 2 ? row[2] : ''));
-    }
+    // Compute widths from entries
+    renderer.computeWidths(entries);
 
-    String padLeftAlign(String s, int w) {
-      return text.padVisibleRight(s, w);
-    }
+    // Render header and connector
+    out.writeln(renderer.headerLine());
+    out.writeln(renderer.connectorLine());
 
-    String padCenter(String s, int w) {
-      return text.padVisibleCenter(s, w);
-    }
-
-    // Header row
-    final header = StringBuffer();
-    header.write('${theme.gray}${style.borderVertical}${theme.reset} ');
-    header.write(
-        '${theme.bold}${theme.accent}${padLeftAlign(columns[0], widths[0])}${theme.reset}');
-    header.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
-    header.write(
-        '${theme.bold}${theme.accent}${padCenter(columns[1], widths[1])}${theme.reset}');
-    header.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
-    header.write(
-        '${theme.bold}${theme.accent}${padLeftAlign(columns[2], widths[2])}${theme.reset}');
-    out.writeln(header.toString());
-
-    // Connector line (sized to table width)
-    final tableWidth = 2 +
-        widths.fold<int>(0, (sum, w) => sum + w) +
-        2 * 3; // 3 cols => 2 separators
-    out.writeln(
-        '${theme.gray}${style.borderConnector}${'─' * tableWidth}${theme.reset}');
-
-    // Rows (zebra stripes)
+    // Render data rows
     for (var i = 0; i < entries.length; i++) {
-      final row = entries[i];
-      final stripe = (i % 2 == 1);
-      final prefix = stripe ? theme.dim : '';
-      final suffix = stripe ? theme.reset : '';
-
-      final buf = StringBuffer();
-      buf.write('${theme.gray}${style.borderVertical}${theme.reset} ');
-      buf.write(prefix);
-      buf.write(padLeftAlign(row.isNotEmpty ? row[0] : '', widths[0]));
-      buf.write(suffix);
-      buf.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
-      buf.write(prefix);
-      buf.write(padCenter(row.length > 1 ? row[1] : '', widths[1]));
-      buf.write(suffix);
-      buf.write(' ${theme.gray}${style.borderVertical}${theme.reset} ');
-      buf.write(prefix);
-      buf.write(padLeftAlign(row.length > 2 ? row[2] : '', widths[2]));
-      buf.write(suffix);
-      out.writeln(buf.toString());
+      out.writeln(renderer.rowLine(entries[i], index: i));
     }
 
     // Bottom border to balance the header line

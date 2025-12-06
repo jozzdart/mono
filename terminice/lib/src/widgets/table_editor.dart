@@ -5,7 +5,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/prompt_runner.dart';
-import '../system/text_utils.dart' as text;
+import '../system/table_renderer.dart';
 
 /// Interactive CSV-like grid editor.
 ///
@@ -54,54 +54,13 @@ class TableEditor {
 
     final style = theme.style;
 
-    // Precompute helpful glyphs
-    final String colSep = '${theme.gray}${style.borderVertical}${theme.reset}';
-
-    List<int> computeWidths() {
-      final widths = List<int>.generate(
-          columns.length, (i) => text.visibleLength(columns[i]));
-      for (final row in data) {
-        for (var i = 0; i < columns.length; i++) {
-          final cell = (i < row.length) ? row[i] : '';
-          widths[i] = max(widths[i], text.visibleLength(cell));
-        }
-      }
-      // Pad a bit; clamp to a reasonable max to limit overly wide cells.
-      for (var i = 0; i < widths.length; i++) {
-        widths[i] = widths[i].clamp(3, 40) + 2; // padding space
-      }
-      return widths;
-    }
-
-    String renderCell(
-        String content, int width, bool isSelected, bool isEditing) {
-      // Truncate with ellipsis if needed
-      final maxText = max(0, width - 1);
-      String visible = text.stripAnsi(content);
-      if (visible.length > maxText) {
-        visible = '${visible.substring(0, max(0, maxText - 1))}…';
-      }
-
-      if (isEditing) {
-        // Show a thin cursor indicator at the end while editing
-        final cursor = '${theme.accent}|${theme.reset}';
-        final base = visible + cursor;
-        final padded = base.padRight(width);
-        if (style.useInverseHighlight) {
-          return '${theme.inverse}$padded${theme.reset}';
-        }
-        return '${theme.selection}$padded${theme.reset}';
-      }
-
-      final padded = visible.padRight(width);
-      if (isSelected) {
-        if (style.useInverseHighlight) {
-          return '${theme.inverse}$padded${theme.reset}';
-        }
-        return '${theme.selection}$padded${theme.reset}';
-      }
-      return padded;
-    }
+    // Create table renderer
+    final renderer = TableRenderer.fromHeaders(
+      columns,
+      theme: theme,
+      zebraStripes: zebraStripes,
+      cellPadding: 2, // Extra padding for editor cells
+    );
 
     void ensureInBounds() {
       if (selectedRow < 0) selectedRow = 0;
@@ -156,52 +115,29 @@ class TableEditor {
       final top = frame.top();
       out.writeln('${theme.bold}$top${theme.reset}');
 
-      final widths = computeWidths();
+      // Recompute widths (data may have changed)
+      renderer.computeWidths(data);
 
-      // Header
-      final header = StringBuffer();
-      header.write('${theme.gray}${style.borderVertical}${theme.reset} ');
-      for (var i = 0; i < columns.length; i++) {
-        if (i > 0) header.write(' $colSep ');
-        header.write('${theme.bold}${theme.accent}');
-        final colName = columns[i];
-        final colText = colName.length > widths[i]
-            ? '${colName.substring(0, max(0, widths[i] - 1))}…'
-            : colName;
-        header.write(colText.padRight(widths[i]));
-        header.write(theme.reset);
-      }
-      out.writeln(header.toString());
+      // Header and connector
+      out.writeln(renderer.headerLine());
+      out.writeln(renderer.connectorLine());
 
-      // Connector under header sized to the table content width
-      final tableWidth = 2 + // left border + space
-          widths.fold<int>(0, (sum, w) => sum + w) +
-          (columns.length - 1) * 3; // separators ' │ '
-      out.writeln(
-          '${theme.gray}${style.borderConnector}${'─' * tableWidth}${theme.reset}');
-
-      // Rows
+      // Data rows with selection
       for (var r = 0; r < data.length; r++) {
         final row = data[r];
-        final rowBuf = StringBuffer();
-        rowBuf.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+        final isSelectedRow = r == selectedRow;
 
-        final stripe = zebraStripes && (r % 2 == 1);
-        final prefix = stripe ? theme.dim : '';
-        final suffix = stripe ? theme.reset : '';
-
-        for (var c = 0; c < columns.length; c++) {
-          if (c > 0) rowBuf.write(' $colSep ');
-          final cell = (c < row.length) ? row[c] : '';
-          final isSel = r == selectedRow && c == selectedCol;
-          final isEdit = isSel && editing;
-          final rendered =
-              renderCell(isEdit ? editBuffer : cell, widths[c], isSel, isEdit);
-          rowBuf.write(prefix);
-          rowBuf.write(rendered);
-          rowBuf.write(suffix);
+        if (isSelectedRow) {
+          out.writeln(renderer.selectableRowLine(
+            row,
+            index: r,
+            selectedColumn: selectedCol,
+            isEditing: editing,
+            editBuffer: editBuffer,
+          ));
+        } else {
+          out.writeln(renderer.rowLine(row, index: r));
         }
-        out.writeln(rowBuf.toString());
       }
 
       if (style.showBorder) {
@@ -320,5 +256,3 @@ class TableEditor {
     return data;
   }
 }
-
-// Uses text.stripAnsi from text_utils.dart
