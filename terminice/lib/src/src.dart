@@ -16,6 +16,7 @@ export 'system/selectable_grid_prompt.dart';
 export 'system/ranked_list_prompt.dart';
 export 'system/dynamic_list_prompt.dart';
 export 'system/value_prompt.dart';
+export 'system/simple_prompt.dart';
 export 'system/table_renderer.dart';
 export 'system/terminal.dart';
 export 'system/text_input_buffer.dart';

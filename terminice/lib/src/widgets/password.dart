@@ -1,10 +1,17 @@
 import '../style/theme.dart';
-import '../system/key_bindings.dart';
-import '../system/prompt_runner.dart';
-import '../system/text_input_buffer.dart';
-import '../system/widget_frame.dart';
+import '../system/simple_prompt.dart';
 
 /// PasswordPrompt – secure masked input with toggle visibility (Ctrl+R)
+///
+/// Controls:
+/// - Type to enter text
+/// - Backspace to delete
+/// - Enter to confirm
+/// - Esc to cancel
+/// - Ctrl+R to toggle visibility
+///
+/// **Implementation:** Uses [AsyncSimplePrompts.password] for core functionality,
+/// demonstrating composition over inheritance.
 class PasswordPrompt {
   final String label;
   final PromptTheme theme;
@@ -18,54 +25,18 @@ class PasswordPrompt {
     this.maskChar = '•',
   });
 
-  String run() {
-    // Use centralized text input for buffer handling
-    final buffer = TextInputBuffer();
-    bool showPlain = false;
-    bool confirmed = false;
-    final cursorBlink = CursorBlink();
-
-    // Use KeyBindings for declarative key handling
-    final bindings = KeyBindings.password(
-      buffer: buffer,
-      onRevealToggle: () => showPlain = !showPlain,
-      onConfirm: () {
-        if (allowEmpty || buffer.isNotEmpty) {
-          confirmed = true;
-          return KeyActionResult.confirmed;
-        }
-        return KeyActionResult.handled;
-      },
-    );
-
-    // Use WidgetFrame for consistent frame rendering
-    final frame = WidgetFrame(
+  /// Runs the prompt and returns the entered password.
+  ///
+  /// Returns empty string if cancelled or validation fails.
+  Future<String> run() async {
+    final result = await AsyncSimplePrompts.password(
       title: label,
       theme: theme,
-      bindings: bindings,
-    );
+      required: !allowEmpty,
+      maskChar: maskChar,
+      allowReveal: true,
+    ).run();
 
-    void render(RenderOutput out) {
-      frame.render(out, (ctx) {
-        // Input display
-        final display = showPlain ? buffer.text : maskChar * buffer.length;
-        final cursor =
-            cursorBlink.isVisible ? '${theme.accent}▋${theme.reset}' : ' ';
-        final content =
-            buffer.isEmpty ? ctx.lb.emptyMessage('empty') : '$display$cursor';
-
-        ctx.gutterLine('${ctx.lb.arrowAccent()} $content');
-      });
-    }
-
-    final runner = PromptRunner(hideCursor: true);
-    runner.runAsyncWithBindings(
-      render: render,
-      cursorBlink: cursorBlink,
-      bindings: bindings,
-    );
-
-    if (!confirmed) return '';
-    return buffer.text;
+    return result ?? '';
   }
 }

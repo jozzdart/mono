@@ -1,7 +1,5 @@
 import '../style/theme.dart';
-import '../system/key_bindings.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import '../system/simple_prompt.dart';
 
 /// ConfirmPrompt – elegant instant confirmation dialog (no timers or delays).
 ///
@@ -9,6 +7,21 @@ import '../system/widget_frame.dart';
 /// - ← / → or ↑ / ↓ toggle between options
 /// - Enter confirms
 /// - Esc / Ctrl+C cancels (returns false)
+///
+/// **Implementation:** Uses [SimplePrompt] for core functionality,
+/// demonstrating composition over inheritance.
+///
+/// **Example:**
+/// ```dart
+/// final confirmed = ConfirmPrompt(
+///   label: 'Delete',
+///   message: 'Are you sure you want to delete?',
+/// ).run();
+///
+/// if (confirmed) {
+///   // User selected Yes
+/// }
+/// ```
 class ConfirmPrompt {
   final String label;
   final String message;
@@ -27,48 +40,14 @@ class ConfirmPrompt {
   });
 
   bool run() {
-    bool selectedYes = defaultYes;
-
-    // Use KeyBindings for declarative, composable key handling
-    final bindings = KeyBindings.togglePrompt(
-      onToggle: () => selectedYes = !selectedYes,
-    );
-
-    // Use WidgetFrame for consistent frame rendering
-    final frame = WidgetFrame(
+    // Delegate to SimplePrompts.confirm for all core functionality
+    return SimplePrompts.confirm(
       title: label,
+      message: message,
+      yesLabel: yesLabel,
+      noLabel: noLabel,
+      defaultYes: defaultYes,
       theme: theme,
-      bindings: bindings,
-    );
-
-    void render(RenderOutput out) {
-      frame.render(out, (ctx) {
-        // Message with arrow
-        ctx.emptyLine();
-        ctx.line(
-            ' ${ctx.lb.arrowAccent()} ${theme.bold}$message${theme.reset}');
-        ctx.emptyLine();
-
-        // Static "highlighted" buttons (no animation)
-        final yes = selectedYes
-            ? '${theme.inverse}${theme.accent} $yesLabel ${theme.reset}'
-            : '${theme.dim}$yesLabel${theme.reset}';
-        final no = !selectedYes
-            ? '${theme.inverse}${theme.accent} $noLabel ${theme.reset}'
-            : '${theme.dim}$noLabel${theme.reset}';
-
-        // Balanced layout
-        ctx.line('   $yes   $no\n');
-      });
-    }
-
-    final runner = PromptRunner(hideCursor: true);
-    final result = runner.runWithBindings(
-      render: render,
-      bindings: bindings,
-    );
-
-    if (result == PromptResult.cancelled) return false;
-    return selectedYes;
+    ).run();
   }
 }

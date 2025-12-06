@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:terminice/src/widgets/password.dart';
 import 'package:terminice/src/style/theme.dart';
 
-void main() {
-  final password = PasswordPrompt(
+void main() async {
+  final password = await PasswordPrompt(
     label: 'Enter your password',
     theme: PromptTheme.pastel,
   ).run();
