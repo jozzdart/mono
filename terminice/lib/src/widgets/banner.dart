@@ -1,8 +1,7 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// Renders a big ASCII banner aligned with ThemeDemo styling.
 ///
@@ -39,32 +38,23 @@ class Banner {
   }
 
   void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final s = theme.style;
+    final frame = WidgetFrame(title: 'Banner', theme: theme);
+    frame.showTo(out, (ctx) {
+      // Build mask lines once; use it to produce colored and shadow layers
+      final maskLines = _renderMaskLines(text);
 
-    final label = 'Banner';
-    final frame = FramedLayout(label, theme: theme);
-    if (s.boldPrompt) out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-    // Build mask lines once; use it to produce colored and shadow layers
-    final maskLines = _renderMaskLines(text);
-
-    // Primary colored banner lines
-    for (int i = 0; i < maskLines.length; i++) {
-      out.writeln('${lb.gutter()}${_colorizeMask(maskLines[i], rowIndex: i)}');
-    }
-
-    // Optional drop shadow block printed after the banner
-    if (showShadow) {
+      // Primary colored banner lines
       for (int i = 0; i < maskLines.length; i++) {
-        out.writeln('${lb.gutter()}  ${_shadowizeMask(maskLines[i])}');
+        ctx.gutterLine(_colorizeMask(maskLines[i], rowIndex: i));
       }
-    }
 
-    if (s.showBorder) {
-      out.writeln(frame.bottom());
-    }
+      // Optional drop shadow block printed after the banner
+      if (showShadow) {
+        for (int i = 0; i < maskLines.length; i++) {
+          ctx.gutterLine('  ${_shadowizeMask(maskLines[i])}');
+        }
+      }
+    });
 
     out.writeln(Hints.bullets([
       'Use different themes for varied vibes',

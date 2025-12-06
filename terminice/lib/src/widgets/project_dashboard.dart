@@ -1,8 +1,5 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
-import '../system/rendering.dart';
-import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// ProjectDashboard – comprehensive project stats (builds, tests, coverage)
 ///
@@ -66,145 +63,87 @@ class ProjectDashboard {
   }) : assert(coveragePercent >= 0 && coveragePercent <= 100);
 
   void show() {
-    final out = RenderOutput();
-    _render(out);
-  }
-
-  void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final style = theme.style;
-
-    final title = _title();
-    final frame = FramedLayout(title, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-    // Overview
-    out.writeln('${lb.gutter()}${sectionHeader(theme, 'Overview')}');
-    out.writeln('${lb.gutter()}${metric(theme, 'Project', projectName, color: theme.accent)}');
-    if (branch != null && branch!.isNotEmpty) {
-      out.writeln('${lb.gutter()}${metric(theme, 'Branch', branch!, color: theme.highlight)}');
-    }
-    if (sdk != null && sdk!.isNotEmpty) {
-      out.writeln('${lb.gutter()}${metric(theme, 'SDK', sdk!, color: theme.highlight)}');
-    }
-    if (os != null && os!.isNotEmpty) {
-      out.writeln('${lb.gutter()}${metric(theme, 'OS', os!, color: theme.highlight)}');
-    }
-
-    // CI Builds
-    out.writeln('${lb.gutter()}${sectionHeader(theme, 'Builds')}');
-    final totalTests = testsPassed + testsFailed + testsSkipped;
-    out.writeln('${lb.gutter()}${metric(theme, 'Success', '$buildsSuccess', color: theme.info)}');
-    out.writeln('${lb.gutter()}${metric(theme, 'Failed', '$buildsFailed', color: theme.error)}');
-    if (latestBuildLabel != null && latestBuildLabel!.isNotEmpty) {
-      out.writeln('${lb.gutter()}${metric(theme, 'Latest', latestBuildLabel!, color: _latestColor())}');
-    }
-    if (buildDuration != null && buildDuration!.isNotEmpty) {
-      out.writeln('${lb.gutter()}${metric(theme, 'Duration', buildDuration!, color: theme.accent)}');
-    }
-    if (buildHistory != null && buildHistory!.isNotEmpty) {
-      out.writeln('${lb.gutter()}${metric(theme, 'Recent', _buildHistoryLine(buildHistory!))}');
-    }
-
-    // Tests
-    out.writeln('${lb.gutter()}${sectionHeader(theme, 'Tests')}');
-    out.writeln('${lb.gutter()}${metric(theme, 'Passed', '$testsPassed', color: theme.info)}');
-    out.writeln('${lb.gutter()}${metric(theme, 'Failed', '$testsFailed', color: theme.error)}');
-    out.writeln('${lb.gutter()}${metric(theme, 'Skipped', '$testsSkipped', color: theme.warn)}');
-    if (totalTests > 0) {
-      out.writeln('${lb.gutter()}${metric(
-          theme,
-          'Pass Rate',
-          '${((testsPassed / totalTests) * 100).clamp(0, 100).round()}%',
-          color: theme.accent)}');
-    }
-    if (testDuration != null && testDuration!.isNotEmpty) {
-      out.writeln('${lb.gutter()}${metric(theme, 'Duration', testDuration!, color: theme.accent)}');
-    }
-
-    // Coverage
-    out.writeln('${lb.gutter()}${sectionHeader(theme, 'Coverage')}');
-    out.writeln('${lb.gutter()}${_coverageBar(width: 30)}');
-    out.writeln('${lb.gutter()}${metric(theme, 'Percent', '${coveragePercent.toStringAsFixed(1)}%',
-        color: _coverageColor())}');
-    if (coverageTarget != null) {
-      out.writeln('${lb.gutter()}${metric(
-          theme,
-          'Quality', (coveragePercent >= coverageTarget!) ? '[PASS]' : '[FAIL]',
-          color:
-              (coveragePercent >= coverageTarget!) ? theme.info : theme.error)}');
-    }
-    if (coverageHistory != null && coverageHistory!.isNotEmpty) {
-      out.writeln('${lb.gutter()}${metric(
-          theme,
-          'History',
-          _sparkline(coverageHistory!,
-              colorA: theme.accent, colorB: theme.highlight))}');
-    }
-
-    // Repository
-    if ((lastCommit != null && lastCommit!.isNotEmpty) ||
-        (author != null && author!.isNotEmpty) ||
-        (committedAgo != null && committedAgo!.isNotEmpty)) {
-      out.writeln('${lb.gutter()}${sectionHeader(theme, 'Repository')}');
-      if (lastCommit != null && lastCommit!.isNotEmpty) {
-        out.writeln('${lb.gutter()}${metric(theme, 'Commit', lastCommit!, color: theme.selection)}');
+    final frame = WidgetFrame(title: _title(), theme: theme);
+    frame.show((ctx) {
+      // Overview
+      ctx.sectionHeader('Overview');
+      ctx.labeledAccent('Project', projectName);
+      if (branch != null && branch!.isNotEmpty) {
+        ctx.keyValue('Branch', branch!);
       }
-      if (author != null && author!.isNotEmpty) {
-        out.writeln('${lb.gutter()}${metric(theme, 'Author', author!, color: theme.highlight)}');
+      if (sdk != null && sdk!.isNotEmpty) {
+        ctx.keyValue('SDK', sdk!);
       }
-      if (committedAgo != null && committedAgo!.isNotEmpty) {
-        out.writeln('${lb.gutter()}${metric(theme, 'When', committedAgo!, color: theme.gray)}');
+      if (os != null && os!.isNotEmpty) {
+        ctx.keyValue('OS', os!);
       }
-    }
 
-    // Bottom
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
+      // CI Builds
+      ctx.sectionHeader('Builds');
+      final totalTests = testsPassed + testsFailed + testsSkipped;
+      ctx.statItem('Success', '$buildsSuccess', icon: '✔', tone: StatTone.info);
+      ctx.statItem('Failed', '$buildsFailed', icon: '✖', tone: StatTone.error);
+      if (latestBuildLabel != null && latestBuildLabel!.isNotEmpty) {
+        ctx.keyValue('Latest', latestBuildLabel!);
+      }
+      if (buildDuration != null && buildDuration!.isNotEmpty) {
+        ctx.keyValue('Duration', buildDuration!);
+      }
+      if (buildHistory != null && buildHistory!.isNotEmpty) {
+        ctx.gutterLine(
+            '${theme.dim}Recent:${theme.reset} ${_buildHistoryLine(buildHistory!)}');
+      }
+
+      // Tests
+      ctx.sectionHeader('Tests');
+      ctx.statItem('Passed', '$testsPassed', icon: '✔', tone: StatTone.info);
+      ctx.statItem('Failed', '$testsFailed', icon: '✖', tone: StatTone.error);
+      ctx.statItem('Skipped', '$testsSkipped', icon: '⊘', tone: StatTone.warn);
+      if (totalTests > 0) {
+        ctx.keyValue('Pass Rate',
+            '${((testsPassed / totalTests) * 100).clamp(0, 100).round()}%');
+      }
+      if (testDuration != null && testDuration!.isNotEmpty) {
+        ctx.keyValue('Duration', testDuration!);
+      }
+
+      // Coverage
+      ctx.sectionHeader('Coverage');
+      ctx.progressBar(coveragePercent / 100, width: 30);
+      ctx.keyValue('Percent', '${coveragePercent.toStringAsFixed(1)}%');
+      if (coverageTarget != null) {
+        final passed = coveragePercent >= coverageTarget!;
+        ctx.statItem(
+            'Quality Gate', passed ? 'PASS' : 'FAIL',
+            icon: passed ? '✔' : '✖',
+            tone: passed ? StatTone.info : StatTone.error);
+      }
+      if (coverageHistory != null && coverageHistory!.isNotEmpty) {
+        ctx.gutterLine(
+            '${theme.dim}History:${theme.reset} ${_sparkline(coverageHistory!, colorA: theme.accent, colorB: theme.highlight)}');
+      }
+
+      // Repository
+      if ((lastCommit != null && lastCommit!.isNotEmpty) ||
+          (author != null && author!.isNotEmpty) ||
+          (committedAgo != null && committedAgo!.isNotEmpty)) {
+        ctx.sectionHeader('Repository');
+        if (lastCommit != null && lastCommit!.isNotEmpty) {
+          ctx.keyValue('Commit', lastCommit!);
+        }
+        if (author != null && author!.isNotEmpty) {
+          ctx.keyValue('Author', author!);
+        }
+        if (committedAgo != null && committedAgo!.isNotEmpty) {
+          ctx.dimMessage('$committedAgo');
+        }
+      }
+    });
   }
 
   String _title() => branch == null || branch!.isEmpty
       ? 'Project Dashboard'
       : 'Project Dashboard · $branch';
-
-  String _coverageBar({int width = 20}) {
-    final w = width < 6 ? 6 : width;
-    final ratio = (coveragePercent / 100).clamp(0, 1.0);
-    final filled = (ratio * w).round();
-    final buf = StringBuffer();
-    for (int i = 0; i < w; i++) {
-      final on = i < filled;
-      final ch = '─';
-      if (on) {
-        final color = (i % 2 == 0) ? theme.accent : theme.highlight;
-        buf.write('$color$ch${theme.reset}');
-      } else {
-        buf.write('${theme.dim}$ch${theme.reset}');
-      }
-    }
-    return buf.toString();
-  }
-
-  String _latestColor() {
-    final label = (latestBuildLabel ?? '').toLowerCase();
-    if (label.contains('fail') || label.contains('error')) return theme.error;
-    if (label.contains('success') || label.contains('passed')) {
-      return theme.info;
-    }
-    if (label.contains('running') || label.contains('in progress')) {
-      return theme.highlight;
-    }
-    return theme.accent;
-  }
-
-  String _coverageColor() {
-    if (coveragePercent >= 90) return theme.info;
-    if (coveragePercent >= 75) return theme.highlight;
-    if (coveragePercent >= 60) return theme.warn;
-    return theme.error;
-  }
 
   String _buildHistoryLine(List<bool> history) {
     final buf = StringBuffer();

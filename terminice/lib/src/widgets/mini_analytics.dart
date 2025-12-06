@@ -1,7 +1,5 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
-import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// MiniAnalytics – compact trend with growth percent and arrow.
 ///
@@ -34,40 +32,27 @@ class MiniAnalytics {
   });
 
   void show() {
-    final out = RenderOutput();
-    _render(out);
-  }
-
-  void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final style = theme.style;
     final headerLabel =
         (title == null || title!.isEmpty) ? 'Mini Analytics' : title!;
+    final widgetFrame = WidgetFrame(title: headerLabel, theme: theme);
+    widgetFrame.show((ctx) {
+      final style = theme.style;
+      final growth = _computeGrowthPercent(series);
+      final growthText = _formatPercent(growth);
+      final changeTone =
+          growth > 0 ? theme.info : (growth < 0 ? theme.error : theme.gray);
+      final arrow = growth > 0 ? '▲' : (growth < 0 ? '▼' : style.arrow);
 
-    final frame = FramedLayout(headerLabel, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
+      final spark = _buildSparkline(series, sparklineWidth);
 
-    final growth = _computeGrowthPercent(series);
-    final growthText = _formatPercent(growth);
-    final changeTone =
-        growth > 0 ? theme.info : (growth < 0 ? theme.error : theme.gray);
-    final arrow = growth > 0 ? '▲' : (growth < 0 ? '▼' : style.arrow);
+      final line = StringBuffer();
+      line.write('${theme.dim}$label:${theme.reset} ');
+      line.write('${theme.accent}$spark${theme.reset}  ');
+      line.write('$changeTone$arrow${theme.reset} ');
+      line.write('${theme.selection}${theme.bold}$growthText${theme.reset}');
 
-    final spark = _buildSparkline(series, sparklineWidth);
-
-    final line = StringBuffer();
-    line.write(lb.gutter());
-    line.write('${theme.dim}$label:${theme.reset} ');
-    line.write('${theme.accent}$spark${theme.reset}  ');
-    line.write('$changeTone$arrow${theme.reset} ');
-    line.write('${theme.selection}${theme.bold}$growthText${theme.reset}');
-
-    out.writeln(line.toString());
-
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
+      ctx.gutterLine(line.toString());
+    });
   }
 
   static double _computeGrowthPercent(List<num> data) {

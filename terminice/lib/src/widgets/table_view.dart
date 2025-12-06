@@ -1,8 +1,8 @@
 import '../style/theme.dart';
 import '../system/hints.dart';
-import '../system/framed_layout.dart';
 import '../system/prompt_runner.dart';
 import '../system/table_renderer.dart';
+import '../system/widget_frame.dart';
 
 /// Colorful table rendering with alignment and borders, aligned with ThemeDemo styling.
 ///
@@ -34,34 +34,25 @@ class TableView {
   }
 
   void _render(RenderOutput out) {
-    final style = theme.style;
+    final widgetFrame = WidgetFrame(title: title, theme: theme);
+    widgetFrame.showTo(out, (ctx) {
+      // Create table renderer with alignments
+      final alignments = _convertAlignments();
+      final renderer = TableRenderer.withAlignments(
+        columns,
+        alignments,
+        theme: theme,
+        zebraStripes: zebraStripes,
+      );
 
-    // Title
-    final frame = FramedLayout(title, theme: theme);
-    final top = frame.top();
-    out.writeln('${theme.bold}$top${theme.reset}');
-
-    // Create table renderer with alignments
-    final alignments = _convertAlignments();
-    final renderer = TableRenderer.withAlignments(
-      columns,
-      alignments,
-      theme: theme,
-      zebraStripes: zebraStripes,
-    );
-
-    // Compute widths and render
-    renderer.computeWidths(rows);
-    out.writeln(renderer.headerLine());
-    out.writeln(renderer.connectorLine());
-    for (var i = 0; i < rows.length; i++) {
-      out.writeln(renderer.rowLine(rows[i], index: i));
-    }
-
-    // Bottom border line to balance the title
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
+      // Compute widths and render
+      renderer.computeWidths(rows);
+      ctx.line(renderer.headerLine());
+      ctx.line(renderer.connectorLine());
+      for (var i = 0; i < rows.length; i++) {
+        ctx.line(renderer.rowLine(rows[i], index: i));
+      }
+    });
 
     // Hints
     out.writeln(Hints.bullets([

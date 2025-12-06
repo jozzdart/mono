@@ -1,7 +1,6 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/prompt_runner.dart';
 import '../system/table_renderer.dart';
+import '../system/widget_frame.dart';
 
 /// CheatSheet – command list with shortcuts and usage.
 ///
@@ -25,37 +24,28 @@ class CheatSheet {
 
   /// Renders the cheat sheet once. Non-interactive.
   void show() {
-    final out = RenderOutput();
-    _render(out);
-  }
+    final frame = WidgetFrame(title: title, theme: theme);
+    frame.show((ctx) {
+      // Create table renderer with Command (left), Shortcut (center), Usage (left)
+      final renderer = TableRenderer.withAlignments(
+        const ['Command', 'Shortcut', 'Usage'],
+        const [ColumnAlign.left, ColumnAlign.center, ColumnAlign.left],
+        theme: theme,
+        zebraStripes: true,
+      );
 
-  void _render(RenderOutput out) {
-    // Header
-    final frame = FramedLayout(title, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
+      // Compute widths from entries
+      renderer.computeWidths(entries);
 
-    // Create table renderer with Command (left), Shortcut (center), Usage (left)
-    final renderer = TableRenderer.withAlignments(
-      const ['Command', 'Shortcut', 'Usage'],
-      const [ColumnAlign.left, ColumnAlign.center, ColumnAlign.left],
-      theme: theme,
-      zebraStripes: true,
-    );
+      // Render header and connector
+      ctx.line(renderer.headerLine());
+      ctx.line(renderer.connectorLine());
 
-    // Compute widths from entries
-    renderer.computeWidths(entries);
-
-    // Render header and connector
-    out.writeln(renderer.headerLine());
-    out.writeln(renderer.connectorLine());
-
-    // Render data rows
-    for (var i = 0; i < entries.length; i++) {
-      out.writeln(renderer.rowLine(entries[i], index: i));
-    }
-
-    // Bottom border to balance the header line
-    out.writeln(frame.bottom());
+      // Render data rows
+      for (var i = 0; i < entries.length; i++) {
+        ctx.line(renderer.rowLine(entries[i], index: i));
+      }
+    });
   }
 
   /// Convenience: alias to [show].

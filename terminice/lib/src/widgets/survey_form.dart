@@ -1,11 +1,10 @@
 import '../style/theme.dart';
 import '../system/focus_navigation.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
+import '../system/key_bindings.dart';
 import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
+import '../system/widget_frame.dart';
 
 /// SurveyForm – interactive questionnaire builder.
 ///
@@ -140,7 +139,6 @@ class SurveyForm {
 
   /// Runs the interactive survey. Returns null if cancelled.
   SurveyResult? run() {
-    final style = theme.style;
     // Use centralized line builder for consistent styling
     final lb = LineBuilder(theme);
 
@@ -247,52 +245,6 @@ class SurveyForm {
       }
     }
 
-    void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-
-      final frame = FramedLayout(title, theme: theme);
-      final baseTitle = frame.top();
-      final header = style.boldPrompt
-          ? '${theme.bold}$baseTitle${theme.reset}'
-          : baseTitle;
-      out.writeln(header);
-
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
-
-      for (var i = 0; i < questions.length; i++) {
-        final isFocused = focus.isFocused(i);
-        // Use LineBuilder for arrow
-        final arrow = lb.arrow(isFocused);
-        final label = '${theme.selection}${questions[i].prompt}${theme.reset}';
-        final value = renderValue(i);
-        var line = '$arrow $label: $value';
-
-        // Use LineBuilder's writeLine for consistent highlight handling
-        lb.writeLine(out, line, highlighted: isFocused);
-
-        // Error line if invalid - use FocusNavigation's error tracking
-        final err = focus.getError(i);
-        if (err != null && err.isNotEmpty) {
-          out.writeln('${lb.gutter()}${theme.highlight}$err${theme.reset}');
-        }
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      out.writeln(Hints.grid([
-        [Hints.key('↑/↓', theme), 'navigate questions'],
-        [Hints.key('←/→', theme), 'change option/rating'],
-        [Hints.key('Space', theme), 'toggle (multi)'],
-        [Hints.key('Enter', theme), 'next / submit'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
-    }
-
     void moveInner(int delta) {
       final idx = focus.focusedIndex;
       final q = questions[idx];
@@ -375,43 +327,117 @@ class SurveyForm {
     // Initial validation using FocusNavigation
     focus.validateAll(validateQuestion, focusFirstInvalid: false);
 
-    final runner = PromptRunner(hideCursor: true);
-    final result = runner.run(
-      render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings([
+          // Enter: next/submit
+          KeyBinding.single(
+            KeyEventType.enter,
+            (event) {
+              if (focus.focusedIndex < questions.length - 1) {
+                focus.moveDown();
+              } else {
+                if (focus.validateAll(validateQuestion, focusFirstInvalid: true)) {
+                  return KeyActionResult.confirmed;
+                }
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Enter',
+            hintDescription: 'next / submit',
+          ),
+          // Up: previous question
+          KeyBinding.single(
+            KeyEventType.arrowUp,
+            (event) {
+              focus.moveUp();
+              return KeyActionResult.handled;
+            },
+            hintLabel: '↑/↓',
+            hintDescription: 'navigate questions',
+          ),
+          // Down/Tab: next question
+          KeyBinding.multi(
+            {KeyEventType.arrowDown, KeyEventType.tab},
+            (event) {
+              focus.moveDown();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Left/Right: change option/rating
+          KeyBinding.single(
+            KeyEventType.arrowLeft,
+            (event) {
+              moveInner(-1);
+              return KeyActionResult.handled;
+            },
+            hintLabel: '←/→',
+            hintDescription: 'change option/rating',
+          ),
+          KeyBinding.single(
+            KeyEventType.arrowRight,
+            (event) {
+              moveInner(1);
+              return KeyActionResult.handled;
+            },
+          ),
+          // Space: toggle (multi)
+          KeyBinding.single(
+            KeyEventType.space,
+            (event) {
+              toggleOrSelect();
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Space',
+            hintDescription: 'toggle (multi)',
+          ),
+          // Text input for text questions
+          KeyBinding.char(
+            (c) => true,
+            (event) {
+              handleTextInput(event);
+              return KeyActionResult.handled;
+            },
+          ),
+          KeyBinding.single(
+            KeyEventType.backspace,
+            (event) {
+              handleTextInput(event);
+              return KeyActionResult.handled;
+            },
+          ),
+        ]) +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
 
-        if (ev.type == KeyEventType.enter) {
-          // If not last, advance; otherwise submit if valid
-          if (focus.focusedIndex < questions.length - 1) {
-            focus.moveDown();
-          } else {
-            // Use FocusNavigation's validateAll with focusFirstInvalid
-            if (focus.validateAll(validateQuestion, focusFirstInvalid: true)) {
-              return PromptResult.confirmed;
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.runWithBindings(
+      render: (out) {
+        final lb = LineBuilder(theme);
+        final widgetFrame = WidgetFrame(
+          title: title,
+          theme: theme,
+          bindings: bindings,
+          hintStyle: HintStyle.grid,
+          showConnector: true,
+        );
+
+        widgetFrame.render(out, (ctx) {
+          for (var i = 0; i < questions.length; i++) {
+            final isFocused = focus.isFocused(i);
+            final arrow = lb.arrow(isFocused);
+            final label = '${theme.selection}${questions[i].prompt}${theme.reset}';
+            final value = renderValue(i);
+            var line = '$arrow $label: $value';
+
+            ctx.highlightedLine(line, highlighted: isFocused);
+
+            final err = focus.getError(i);
+            if (err != null && err.isNotEmpty) {
+              ctx.gutterLine('${theme.highlight}$err${theme.reset}');
             }
           }
-        } else if (ev.type == KeyEventType.arrowUp) {
-          focus.moveUp();
-        } else if (ev.type == KeyEventType.arrowDown ||
-            ev.type == KeyEventType.tab) {
-          focus.moveDown();
-        } else if (ev.type == KeyEventType.arrowLeft) {
-          moveInner(-1);
-        } else if (ev.type == KeyEventType.arrowRight) {
-          moveInner(1);
-        } else if (ev.type == KeyEventType.space) {
-          toggleOrSelect();
-        } else {
-          // Text input (typing, backspace) - handled by centralized TextInputBuffer
-          handleTextInput(ev);
-        }
-
-        return null;
+        });
       },
+      bindings: bindings,
     );
 
     if (cancelled || result == PromptResult.cancelled) return null;

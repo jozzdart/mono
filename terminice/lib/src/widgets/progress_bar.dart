@@ -2,10 +2,9 @@ import 'dart:io' show sleep;
 import 'dart:math' as math;
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// Animated, colorful progress bar aligned with ThemeDemo styling.
 ///
@@ -34,7 +33,6 @@ class ProgressBar {
         assert(width > 4);
 
   void run() {
-    final style = theme.style;
     final Duration target = totalDuration ?? const Duration(milliseconds: 2200);
 
     // Use TerminalSession for cursor hiding + RenderOutput for partial clearing
@@ -42,74 +40,57 @@ class ProgressBar {
       // Timing model
       final stopwatch = Stopwatch()..start();
 
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-
       // Render a single frame for a given progress [0..total]
       void render(int current, {int shimmerPhase = 0}) {
-        // Top line
-        final frame = FramedLayout(label, theme: theme);
-        final top = frame.top();
-        if (style.boldPrompt) out.writeln('${theme.bold}$top${theme.reset}');
+        final widgetFrame = WidgetFrame(title: label, theme: theme);
+        widgetFrame.showTo(out, (ctx) {
+          // Compute
+          final ratio = current / total;
+          final filled = (ratio * width).clamp(0, width).round();
+          final percent = (ratio * 100).clamp(0, 100).round();
 
-        // Compute
-        final ratio = current / total;
-        final filled = (ratio * width).clamp(0, width).round();
-        final percent = (ratio * 100).clamp(0, 100).round();
+          // Build gradient fill with a moving shimmer head
+          final buffer = StringBuffer();
+          for (int i = 0; i < width; i++) {
+            final isFilled = i < filled;
+            if (!isFilled) {
+              buffer.write('${theme.dim}·${theme.reset}');
+              continue;
+            }
 
-        // Build gradient fill with a moving shimmer head
-        final buffer = StringBuffer();
-        // Left border of the content area, matching ThemeDemo vibes
-        buffer.write(lb.gutter());
+            // Shimmer: bright head traversing the filled segment
+            // Move the head across with a triangular pulse around (filled-1)
+            final headPos = filled - 1;
+            final distance = (i - headPos).abs();
+            final headGlow = (3 - distance).clamp(0, 3); // 0..3
 
-        for (int i = 0; i < width; i++) {
-          final isFilled = i < filled;
-          if (!isFilled) {
-            buffer.write('${theme.dim}·${theme.reset}');
-            continue;
+            // Color cycling between accent and highlight with a subtle phase shift
+            final cycle = ((i + shimmerPhase) % 6);
+            final baseColor = (cycle < 3) ? theme.accent : theme.highlight;
+
+            // Shade set for density illusion
+            const shades = ['░', '▒', '▓', '█'];
+            final ch = shades[(headGlow).clamp(0, 3)];
+
+            // Head gets bold/inverse to pop
+            if (i == headPos) {
+              buffer.write('${theme.inverse}$baseColor$ch${theme.reset}');
+            } else if (headGlow > 0) {
+              buffer.write('${theme.bold}$baseColor$ch${theme.reset}');
+            } else {
+              buffer.write('$baseColor$ch${theme.reset}');
+            }
           }
 
-          // Shimmer: bright head traversing the filled segment
-          // Move the head across with a triangular pulse around (filled-1)
-          final headPos = filled - 1;
-          final distance = (i - headPos).abs();
-          final headGlow = (3 - distance).clamp(0, 3); // 0..3
+          ctx.gutterLine(buffer.toString());
 
-          // Color cycling between accent and highlight with a subtle phase shift
-          final cycle = ((i + shimmerPhase) % 6);
-          final baseColor = (cycle < 3) ? theme.accent : theme.highlight;
-
-          // Shade set for density illusion
-          const shades = ['░', '▒', '▓', '█'];
-          final ch = shades[(headGlow).clamp(0, 3)];
-
-          // Head gets bold/inverse to pop
-          if (i == headPos) {
-            buffer.write('${theme.inverse}$baseColor$ch${theme.reset}');
-          } else if (headGlow > 0) {
-            buffer.write('${theme.bold}$baseColor$ch${theme.reset}');
-          } else {
-            buffer.write('$baseColor$ch${theme.reset}');
-          }
-        }
-
-        out.writeln(buffer.toString());
-
-        // Second line with metrics: percent, elapsed, ETA
-        final elapsed = stopwatch.elapsed;
-        final estEta = _eta(elapsed, ratio, target);
-        final metrics = StringBuffer();
-        metrics.write(lb.gutter());
-        metrics.write(
-            '${theme.dim}Progress:${theme.reset} ${theme.accent}$percent%${theme.reset}   ');
-        metrics.write(
-            '${theme.dim}Elapsed:${theme.reset} ${_fmt(elapsed)}   ${theme.dim}ETA:${theme.reset} ${_fmt(estEta)}');
-        out.writeln(metrics.toString());
-
-        // Bottom border
-        if (style.showBorder) {
-          out.writeln(frame.bottom());
-        }
+          // Second line with metrics: percent, elapsed, ETA
+          final elapsed = stopwatch.elapsed;
+          final estEta = _eta(elapsed, ratio, target);
+          ctx.gutterLine(
+              '${theme.dim}Progress:${theme.reset} ${theme.accent}$percent%${theme.reset}   '
+              '${theme.dim}Elapsed:${theme.reset} ${_fmt(elapsed)}   ${theme.dim}ETA:${theme.reset} ${_fmt(estEta)}');
+        });
 
         // Hints (non-interactive, just informational)
         out.writeln(Hints.bullets([

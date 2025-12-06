@@ -2,9 +2,8 @@ import 'dart:io' show File;
 
 import '../style/theme.dart';
 import '../system/frame_renderer.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// ChangeLogViewer – parse and display a Markdown CHANGELOG nicely.
 ///
@@ -19,6 +18,7 @@ class ChangeLogViewer {
   final bool color;
 
   late RenderOutput _out;
+  late FrameContext _ctx;
 
   ChangeLogViewer({
     this.theme = PromptTheme.dark,
@@ -33,74 +33,65 @@ class ChangeLogViewer {
   /// Parse, format and print.
   void show() {
     _out = RenderOutput();
-    _render(_out);
+    final frame = WidgetFrame(title: title, theme: theme);
+    frame.showTo(_out, (ctx) {
+      _ctx = ctx;
+      _renderContent();
+    });
   }
 
-  void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final label = title;
-    final frame = FramedLayout(label, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
+  void _renderContent() {
     final raw = content ?? _readFile(filePath!);
     final releases = _parse(raw);
 
-    final gutter = lb.gutter();
     int count = 0;
     for (final r in releases) {
       if (count++ == maxReleases) break;
       // Release header
       final header = StringBuffer();
-      header
-        ..write(gutter)
-        ..write('${theme.accent}${theme.bold}${r.version}${theme.reset}');
+      header.write('${theme.accent}${theme.bold}${r.version}${theme.reset}');
       if (r.date != null && r.date!.isNotEmpty) {
-        header
-          ..write('  ')
-          ..write('${theme.gray}— ${r.date}${theme.reset}');
+        header.write('  ${theme.gray}— ${r.date}${theme.reset}');
       }
-      out.writeln(header.toString());
+      _ctx.gutterLine(header.toString());
 
       // Optional summary notes without section
       for (final note in r.notes) {
-        _wrapBulleted(note, gutter, bullet: '•');
+        _wrapBulleted(note, bullet: '•');
       }
 
       // Sections
       for (final section in r.sections) {
-        out.writeln(
-            '$gutter${theme.dim}${section.name.toUpperCase()}${theme.reset}');
+        _ctx.gutterLine(
+            '${theme.dim}${section.name.toUpperCase()}${theme.reset}');
         for (final item in section.items) {
-          _wrapBulleted(item, gutter,
+          _wrapBulleted(item,
               bulletColor: theme.highlight, textColor: theme.reset);
         }
       }
 
       // Spacing and subtle connector
-      out.writeln(gutter);
-      out.writeln(FrameRenderer.bottomLine(r.version, theme));
+      _ctx.gutterEmpty();
+      _ctx.line(FrameRenderer.bottomLine(r.version, theme));
     }
   }
 
   void _wrapBulleted(
-    String text,
-    String gutter, {
+    String text, {
     String bullet = '›',
     String? bulletColor,
     String? textColor,
     int width = 92,
   }) {
     final lead = '  ';
-    final bulletStyled =
-        (bulletColor ?? theme.accent) + bullet + theme.reset;
-    final prefix = '$gutter$lead$bulletStyled ';
-    final wrapPrefix = '$gutter$lead  ';
-    for (final line in _wrap(text, width - _visibleLength(prefix))) {
+    final bulletStyled = (bulletColor ?? theme.accent) + bullet + theme.reset;
+    final prefix = '$lead$bulletStyled ';
+    final wrapPrefix = '$lead  ';
+    for (final line in _wrap(text, width - _visibleLength(prefix) - 2)) {
       if (identical(line, text)) {
-        _out.writeln('$prefix${textColor ?? ''}$line${theme.reset}');
+        _ctx.gutterLine('$prefix${textColor ?? ''}$line${theme.reset}');
       } else {
-        _out.writeln('$wrapPrefix${textColor ?? ''}$line${theme.reset}');
+        _ctx.gutterLine('$wrapPrefix${textColor ?? ''}$line${theme.reset}');
       }
     }
   }

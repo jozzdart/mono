@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/line_builder.dart';
+import '../system/widget_frame.dart';
 
 /// Wizard – orchestrates a sequence of prompts with auto state passing.
 ///
@@ -80,50 +80,46 @@ class Wizard {
   }
 
   void _renderProgress(int index, Map<String, dynamic> state) {
-    // Use centralized line builder for consistent styling
     final lb = LineBuilder(theme);
-    final s = theme.style;
-    final frame = FramedLayout(title, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    final frame = WidgetFrame(
+      title: title,
+      theme: theme,
+      hintStyle: HintStyle.none, // Manual hints below
+    );
 
-    // Step header
-    final stepNum = '${index + 1}/${steps.length}';
-    stdout.writeln(
-        '${lb.gutter()}${theme.dim}Step${theme.reset} ${theme.accent}$stepNum${theme.reset}');
+    frame.show((ctx) {
+      // Step header
+      final stepNum = '${index + 1}/${steps.length}';
+      ctx.gutterLine(
+          '${theme.dim}Step${theme.reset} ${theme.accent}$stepNum${theme.reset}');
 
-    // Optional connector
-    if (s.showBorder) {
-      stdout.writeln(frame.connector());
-    }
+      ctx.writeConnector();
 
-    // Steps listing
-    for (int i = 0; i < steps.length; i++) {
-      final isDone = i < index;
-      final isCurrent = i == index;
-      final step = steps[i];
+      // Steps listing
+      for (int i = 0; i < steps.length; i++) {
+        final isDone = i < index;
+        final isCurrent = i == index;
+        final step = steps[i];
 
-      if (isCurrent) {
-        final line =
-            ' ${lb.arrowAccent()} ${theme.inverse}${theme.accent} ${step.label} ${theme.reset}';
-        stdout.writeln('${lb.gutterOnly()}$line');
-      } else if (isDone) {
-        final check = lb.checkbox(true);
-        final val = state.containsKey(step.id)
-            ? ' ${theme.dim}(${_shortValue(state[step.id])})${theme.reset}'
-            : '';
-        stdout.writeln(
-            '${lb.gutter()} $check ${theme.accent}${step.label}${theme.reset}$val');
-      } else {
-        final box = lb.checkbox(false);
-        stdout.writeln(
-            '${lb.gutter()} $box ${theme.dim}${step.label}${theme.reset}');
+        if (isCurrent) {
+          final line =
+              ' ${lb.arrowAccent()} ${theme.inverse}${theme.accent} ${step.label} ${theme.reset}';
+          ctx.line('${lb.gutterOnly()}$line');
+        } else if (isDone) {
+          final check = lb.checkbox(true);
+          final val = state.containsKey(step.id)
+              ? ' ${theme.dim}(${_shortValue(state[step.id])})${theme.reset}'
+              : '';
+          ctx.gutterLine(
+              ' $check ${theme.accent}${step.label}${theme.reset}$val');
+        } else {
+          final box = lb.checkbox(false);
+          ctx.gutterLine(' $box ${theme.dim}${step.label}${theme.reset}');
+        }
       }
-    }
+    });
 
-    if (s.showBorder) {
-      stdout.writeln(frame.bottom());
-    }
-
+    // External hints (outside the frame)
     stdout.writeln(Hints.bullets([
       'Auto state passing',
       'Back: provide WizardResult.back()',

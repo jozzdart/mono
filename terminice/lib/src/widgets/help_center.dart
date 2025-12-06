@@ -1,15 +1,13 @@
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
 import '../system/highlighter.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 import '../system/text_input_buffer.dart';
+import '../system/widget_frame.dart';
 
 class HelpDoc {
   final String id;
@@ -50,8 +48,6 @@ class HelpCenter {
 
   HelpDoc? run() {
     if (docs.isEmpty) return null;
-
-    final style = theme.style;
 
     // Use centralized text input for search query handling
     final queryInput = TextInputBuffer();
@@ -103,139 +99,123 @@ class HelpCenter {
       return '${d.title}  ${theme.dim}(${d.category})${theme.reset}';
     }
 
-    void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-      final cols = TerminalInfo.columns;
-
-      final frame = FramedLayout(title, theme: theme);
-      final top = frame.top();
-      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
-
-      out.writeln('${lb.gutter()}${theme.accent}Search:${theme.reset} ${queryInput.text}');
-
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
-
-      // Results header
-      final header = '${theme.dim}Results (${filtered.length})${theme.reset}';
-      out.writeln('${lb.gutter()}$header');
-
-      // Results window using ListNavigation
-      if (filtered.isEmpty) {
-        out.writeln(lb.emptyLine('no matches'));
-      } else {
-        final window = nav.visibleWindow(filtered);
-
-        // Use LineBuilder for overflow indicator
-        if (window.hasOverflowAbove) {
-          out.writeln(lb.overflowLine());
-        }
-
-        for (var i = 0; i < window.items.length; i++) {
-          final absoluteIdx = window.start + i;
-          final isSel = nav.isSelected(absoluteIdx);
-          // Use LineBuilder for arrow
-          final prefix = lb.arrow(isSel);
-          final label = labelFor(window.items[i]);
-          final line = '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
-          // Use LineBuilder's writeLine for consistent highlight handling
-          lb.writeLine(out, line, highlighted: isSel);
-        }
-
-        // Use LineBuilder for overflow indicator
-        if (window.hasOverflowBelow) {
-          out.writeln(lb.overflowLine());
-        }
-      }
-
-      // Separator to preview
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
-
-      // Preview header
-      final selected = filtered.isEmpty ? null : filtered[nav.selectedIndex];
-      final previewTitle = selected == null
-          ? lb.emptyMessage('no selection')
-          : '${theme.accent}Preview:${theme.reset} ${selected.title}';
-      out.writeln('${lb.gutter()}$previewTitle');
-
-      // Preview content area
-      if (selected == null) {
-        // Compact: no filler
-      } else {
-        final rawLines = selected.content.split('\n');
-        final viewportStart = min(previewScroll, max(0, rawLines.length - 1));
-        final viewportEnd =
-            min(viewportStart + maxPreviewLines, rawLines.length);
-        final contentWidth = max(10, cols - 4); // rough padding
-
-        for (var i = viewportStart; i < viewportEnd; i++) {
-          final ln = rawLines[i];
-          final highlighted =
-              highlightSubstring(truncate(ln, contentWidth), queryInput.text, theme);
-          out.writeln('${lb.gutter()}$highlighted');
-        }
-        // Compact: no filler beyond content
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      out.writeln(Hints.bullets([
-        Hints.hint('type', 'search', theme),
-        Hints.hint('↑/↓', 'results', theme),
-        Hints.hint('←/→', 'scroll preview', theme),
-        Hints.hint('Backspace', 'erase', theme),
-        Hints.hint('Enter', 'confirm', theme),
-        Hints.hint('Esc', 'cancel', theme),
-      ], theme));
-    }
-
     void moveSelection(int delta) {
       nav.moveBy(delta);
       previewScroll = 0; // reset preview to top of new selection
     }
 
-    updateFilter();
-
     HelpDoc? result;
 
-    final runner = PromptRunner(hideCursor: true);
-    runner.run(
-      render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        if (ev.type == KeyEventType.enter) {
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.verticalNavigation(
+          onUp: () => moveSelection(-1),
+          onDown: () => moveSelection(1),
+        ) +
+        KeyBindings([
+          // Horizontal scroll
+          KeyBinding.single(
+            KeyEventType.arrowLeft,
+            (event) {
+              previewScroll = max(0, previewScroll - 1);
+              return KeyActionResult.handled;
+            },
+            hintLabel: '←/→',
+            hintDescription: 'scroll preview',
+          ),
+          KeyBinding.single(
+            KeyEventType.arrowRight,
+            (event) {
+              if (filtered.isNotEmpty) {
+                final lines = filtered[nav.selectedIndex].content.split('\n');
+                previewScroll = min(previewScroll + 1, max(0, lines.length - 1));
+              }
+              return KeyActionResult.handled;
+            },
+          ),
+        ]) +
+        KeyBindings.textInput(buffer: queryInput, onInput: updateFilter) +
+        KeyBindings.confirm(onConfirm: () {
           if (filtered.isNotEmpty) result = filtered[nav.selectedIndex];
-          return PromptResult.confirmed;
-        }
+          return KeyActionResult.confirmed;
+        }) +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
 
-        if (ev.type == KeyEventType.arrowUp) {
-          moveSelection(-1);
-        } else if (ev.type == KeyEventType.arrowDown) {
-          moveSelection(1);
-        } else if (ev.type == KeyEventType.arrowLeft) {
-          previewScroll = max(0, previewScroll - 1);
-        } else if (ev.type == KeyEventType.arrowRight) {
-          if (filtered.isNotEmpty) {
-            final lines = filtered[nav.selectedIndex].content.split('\n');
-            previewScroll = min(previewScroll + 1, max(0, lines.length - 1));
+    void render(RenderOutput out) {
+      final cols = TerminalInfo.columns;
+      final widgetFrame = WidgetFrame(
+        title: title,
+        theme: theme,
+        bindings: bindings,
+        hintStyle: HintStyle.bullets,
+        showConnector: true,
+      );
+
+      widgetFrame.render(out, (ctx) {
+        ctx.labeledValue('Search', queryInput.text, dimLabel: false);
+
+        ctx.writeConnector();
+
+        // Results header
+        ctx.gutterLine('${theme.dim}Results (${filtered.length})${theme.reset}');
+
+        // Results window using ListNavigation
+        if (filtered.isEmpty) {
+          ctx.emptyMessage('no matches');
+        } else {
+          final window = nav.visibleWindow(filtered);
+
+          if (window.hasOverflowAbove) {
+            ctx.overflowIndicator();
           }
-        } else if (queryInput.handleKey(ev)) {
-          // Text input (typing, backspace) - handled by centralized TextInputBuffer
-          updateFilter();
+
+          for (var i = 0; i < window.items.length; i++) {
+            final absoluteIdx = window.start + i;
+            final isSel = nav.isSelected(absoluteIdx);
+            final prefix = ctx.lb.arrow(isSel);
+            final label = labelFor(window.items[i]);
+            final line = '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
+            ctx.highlightedLine(line, highlighted: isSel);
+          }
+
+          if (window.hasOverflowBelow) {
+            ctx.overflowIndicator();
+          }
         }
 
-        return null;
-      },
+        // Separator to preview
+        ctx.writeConnector();
+
+        // Preview header
+        final selected = filtered.isEmpty ? null : filtered[nav.selectedIndex];
+        final previewTitle = selected == null
+            ? '${theme.dim}no selection${theme.reset}'
+            : '${theme.accent}Preview:${theme.reset} ${selected.title}';
+        ctx.gutterLine(previewTitle);
+
+        // Preview content area
+        if (selected != null) {
+          final rawLines = selected.content.split('\n');
+          final viewportStart = min(previewScroll, max(0, rawLines.length - 1));
+          final viewportEnd =
+              min(viewportStart + maxPreviewLines, rawLines.length);
+          final contentWidth = max(10, cols - 4);
+
+          for (var i = viewportStart; i < viewportEnd; i++) {
+            final ln = rawLines[i];
+            final highlighted =
+                highlightSubstring(truncate(ln, contentWidth), queryInput.text, theme);
+            ctx.gutterLine(highlighted);
+          }
+        }
+      });
+    }
+
+    updateFilter();
+
+    final runner = PromptRunner(hideCursor: true);
+    runner.runWithBindings(
+      render: render,
+      bindings: bindings,
     );
 
     return cancelled ? null : result;

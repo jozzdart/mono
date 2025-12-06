@@ -1,12 +1,10 @@
 import '../style/theme.dart';
-import '../system/key_events.dart';
 import '../system/highlighter.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
+import '../system/widget_frame.dart';
 
 class SearchSelectPrompt {
   final List<String> allOptions;
@@ -46,10 +44,6 @@ List<String> _searchSelect(
   int maxVisible = 10,
   PromptTheme theme = PromptTheme.dark,
 }) {
-  final style = theme.style;
-  // Use centralized line builder for consistent styling
-  final lb = LineBuilder(theme);
-
   // Use centralized text input for search query handling
   final queryInput = TextInputBuffer();
   bool searchEnabled = showSearch;
@@ -75,108 +69,78 @@ List<String> _searchSelect(
     nav.reset();
   }
 
+  // Use KeyBindings for declarative key handling
+  final bindings = KeyBindings.searchableList(
+    onUp: () => nav.moveUp(),
+    onDown: () => nav.moveDown(),
+    onSearchToggle: () {
+      searchEnabled = !searchEnabled;
+      if (!searchEnabled) queryInput.clear();
+      updateFilter();
+    },
+    searchBuffer: queryInput,
+    isSearchEnabled: () => searchEnabled,
+    onSearchInput: updateFilter,
+    onToggle: multiSelect && filtered.isNotEmpty
+        ? () {
+            final current = filtered[nav.selectedIndex];
+            if (selectedSet.contains(current)) {
+              selectedSet.remove(current);
+            } else {
+              selectedSet.add(current);
+            }
+          }
+        : null,
+    hasMultiSelect: multiSelect,
+    onCancel: () => cancelled = true,
+  );
+
+  // Use WidgetFrame for consistent frame rendering
+  final frame = WidgetFrame(
+    title: prompt,
+    theme: theme,
+    bindings: bindings,
+    showConnector: true,
+  );
+
   void render(RenderOutput out) {
-    final frame = FramedLayout(prompt, theme: theme);
-    final topBorder = frame.top();
-    if (style.boldPrompt) {
-      out.writeln('${theme.bold}$topBorder${theme.reset}');
-    } else {
-      out.writeln(topBorder);
-    }
+    frame.render(out, (ctx) {
+      // Search line
+      ctx.searchLine(queryInput.text, enabled: searchEnabled);
 
-    // Search line - using LineBuilder's gutter
-    if (searchEnabled) {
-      out.writeln(
-          '${lb.gutter()}${theme.accent}Search:${theme.reset} ${queryInput.text}');
-    } else {
-      out.writeln(
-          '${lb.gutter()}${theme.dim}(Search disabled — press / to enable)${theme.reset}');
-    }
+      // Connector after search
+      ctx.writeConnector();
 
-    if (style.showBorder) {
-      out.writeln(frame.connector());
-    }
+      // Use ListNavigation's viewport for visible window
+      final window = nav.visibleWindow(filtered);
 
-    // Use ListNavigation's viewport for visible window
-    final window = nav.visibleWindow(filtered);
+      ctx.listWindow(
+        window,
+        selectedIndex: nav.selectedIndex,
+        renderItem: (item, index, isFocused) {
+          final isChecked = selectedSet.contains(item);
+          // Use LineBuilder for arrow and checkbox
+          final checkbox = multiSelect ? ctx.lb.checkbox(isChecked) : ' ';
+          final prefix = ctx.lb.arrow(isFocused);
+          final lineText =
+              '$prefix $checkbox ${highlightSubstring(item, queryInput.text, theme, enabled: searchEnabled)}';
+          // Use LineBuilder's writeLine for consistent highlight handling
+          ctx.highlightedLine(lineText, highlighted: isFocused);
+        },
+      );
 
-    for (var i = 0; i < window.items.length; i++) {
-      final absoluteIdx = window.start + i;
-      final isHighlighted = nav.isSelected(absoluteIdx);
-      final isChecked = selectedSet.contains(window.items[i]);
-      // Use LineBuilder for arrow and checkbox
-      final checkbox = multiSelect ? lb.checkbox(isChecked) : ' ';
-      final prefix = lb.arrow(isHighlighted);
-      final lineText =
-          '$prefix $checkbox ${highlightSubstring(window.items[i], queryInput.text, theme, enabled: searchEnabled)}';
-      // Use LineBuilder's writeLine for consistent highlight handling
-      lb.writeLine(out, lineText, highlighted: isHighlighted);
-    }
-
-    if (filtered.isEmpty) {
-      out.writeln(lb.emptyLine('no matches'));
-    }
-
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
-
-    final hints = <String>[Hints.hint('↑/↓', 'navigate', theme)];
-    if (multiSelect) hints.add(Hints.hint('Space', 'select', theme));
-    hints.addAll([
-      Hints.hint('Enter', 'confirm', theme),
-      Hints.hint('/', 'search', theme),
-      Hints.hint('Esc', 'cancel', theme),
-    ]);
-    out.writeln(Hints.bullets(hints, theme));
+      if (filtered.isEmpty) {
+        ctx.emptyMessage('no matches');
+      }
+    });
   }
 
   updateFilter();
 
   final runner = PromptRunner(hideCursor: true);
-  final result = runner.run(
+  final result = runner.runWithBindings(
     render: render,
-    onKey: (ev) {
-      if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
-      if (ev.type == KeyEventType.ctrlC) {
-        cancelled = true;
-        return PromptResult.cancelled;
-      }
-
-      // Space
-      if (multiSelect && ev.type == KeyEventType.space && filtered.isNotEmpty) {
-        final current = filtered[nav.selectedIndex];
-        if (selectedSet.contains(current)) {
-          selectedSet.remove(current);
-        } else {
-          selectedSet.add(current);
-        }
-      }
-
-      // Toggle search
-      else if (ev.type == KeyEventType.slash) {
-        searchEnabled = !searchEnabled;
-        if (!searchEnabled) queryInput.clear();
-        updateFilter();
-      }
-
-      // Arrows / ESC
-      else if (ev.type == KeyEventType.arrowUp) {
-        nav.moveUp();
-      } else if (ev.type == KeyEventType.arrowDown) {
-        nav.moveDown();
-      } else if (ev.type == KeyEventType.esc) {
-        cancelled = true;
-        return PromptResult.cancelled;
-      }
-
-      // Text input (typing, backspace) - handled by centralized TextInputBuffer
-      else if (searchEnabled && queryInput.handleKey(ev)) {
-        updateFilter();
-      }
-
-      return null;
-    },
+    bindings: bindings,
   );
 
   if (cancelled || result == PromptResult.cancelled || filtered.isEmpty) {

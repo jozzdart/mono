@@ -1,13 +1,11 @@
 import 'dart:math' as math;
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 import '../system/text_utils.dart' as text;
+import '../system/widget_frame.dart';
 
 /// LaunchPad – grid of big icons/buttons for actions.
 ///
@@ -62,72 +60,6 @@ class LaunchPad {
     int selected = 0;
     LaunchAction? result;
 
-    void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-
-      // Title
-      final frame = FramedLayout(title, theme: theme);
-      final top = frame.top();
-      out.writeln('${theme.bold}$top${theme.reset}');
-
-      // Render row-by-row; each tile expands to the same number of lines
-      for (int r = 0; r < rows; r++) {
-        final start = r * cols;
-        final end = math.min(start + cols, actions.length);
-        final slice = actions.sublist(start, end);
-
-        final tiles = <List<String>>[];
-        for (int i = 0; i < slice.length; i++) {
-          final idx = start + i;
-          tiles.add(_renderTile(slice[i],
-              width: computedCellWidth, height: tileHeight, highlighted: idx == selected));
-        }
-
-        // Normalize height across tiles in this row
-        final int linesPerTile = tiles
-            .map((t) => t.length)
-            .fold<int>(0, (a, b) => math.max(a, b));
-        for (final t in tiles) {
-          while (t.length < linesPerTile) {
-            t.add(' '.padRight(computedCellWidth));
-          }
-        }
-
-        // Print each visual line across the row - using LineBuilder's gutter
-        for (int line = 0; line < linesPerTile; line++) {
-          final buf = StringBuffer();
-          buf.write(lb.gutter());
-          for (int i = 0; i < tiles.length; i++) {
-            if (i > 0) buf.write(colSep);
-            buf.write(tiles[i][line]);
-          }
-          out.writeln(buf.toString());
-        }
-
-        // Connector between rows
-        if (r < rows - 1) {
-          final connector = StringBuffer();
-          connector.write('${theme.gray}${style.borderConnector}${theme.reset}');
-          connector.write(
-              '${theme.gray}${'─' * _rowContentWidth(tiles.length, computedCellWidth)}${theme.reset}');
-          out.writeln(connector.toString());
-        }
-      }
-
-      // Bottom border line
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      // Hints
-      out.writeln(Hints.grid([
-        [Hints.key('↑/↓/←/→', theme), 'navigate'],
-        [Hints.key('Enter', theme), executeOnEnter ? 'launch' : 'select'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
-    }
-
     int moveUp(int idx) {
       final col = idx % cols;
       var row = idx ~/ cols;
@@ -160,35 +92,80 @@ class LaunchPad {
       return idx + 1;
     }
 
-    final runner = PromptRunner(hideCursor: true);
-    runner.run(
-      render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.enter) {
-          final chosen = actions[selected];
-          if (executeOnEnter && chosen.onActivate != null) {
-            result = chosen;
-            return PromptResult.confirmed;
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.directionalNavigation(
+          onUp: () => selected = moveUp(selected),
+          onDown: () => selected = moveDown(selected),
+          onLeft: () => selected = moveLeft(selected),
+          onRight: () => selected = moveRight(selected),
+        ) +
+        KeyBindings.confirm(
+          onConfirm: () {
+            result = actions[selected];
+            return KeyActionResult.confirmed;
+          },
+          hintDescription: executeOnEnter ? 'launch' : 'select',
+        ) +
+        KeyBindings.cancel();
+
+    void render(RenderOutput out) {
+      final widgetFrame = WidgetFrame(
+        title: title,
+        theme: theme,
+        bindings: bindings,
+        hintStyle: HintStyle.grid,
+      );
+
+      widgetFrame.render(out, (ctx) {
+        // Render row-by-row; each tile expands to the same number of lines
+        for (int r = 0; r < rows; r++) {
+          final start = r * cols;
+          final end = math.min(start + cols, actions.length);
+          final slice = actions.sublist(start, end);
+
+          final tiles = <List<String>>[];
+          for (int i = 0; i < slice.length; i++) {
+            final idx = start + i;
+            tiles.add(_renderTile(slice[i],
+                width: computedCellWidth, height: tileHeight, highlighted: idx == selected));
           }
-          result = chosen;
-          return PromptResult.confirmed;
-        }
-        if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
-          return PromptResult.cancelled;
-        }
 
-        if (ev.type == KeyEventType.arrowUp) {
-          selected = moveUp(selected);
-        } else if (ev.type == KeyEventType.arrowDown) {
-          selected = moveDown(selected);
-        } else if (ev.type == KeyEventType.arrowLeft) {
-          selected = moveLeft(selected);
-        } else if (ev.type == KeyEventType.arrowRight) {
-          selected = moveRight(selected);
-        }
+          // Normalize height across tiles in this row
+          final int linesPerTile = tiles
+              .map((t) => t.length)
+              .fold<int>(0, (a, b) => math.max(a, b));
+          for (final t in tiles) {
+            while (t.length < linesPerTile) {
+              t.add(' '.padRight(computedCellWidth));
+            }
+          }
 
-        return null;
-      },
+          // Print each visual line across the row - using LineBuilder's gutter
+          for (int line = 0; line < linesPerTile; line++) {
+            final buf = StringBuffer();
+            for (int i = 0; i < tiles.length; i++) {
+              if (i > 0) buf.write(colSep);
+              buf.write(tiles[i][line]);
+            }
+            ctx.gutterLine(buf.toString());
+          }
+
+          // Connector between rows
+          if (r < rows - 1) {
+            final connector = StringBuffer();
+            connector.write('${theme.gray}${style.borderConnector}${theme.reset}');
+            connector.write(
+                '${theme.gray}${'─' * _rowContentWidth(tiles.length, computedCellWidth)}${theme.reset}');
+            ctx.line(connector.toString());
+          }
+        }
+      });
+    }
+
+    final runner = PromptRunner(hideCursor: true);
+    runner.runWithBindings(
+      render: render,
+      bindings: bindings,
     );
 
     // Execute after cleanup if needed

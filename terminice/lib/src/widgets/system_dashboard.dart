@@ -2,10 +2,9 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// SystemDashboard – themed, real-time CPU / Memory / Disk bars.
 ///
@@ -28,9 +27,6 @@ class SystemDashboard {
   }) : assert(barWidth > 6);
 
   void run() {
-    final style = theme.style;
-    final frame = FramedLayout('System Dashboard', theme: theme);
-
     final session = TerminalSession(hideCursor: true, rawMode: true);
     session.start();
     final out = RenderOutput();
@@ -43,37 +39,37 @@ class SystemDashboard {
 
         out.clear();
 
-        // Top line
-        out.writeln('${theme.bold}${frame.top()}${theme.reset}');
+        final frame = WidgetFrame(
+          title: 'System Dashboard',
+          theme: theme,
+          hintStyle: HintStyle.none, // Manual hints below
+        );
 
-        // CPU
-        out.writeln(_renderMetricLine(
-          label: 'CPU',
-          percent: stats.cpuPercent,
-          extra: stats.cpuDetail,
-          shimmerPhase: frameIdx,
-        ));
+        frame.showTo(out, (ctx) {
+          // CPU
+          ctx.gutterLine(_renderMetricLine(
+            label: 'CPU',
+            percent: stats.cpuPercent,
+            extra: stats.cpuDetail,
+            shimmerPhase: frameIdx,
+          ));
 
-        // Memory
-        out.writeln(_renderMetricLine(
-          label: 'Memory',
-          percent: stats.memPercent,
-          extra: stats.memDetail,
-          shimmerPhase: frameIdx + 2,
-        ));
+          // Memory
+          ctx.gutterLine(_renderMetricLine(
+            label: 'Memory',
+            percent: stats.memPercent,
+            extra: stats.memDetail,
+            shimmerPhase: frameIdx + 2,
+          ));
 
-        // Disk
-        out.writeln(_renderMetricLine(
-          label: 'Disk',
-          percent: stats.diskPercent,
-          extra: stats.diskDetail,
-          shimmerPhase: frameIdx + 4,
-        ));
-
-        // Bottom border
-        if (style.showBorder) {
-          out.writeln(frame.bottom());
-        }
+          // Disk
+          ctx.gutterLine(_renderMetricLine(
+            label: 'Disk',
+            percent: stats.diskPercent,
+            extra: stats.diskDetail,
+            shimmerPhase: frameIdx + 4,
+          ));
+        });
 
         // Hints
         out.writeln(Hints.bullets([
@@ -96,13 +92,10 @@ class SystemDashboard {
     required String extra,
     required int shimmerPhase,
   }) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
     final pct = percent.clamp(0, 100);
     final filled = ((pct / 100) * barWidth).round();
 
     final line = StringBuffer();
-    line.write(lb.gutter());
     line.write('${theme.dim}$label:${theme.reset} ');
 
     // Bar

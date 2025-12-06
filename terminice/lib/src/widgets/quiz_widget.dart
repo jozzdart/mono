@@ -4,9 +4,10 @@ import '../style/theme.dart';
 import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/key_events.dart';
+import '../system/key_bindings.dart';
 import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// QuizWidget – question/answer interaction with scoring.
 ///
@@ -40,85 +41,65 @@ class QuizWidget {
       // Use centralized focus navigation for option selection
       final focus = FocusNavigation(itemCount: q.options.length);
 
+      // Use KeyBindings for declarative key handling
+      final bindings = KeyBindings.verticalNavigation(
+            onUp: () => focus.moveUp(),
+            onDown: () => focus.moveDown(),
+          ) +
+          (allowNumberShortcuts
+              ? KeyBindings([
+                  KeyBinding.char(
+                    (c) => RegExp(r'^[1-9]$').hasMatch(c),
+                    (event) {
+                      final ch = event.char!;
+                      final idx = int.parse(ch) - 1;
+                      if (idx >= 0 && idx < q.options.length) {
+                        focus.jumpTo(idx);
+                      }
+                      return KeyActionResult.handled;
+                    },
+                    hintLabel: '1-9',
+                    hintDescription: 'quick select',
+                  ),
+                ])
+              : KeyBindings([])) +
+          KeyBindings.confirm() +
+          KeyBindings.cancel();
+
+      // Use WidgetFrame for consistent frame rendering
+      final frame = WidgetFrame(
+        title: _title(qi),
+        theme: theme,
+        bindings: bindings,
+      );
+
       void render(RenderOutput out) {
-        final style = theme.style;
-        // Use centralized line builder for consistent styling
-        final lb = LineBuilder(theme);
+        frame.render(out, (ctx) {
+          // Question
+          ctx.boldMessage(q.text);
+          if (q.description != null && q.description!.trim().isNotEmpty) {
+            ctx.dimMessage(q.description!);
+          }
 
-        final label = _title(qi);
-        final frame = FramedLayout(label, theme: theme);
-        out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-        // Question
-        out.writeln(
-            '${lb.gutter()}${theme.bold}${q.text}${theme.reset}');
-        if (q.description != null && q.description!.trim().isNotEmpty) {
-          out.writeln(
-              '${lb.gutter()}${theme.dim}${q.description}${theme.reset}');
-        }
-
-        // Options
-        for (int i = 0; i < q.options.length; i++) {
-          final isSel = focus.isFocused(i);
-          // Use LineBuilder for arrow (focused vs dim)
-          final bullet = isSel ? lb.arrowAccent() : lb.arrowDim();
-          final label = allowNumberShortcuts ? '${i + 1}. ' : '';
-          final optionText = '$label${q.options[i]}';
-          final line = isSel
-              ? '${theme.inverse}${theme.accent} $optionText ${theme.reset}'
-              : optionText;
-          out.writeln('${lb.gutter()}$bullet $line');
-        }
-
-        // Bottom border
-        if (style.showBorder) {
-          out.writeln(frame.bottom());
-        }
-
-        // Hints
-        out.writeln(Hints.bullets([
-          Hints.hint('↑/↓', 'navigate', theme),
-          Hints.hint('Enter', 'submit', theme),
-          if (allowNumberShortcuts) Hints.hint('1-9', 'quick select', theme),
-          Hints.hint('Esc', 'quit', theme),
-        ], theme));
+          // Options
+          for (int i = 0; i < q.options.length; i++) {
+            final isSel = focus.isFocused(i);
+            // Use LineBuilder for arrow (focused vs dim)
+            final bullet = isSel ? ctx.lb.arrowAccent() : ctx.lb.arrowDim();
+            final label = allowNumberShortcuts ? '${i + 1}. ' : '';
+            final optionText = '$label${q.options[i]}';
+            final line = isSel
+                ? '${theme.inverse}${theme.accent} $optionText ${theme.reset}'
+                : optionText;
+            ctx.gutterLine('$bullet $line');
+          }
+        });
       }
 
       final runner = PromptRunner(hideCursor: true);
-      final result = runner.run(
+      final result = runner.runWithBindings(
         render: render,
-        onKey: (ev) {
-          if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-            return PromptResult.cancelled;
-          }
-
-          if (ev.type == KeyEventType.arrowUp) {
-            focus.moveUp();
-            return null;
-          }
-
-          if (ev.type == KeyEventType.arrowDown) {
-            focus.moveDown();
-            return null;
-          }
-
-          if (allowNumberShortcuts && ev.type == KeyEventType.char) {
-            final ch = ev.char!;
-            if (RegExp(r'^[1-9]$').hasMatch(ch)) {
-              final idx = int.parse(ch) - 1;
-              if (idx >= 0 && idx < q.options.length) {
-                focus.jumpTo(idx);
-                return null;
-              }
-            }
-          }
-
-          if (ev.type == KeyEventType.enter) {
-            return PromptResult.confirmed;
-          }
-
-          return null;
-        },
+        bindings: bindings,
       );
 
       if (result == PromptResult.cancelled) {
@@ -182,17 +163,17 @@ class QuizWidget {
       stdout.writeln(frame.bottom());
     }
 
-    stdout.writeln(Hints.comma([
-      'Press Enter to continue',
-      'Esc to skip summary',
-    ], theme));
+    // Use KeyBindings for continue/skip scenario
+    final continueBindings = KeyBindings.continuePrompt(
+      hintDescription: 'continue / skip summary',
+    );
+    stdout.writeln(Hints.comma(
+      continueBindings.toHintEntries().map((e) => e[1]).toList(),
+      theme,
+    ));
 
-    // Wait for Enter or Esc before continuing
-    while (true) {
-      final ev = KeyEventReader.read();
-      if (ev.type == KeyEventType.enter) break;
-      if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) break;
-    }
+    // Wait for continue key
+    continueBindings.waitForKey();
   }
 
   void _renderSummary(int correct) {

@@ -1,11 +1,9 @@
 import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
+import '../system/widget_frame.dart';
 
 /// CheckboxMenu – vertical multi-select checklist with live summary counter.
 ///
@@ -32,10 +30,6 @@ class CheckboxMenu {
 
   List<String> run() {
     if (options.isEmpty) return <String>[];
-
-    final style = theme.style;
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
 
     // Use centralized list navigation for selection & scrolling
     final nav = ListNavigation(
@@ -67,11 +61,29 @@ class CheckboxMenu {
       }
     }
 
+    // Use KeyBindings for declarative, composable key handling
+    final bindings = KeyBindings.verticalNavigation(
+          onUp: () => nav.moveUp(),
+          onDown: () => nav.moveDown(),
+        ) +
+        KeyBindings.toggle(
+          onToggle: () => toggle(nav.selectedIndex),
+          hintDescription: 'toggle',
+        ) +
+        KeyBindings.letter(
+          char: 'A',
+          onPress: selectAllOrClear,
+          hintDescription: 'select all / clear',
+        ) +
+        KeyBindings.prompt(
+          onCancel: () => cancelled = true,
+        );
+
     String summaryLine() {
       final total = options.length;
       final count = selected.length;
       if (count == 0) {
-        return lb.emptyMessage('none selected');
+        return '${theme.dim}(none selected)${theme.reset}';
       }
       // render up to 3 selections by label, then "+N"
       final indices = selected.toList()..sort();
@@ -86,106 +98,73 @@ class CheckboxMenu {
       return '${theme.accent}$count${theme.reset}/${theme.dim}$total${theme.reset} • ${names.join('${theme.dim}, ${theme.reset}')} $more';
     }
 
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: label,
+      theme: theme,
+      bindings: bindings,
+      showConnector: true,
+      hintStyle: HintStyle.grid,
+    );
+
     void render(RenderOutput out) {
       // Responsive rows from terminal lines: reserve around 7 for chrome/hints
       nav.maxVisible = (TerminalInfo.rows - 7).clamp(5, maxVisible);
 
-      final frame = FramedLayout(label, theme: theme);
-      final title = frame.top();
-      out.writeln(
-          style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
+      frame.render(out, (ctx) {
+        // Summary line
+        ctx.gutterLine(summaryLine());
 
-      // Summary line - using LineBuilder's gutter
-      out.writeln('${lb.gutter()}${summaryLine()}');
+        // Connector after summary
+        ctx.writeConnector();
 
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
+        // Use ListNavigation's viewport for visible window
+        final window = nav.visibleWindow(options);
 
-      // Use ListNavigation's viewport for visible window
-      final window = nav.visibleWindow(options);
-
-      // Optional overflow indicator (top) - using LineBuilder
-      if (window.hasOverflowAbove) {
-        out.writeln(lb.overflowLine());
-      }
-
-      final cols = TerminalInfo.columns;
-      for (var i = 0; i < window.items.length; i++) {
-        final absoluteIdx = window.start + i;
-        final isFocused = nav.isSelected(absoluteIdx);
-        final isChecked = selected.contains(absoluteIdx);
-
-        // Use LineBuilder for arrow and checkbox
-        final arrow = lb.arrow(isFocused);
-        final check = lb.checkbox(isChecked);
-
-        // Construct core line and fit within terminal width with graceful truncation
-        var core = '$arrow $check ${window.items[i]}';
-        final reserve = 0; // no trailing widget for now
-        final gutterLen = lb.gutter().length;
-        final maxLabel = (cols - gutterLen - 1 - reserve).clamp(8, cols);
-        if (core.length > maxLabel) {
-          core = '${core.substring(0, maxLabel - 3)}...';
+        // Optional overflow indicator (top)
+        if (window.hasOverflowAbove) {
+          ctx.overflowIndicator();
         }
 
-        // Use LineBuilder's writeLine for consistent highlight handling
-        lb.writeLine(out, core, highlighted: isFocused);
-      }
+        final cols = TerminalInfo.columns;
+        for (var i = 0; i < window.items.length; i++) {
+          final absoluteIdx = window.start + i;
+          final isFocused = nav.isSelected(absoluteIdx);
+          final isChecked = selected.contains(absoluteIdx);
 
-      // Optional overflow indicator (bottom) - using LineBuilder
-      if (window.hasOverflowBelow) {
-        out.writeln(lb.overflowLine());
-      }
+          // Use LineBuilder for arrow and checkbox
+          final arrow = ctx.lb.arrow(isFocused);
+          final check = ctx.lb.checkbox(isChecked);
 
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
+          // Construct core line and fit within terminal width with graceful truncation
+          var core = '$arrow $check ${window.items[i]}';
+          final reserve = 0; // no trailing widget for now
+          final gutterLen = ctx.lb.gutter().length;
+          final maxLabel = (cols - gutterLen - 1 - reserve).clamp(8, cols);
+          if (core.length > maxLabel) {
+            core = '${core.substring(0, maxLabel - 3)}...';
+          }
 
-      // Hints (aligned grid)
-      out.writeln(Hints.grid([
-        [Hints.key('↑/↓', theme), 'navigate'],
-        [Hints.key('Space', theme), 'toggle'],
-        [Hints.key('A', theme), 'select all / clear'],
-        [Hints.key('Enter', theme), 'confirm'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
+          // Use LineBuilder's writeLine for consistent highlight handling
+          ctx.highlightedLine(core, highlighted: isFocused);
+        }
+
+        // Optional overflow indicator (bottom)
+        if (window.hasOverflowBelow) {
+          ctx.overflowIndicator();
+        }
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    final result = runner.run(
+    final result = runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.ctrlC) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        if (ev.type == KeyEventType.arrowUp) {
-          nav.moveUp();
-        } else if (ev.type == KeyEventType.arrowDown) {
-          nav.moveDown();
-        } else if (ev.type == KeyEventType.space) {
-          toggle(nav.selectedIndex);
-        } else if (ev.type == KeyEventType.char && ev.char != null) {
-          final ch = ev.char!;
-          if (ch.toLowerCase() == 'a') {
-            selectAllOrClear();
-          }
-        } else if (ev.type == KeyEventType.esc) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        } else if (ev.type == KeyEventType.enter) {
-          return PromptResult.confirmed;
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     if (cancelled || result == PromptResult.cancelled) return <String>[];
     if (selected.isEmpty) selected.add(nav.selectedIndex);
-    final out = selected.toList()..sort();
-    return out.map((i) => options[i]).toList(growable: false);
+    final sortedIndices = selected.toList()..sort();
+    return sortedIndices.map((i) => options[i]).toList(growable: false);
   }
 }

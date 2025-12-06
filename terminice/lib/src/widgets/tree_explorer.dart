@@ -1,17 +1,16 @@
 import '../style/theme.dart';
-import '../system/key_events.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 class TreeNode {
   final String label;
   final List<TreeNode> children;
   final bool initiallyExpanded;
 
-  const TreeNode(this.label, {this.children = const [], this.initiallyExpanded = false});
+  const TreeNode(this.label,
+      {this.children = const [], this.initiallyExpanded = false});
 
   bool get isLeaf => children.isEmpty;
 }
@@ -33,8 +32,6 @@ class TreeExplorer {
 
   /// Returns the selected node's label path (e.g., "root/child/grandchild"), or null if cancelled.
   String? run() {
-    final style = theme.style;
-
     final expanded = <TreeNode, bool>{};
     for (final r in roots) {
       expanded[r] = r.initiallyExpanded;
@@ -74,6 +71,7 @@ class TreeExplorer {
         parts.insert(0, cur.node.label);
         if (cur.parent != null) ascend(cur.parent!);
       }
+
       ascend(e);
       return parts.join('/');
     }
@@ -100,108 +98,125 @@ class TreeExplorer {
       }
     }
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.verticalNavigation(
+          onUp: () => nav.moveUp(),
+          onDown: () => nav.moveDown(),
+        ) +
+        KeyBindings([
+          // Right / Enter - expand or select
+          KeyBinding.multi(
+            {KeyEventType.arrowRight, KeyEventType.enter},
+            (event) {
+              final list = visible();
+              if (list.isEmpty) return KeyActionResult.ignored;
+              nav.itemCount = list.length;
+              final current = list[nav.selectedIndex];
+
+              if (current.node.isLeaf) {
+                confirmed = true;
+                return KeyActionResult.confirmed;
+              } else {
+                if (event.type == KeyEventType.arrowRight) {
+                  expand(current);
+                } else {
+                  toggle(current);
+                }
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: '→ / Enter',
+            hintDescription: 'Expand / Select',
+          ),
+          // Left - collapse or parent
+          KeyBinding.single(
+            KeyEventType.arrowLeft,
+            (event) {
+              final list = visible();
+              if (list.isEmpty) return KeyActionResult.ignored;
+              nav.itemCount = list.length;
+              collapse(list[nav.selectedIndex]);
+              return KeyActionResult.handled;
+            },
+            hintLabel: '←',
+            hintDescription: 'Collapse / Parent',
+          ),
+          // Space - toggle
+          KeyBinding.single(
+            KeyEventType.space,
+            (event) {
+              final list = visible();
+              if (list.isEmpty) return KeyActionResult.ignored;
+              nav.itemCount = list.length;
+              final current = list[nav.selectedIndex];
+              if (current.node.isLeaf) {
+                confirmed = true;
+                return KeyActionResult.confirmed;
+              }
+              toggle(current);
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Space',
+            hintDescription: 'Toggle',
+          ),
+        ]) +
+        KeyBindings([
+          // Esc - exit without selection
+          KeyBinding.single(
+            KeyEventType.esc,
+            (event) => KeyActionResult.confirmed,
+            hintLabel: 'Esc',
+            hintDescription: 'Exit',
+          ),
+        ]) +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
+
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: title,
+      theme: theme,
+      bindings: bindings,
+      showConnector: true,
+      hintStyle: HintStyle.grid,
+    );
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
+      frame.render(out, (ctx) {
+        final list = visible();
+        // Update nav's item count as tree structure changes
+        nav.itemCount = list.length;
 
-      final frame = FramedLayout(title, theme: theme);
-      final top = frame.top();
-      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+        // Use ListNavigation's viewport
+        final window = nav.visibleWindow(list);
 
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
+        ctx.listWindow(
+          window,
+          selectedIndex: nav.selectedIndex,
+          renderItem: (entry, index, isFocused) {
+            final prefix = ctx.lb.arrow(isFocused);
+            final branch = _treeBranchGlyph(entry, theme);
+            final toggleGlyph = entry.node.isLeaf
+                ? ' '
+                : ((expanded[entry.node] ?? false)
+                    ? '${theme.accent}>${theme.reset}'
+                    : '${theme.accent}+${theme.reset}');
+            final indent = _indentString(entry);
+            final lineText =
+                '$prefix $indent$branch $toggleGlyph ${entry.node.label}';
+            ctx.highlightedLine(lineText, highlighted: isFocused);
+          },
+        );
 
-      final list = visible();
-      // Update nav's item count as tree structure changes
-      nav.itemCount = list.length;
-
-      // Use ListNavigation's viewport
-      final window = nav.visibleWindow(list);
-
-      // Use LineBuilder for overflow indicator
-      if (window.hasOverflowAbove) {
-        out.writeln(lb.overflowLine());
-      }
-
-      for (var i = 0; i < window.items.length; i++) {
-        final e = window.items[i];
-        final absoluteIdx = window.start + i;
-        final isHighlighted = nav.isSelected(absoluteIdx);
-        // Use LineBuilder for arrow
-        final prefix = lb.arrow(isHighlighted);
-        final branch = _treeBranchGlyph(e, theme);
-        final toggleGlyph = e.node.isLeaf
-            ? ' '
-            : ((expanded[e.node] ?? false)
-                ? '${theme.accent}>${theme.reset}'
-                : '${theme.accent}+${theme.reset}');
-        final indent = _indentString(e);
-        final lineText = '$prefix $indent$branch $toggleGlyph ${e.node.label}';
-        // Use LineBuilder's writeLine for consistent highlight handling
-        lb.writeLine(out, lineText, highlighted: isHighlighted);
-      }
-
-      // Use LineBuilder for overflow indicator
-      if (window.hasOverflowBelow) {
-        out.writeln(lb.overflowLine());
-      }
-
-      if (list.isEmpty) {
-        out.writeln(lb.emptyLine('empty'));
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      out.writeln(Hints.grid([
-        [Hints.key('↑/↓', theme), 'Navigate'],
-        [Hints.key('→ / Enter', theme), 'Expand / Select'],
-        [Hints.key('←', theme), 'Collapse / Parent'],
-        [Hints.key('Space', theme), 'Toggle'],
-        [Hints.key('Esc', theme), 'Exit'],
-      ], theme));
+        if (list.isEmpty) {
+          ctx.emptyMessage('empty');
+        }
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
+    runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.esc) {
-          return PromptResult.confirmed; // exit without selection
-        }
-        if (ev.type == KeyEventType.ctrlC) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        final list = visible();
-        if (list.isEmpty) return null;
-        nav.itemCount = list.length; // Keep in sync
-        final current = list[nav.selectedIndex];
-
-        if (ev.type == KeyEventType.arrowUp) {
-          nav.moveUp();
-        } else if (ev.type == KeyEventType.arrowDown) {
-          nav.moveDown();
-        } else if (ev.type == KeyEventType.arrowRight || ev.type == KeyEventType.enter || ev.type == KeyEventType.space) {
-          if (current.node.isLeaf) {
-            confirmed = true;
-            return PromptResult.confirmed; // select leaf
-          } else {
-            if (ev.type == KeyEventType.arrowRight) {
-              expand(current);
-            } else {
-              toggle(current);
-            }
-          }
-        } else if (ev.type == KeyEventType.arrowLeft) {
-          collapse(current);
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     if (cancelled) return null;
@@ -226,7 +241,8 @@ class _VisibleEntry {
   final _VisibleEntry? parent;
   final bool isLast;
   final List<bool> lifelines; // draw verticals for ancestors
-  const _VisibleEntry(this.node, this.depth, this.parent, this.isLast, this.lifelines);
+  const _VisibleEntry(
+      this.node, this.depth, this.parent, this.isLast, this.lifelines);
 }
 
 void _buildVisible(

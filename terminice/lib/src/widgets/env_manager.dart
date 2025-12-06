@@ -1,11 +1,9 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/key_events.dart';
-import '../system/hints.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 import 'text_prompt.dart';
 import 'confirm_prompt.dart';
 import 'search_select.dart';
@@ -68,45 +66,104 @@ class EnvManager {
 
   Future<_PostAction> _actionsLoop(
       String name, List<_EnvEntry> Function() getEntries) async {
-    final style = theme.style;
     String currentName = name;
     var entries = getEntries();
     _PostAction result = _PostAction.back;
     bool needsNestedPrompt = false;
     String? nestedPromptType;
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings([
+          // Edit (Enter or 'e')
+          KeyBinding.multi(
+            {KeyEventType.enter},
+            (event) {
+              needsNestedPrompt = true;
+              nestedPromptType = 'edit';
+              return KeyActionResult.confirmed;
+            },
+            hintLabel: 'Enter / e',
+            hintDescription: 'edit value',
+          ),
+          KeyBinding.char(
+            (c) => c == 'e' || c == 'E',
+            (event) {
+              needsNestedPrompt = true;
+              nestedPromptType = 'edit';
+              return KeyActionResult.confirmed;
+            },
+          ),
+          // Delete
+          KeyBinding.char(
+            (c) => c == 'd' || c == 'D',
+            (event) {
+              needsNestedPrompt = true;
+              nestedPromptType = 'delete';
+              return KeyActionResult.confirmed;
+            },
+            hintLabel: 'd',
+            hintDescription: 'delete variable',
+          ),
+          // New variable
+          KeyBinding.char(
+            (c) => c == 'n' || c == 'N',
+            (event) {
+              needsNestedPrompt = true;
+              nestedPromptType = 'new';
+              return KeyActionResult.confirmed;
+            },
+            hintLabel: 'n',
+            hintDescription: 'new variable',
+          ),
+          // Back to list
+          KeyBinding.char(
+            (c) => c == 'b' || c == 'B',
+            (event) {
+              result = _PostAction.back;
+              return KeyActionResult.confirmed;
+            },
+            hintLabel: 'b',
+            hintDescription: 'back to list',
+          ),
+        ]) +
+        KeyBindings.ctrlR(
+          onPress: () => result = _PostAction.reload,
+          hintDescription: 'reload from system',
+        ) +
+        KeyBindings([
+          // Quit
+          KeyBinding.char(
+            (c) => c == 'q' || c == 'Q',
+            (event) {
+              result = _PostAction.quit;
+              return KeyActionResult.confirmed;
+            },
+            hintLabel: 'q / Esc',
+            hintDescription: 'quit',
+          ),
+        ]) +
+        KeyBindings.cancel(onCancel: () => result = _PostAction.quit);
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-
       final heading = 'Env · $currentName';
-      final frame = FramedLayout(heading, theme: theme);
-      out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-      final entry = entries.firstWhere(
-        (e) => e.name == currentName,
-        orElse: () => _EnvEntry(currentName, ''),
+      final widgetFrame = WidgetFrame(
+        title: heading,
+        theme: theme,
+        bindings: bindings,
+        hintStyle: HintStyle.grid,
       );
 
-      out.writeln(
-          '${lb.gutter()}${theme.dim}Name:${theme.reset} ${theme.accent}${entry.name}${theme.reset}');
-      final value = entry.value.isEmpty
-          ? lb.emptyMessage('<empty>')
-          : entry.value;
-      out.writeln('${lb.gutter()}${theme.dim}Value:${theme.reset} $value');
+      widgetFrame.render(out, (ctx) {
+        final entry = entries.firstWhere(
+          (e) => e.name == currentName,
+          orElse: () => _EnvEntry(currentName, ''),
+        );
 
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      out.writeln(Hints.grid([
-        ['Enter / e', 'edit value'],
-        ['d', 'delete variable'],
-        ['n', 'new variable'],
-        ['b', 'back to list'],
-        ['Ctrl+R', 'reload from system'],
-        ['q / Esc', 'quit'],
-      ], theme));
+        ctx.labeledAccent('Name', entry.name);
+        final value =
+            entry.value.isEmpty ? '${theme.dim}<empty>${theme.reset}' : entry.value;
+        ctx.labeledValue('Value', value);
+      });
     }
 
     while (true) {
@@ -114,60 +171,9 @@ class EnvManager {
       nestedPromptType = null;
 
       final runner = PromptRunner(hideCursor: true);
-      runner.run(
+      runner.runWithBindings(
         render: render,
-        onKey: (ev) {
-          // Quit
-          if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-            result = _PostAction.quit;
-            return PromptResult.confirmed;
-          }
-          if (ev.type == KeyEventType.char &&
-              (ev.char == 'q' || ev.char == 'Q')) {
-            result = _PostAction.quit;
-            return PromptResult.confirmed;
-          }
-
-          // Back to list
-          if (ev.type == KeyEventType.char &&
-              (ev.char == 'b' || ev.char == 'B')) {
-            result = _PostAction.back;
-            return PromptResult.confirmed;
-          }
-
-          // Reload
-          if (ev.type == KeyEventType.ctrlR) {
-            result = _PostAction.reload;
-            return PromptResult.confirmed;
-          }
-
-          // Edit (Enter or 'e')
-          if (ev.type == KeyEventType.enter ||
-              (ev.type == KeyEventType.char &&
-                  (ev.char == 'e' || ev.char == 'E'))) {
-            needsNestedPrompt = true;
-            nestedPromptType = 'edit';
-            return PromptResult.confirmed;
-          }
-
-          // Delete
-          if (ev.type == KeyEventType.char &&
-              (ev.char == 'd' || ev.char == 'D')) {
-            needsNestedPrompt = true;
-            nestedPromptType = 'delete';
-            return PromptResult.confirmed;
-          }
-
-          // New variable
-          if (ev.type == KeyEventType.char &&
-              (ev.char == 'n' || ev.char == 'N')) {
-            needsNestedPrompt = true;
-            nestedPromptType = 'new';
-            return PromptResult.confirmed;
-          }
-
-          return null;
-        },
+        bindings: bindings,
       );
 
       // Handle nested prompts outside of the runner

@@ -4,10 +4,9 @@ import 'dart:math';
 
 import '../style/theme.dart';
 import '../system/hints.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
+import '../system/widget_frame.dart';
 
 /// LineChartWidget – ASCII-based real-time line plot.
 ///
@@ -137,16 +136,8 @@ class LineChartWidget {
     session.start();
     final out = RenderOutput();
 
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(currentTheme);
-
     void render() {
-      final style = currentTheme.style;
       out.clear();
-
-      final frame = FramedLayout(title, theme: currentTheme);
-      final top = frame.top();
-      out.writeln('${currentTheme.bold}$top${currentTheme.reset}');
 
       // Determine range and zero line
       final (lo, hi) = range();
@@ -219,44 +210,48 @@ class LineChartWidget {
         }
       }
 
-      // Compose lines
-      final left = lb.gutter();
-      for (int r = 0; r < chartHeight; r++) {
-        final row = StringBuffer();
-        row.write(left);
-        for (int c = 0; c < chartWidth; c++) {
-          final ch = gridChars[r][c];
-          if (ch == '•') {
-            row.write(
-                '${currentTheme.accent}${currentTheme.bold}•${currentTheme.reset}');
-          } else if (ch == '─') {
-            row.write('${currentTheme.dim}─${currentTheme.reset}');
-          } else if (ch == '-' || ch == '·') {
-            row.write('${currentTheme.gray}$ch${currentTheme.reset}');
-          } else {
-            row.write(' ');
+      // Use WidgetFrame for consistent frame rendering
+      final wf = WidgetFrame(
+        title: title,
+        theme: currentTheme,
+        hintStyle: HintStyle.none, // Manual hints below
+      );
+
+      wf.showTo(out, (ctx) {
+        // Compose lines
+        for (int r = 0; r < chartHeight; r++) {
+          final row = StringBuffer();
+          for (int c = 0; c < chartWidth; c++) {
+            final ch = gridChars[r][c];
+            if (ch == '•') {
+              row.write(
+                  '${currentTheme.accent}${currentTheme.bold}•${currentTheme.reset}');
+            } else if (ch == '─') {
+              row.write('${currentTheme.dim}─${currentTheme.reset}');
+            } else if (ch == '-' || ch == '·') {
+              row.write('${currentTheme.gray}$ch${currentTheme.reset}');
+            } else {
+              row.write(' ');
+            }
           }
+          ctx.gutterLine(row.toString());
         }
-        out.writeln(row.toString());
-      }
 
-      // Summary line + bottom border
-      final stats = window();
-      final latest = stats.isNotEmpty ? stats.last : null;
-      final loStr = stats.isNotEmpty ? _fmt(stats.reduce(min)) : '—';
-      final hiStr = stats.isNotEmpty ? _fmt(stats.reduce(max)) : '—';
-      final lastStr = latest != null ? _fmt(latest) : '—';
-      final rangeStr =
-          '${currentTheme.dim}y:[${currentTheme.reset}${currentTheme.gray}${_fmt(lo)}${currentTheme.reset}${currentTheme.dim}, ${currentTheme.gray}${_fmt(hi)}${currentTheme.reset}${currentTheme.dim}]${currentTheme.reset}';
-      final info =
-          '${currentTheme.gray}min ${currentTheme.reset}${currentTheme.warn}$loStr${currentTheme.reset}  '
-          '${currentTheme.gray}max ${currentTheme.reset}${currentTheme.info}$hiStr${currentTheme.reset}  '
-          '${currentTheme.gray}last ${currentTheme.reset}${currentTheme.highlight}$lastStr${currentTheme.reset}  $rangeStr';
+        // Summary line
+        final stats = window();
+        final latest = stats.isNotEmpty ? stats.last : null;
+        final loStr = stats.isNotEmpty ? _fmt(stats.reduce(min)) : '—';
+        final hiStr = stats.isNotEmpty ? _fmt(stats.reduce(max)) : '—';
+        final lastStr = latest != null ? _fmt(latest) : '—';
+        final rangeStr =
+            '${currentTheme.dim}y:[${currentTheme.reset}${currentTheme.gray}${_fmt(lo)}${currentTheme.reset}${currentTheme.dim}, ${currentTheme.gray}${_fmt(hi)}${currentTheme.reset}${currentTheme.dim}]${currentTheme.reset}';
+        final info =
+            '${currentTheme.gray}min ${currentTheme.reset}${currentTheme.warn}$loStr${currentTheme.reset}  '
+            '${currentTheme.gray}max ${currentTheme.reset}${currentTheme.info}$hiStr${currentTheme.reset}  '
+            '${currentTheme.gray}last ${currentTheme.reset}${currentTheme.highlight}$lastStr${currentTheme.reset}  $rangeStr';
 
-      out.writeln('${lb.gutter()}$info');
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
+        ctx.gutterLine(info);
+      });
 
       // Hints
       out.writeln(Hints.grid([

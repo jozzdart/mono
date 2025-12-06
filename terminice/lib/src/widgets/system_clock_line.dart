@@ -1,8 +1,6 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
-import '../system/prompt_runner.dart';
 import '../system/text_utils.dart' as text;
+import '../system/widget_frame.dart';
 
 /// Describes an upcoming cron-style task/event.
 class CronEvent {
@@ -42,15 +40,7 @@ class SystemClockLine {
   }) : _clock = now ?? DateTime.now;
 
   void run() {
-    final out = RenderOutput();
-    _render(out);
-  }
-
-  void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
     final label = title ?? 'System Clock Line';
-    final style = theme.style;
     final now = _clock();
 
     // Prepare list: future-only, within window, sorted.
@@ -60,73 +50,62 @@ class SystemClockLine {
         .toList()
       ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
 
-    // Header
-    final frame = FramedLayout(label, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    final frame = WidgetFrame(title: label, theme: theme, showConnector: true);
+    frame.show((ctx) {
+      // Legend
+      final nowStr = _fmtTime(now);
+      ctx.gutterLine(
+          '${theme.gray}Window:${theme.reset} ${theme.selection}${_fmtWindow(window)}${theme.reset}  '
+          '${theme.gray}Events:${theme.reset} ${theme.accent}${upcoming.length}${theme.reset}  '
+          '${theme.gray}Now:${theme.reset} ${theme.accent}$nowStr${theme.reset}');
+      ctx.writeConnector();
 
-    // Legend + connector
-    final nowStr = _fmtTime(now);
-    out.writeln('${lb.gutter()}'
-        '${theme.gray}Window:${theme.reset} ${theme.selection}${_fmtWindow(window)}${theme.reset}  '
-        '${theme.gray}Events:${theme.reset} ${theme.accent}${upcoming.length}${theme.reset}  '
-        '${theme.gray}Now:${theme.reset} ${theme.accent}$nowStr${theme.reset}');
-    out.writeln(frame.connector());
-
-    if (upcoming.isEmpty) {
-      out.writeln(lb.emptyLine('No upcoming tasks in next ${_fmtWindow(window)}'));
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
+      if (upcoming.isEmpty) {
+        ctx.emptyMessage('No upcoming tasks in next ${_fmtWindow(window)}');
+        return;
       }
-      return;
-    }
 
-    // Column widths
-    final nameWidth = text.clampInt(text.maxOf(upcoming.map((e) => e.name.length)), 12, 36);
-    final srcWidth = text.clampInt(text.maxOf(upcoming.map((e) => (e.source ?? '').length)), 0, 18);
+      // Column widths
+      final nameWidth = text.clampInt(text.maxOf(upcoming.map((e) => e.name.length)), 12, 36);
+      final srcWidth = text.clampInt(text.maxOf(upcoming.map((e) => (e.source ?? '').length)), 0, 18);
 
-    int printed = 0;
-    for (final e in upcoming) {
-      if (printed >= maxItems) break;
-      printed++;
+      int printed = 0;
+      for (final e in upcoming) {
+        if (printed >= maxItems) break;
+        printed++;
 
-      final at = _fmtTime(e.scheduledAt);
-      final delta = e.scheduledAt.difference(now);
-      final til = _fmtDelta(delta);
-      final icon = _timeIcon(delta);
-      final name = text.padRight(e.name, nameWidth);
-      final src = (e.source != null && e.source!.isNotEmpty)
-          ? ' ${theme.gray}[${text.padRight(e.source!, srcWidth)}]${theme.reset}'
-          : '';
+        final at = _fmtTime(e.scheduledAt);
+        final delta = e.scheduledAt.difference(now);
+        final til = _fmtDelta(delta);
+        final icon = _timeIcon(delta);
+        final name = text.padRight(e.name, nameWidth);
+        final src = (e.source != null && e.source!.isNotEmpty)
+            ? ' ${theme.gray}[${text.padRight(e.source!, srcWidth)}]${theme.reset}'
+            : '';
 
-      // Primary info line
-      out.writeln(
-        '${lb.gutter()}'
-        '$icon ${theme.accent}$at${theme.reset}  '
-        '${theme.bold}${theme.selection}$name${theme.reset}  '
-        '${theme.gray}$til${theme.reset}$src',
-      );
+        // Primary info line
+        ctx.gutterLine(
+          '$icon ${theme.accent}$at${theme.reset}  '
+          '${theme.bold}${theme.selection}$name${theme.reset}  '
+          '${theme.gray}$til${theme.reset}$src',
+        );
 
-      // Proportional timeline line
-      final pos = _positionInWindow(now, e.scheduledAt).clamp(0.0, 1.0);
-      final idx = (pos * trackWidth).round().clamp(0, trackWidth);
-      final track = StringBuffer();
-      for (var i = 0; i <= trackWidth; i++) {
-        if (i == idx) {
-          track.write('${theme.accent}${theme.bold}${theme.style.checkboxOnSymbol}${theme.reset}');
-        } else {
-          track.write('${theme.gray}─${theme.reset}');
+        // Proportional timeline line
+        final pos = _positionInWindow(now, e.scheduledAt).clamp(0.0, 1.0);
+        final idx = (pos * trackWidth).round().clamp(0, trackWidth);
+        final track = StringBuffer();
+        for (var i = 0; i <= trackWidth; i++) {
+          if (i == idx) {
+            track.write('${theme.accent}${theme.bold}${theme.style.checkboxOnSymbol}${theme.reset}');
+          } else {
+            track.write('${theme.gray}─${theme.reset}');
+          }
         }
+        ctx.gutterLine(
+          '${theme.dim}${text.padRight('', at.length)}${theme.reset}  $track',
+        );
       }
-      out.writeln(
-        '${lb.gutter()}'
-        '${theme.dim}${text.padRight('', at.length)}${theme.reset}  ' // align under time
-        '$track',
-      );
-    }
-
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
+    });
   }
 
   String _fmtTime(DateTime dt) {

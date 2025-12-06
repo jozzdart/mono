@@ -1,12 +1,12 @@
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/key_events.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
 import '../system/table_renderer.dart';
 import '../system/text_input_buffer.dart';
+import '../system/widget_frame.dart';
 
 /// Interactive CSV-like grid editor.
 ///
@@ -53,8 +53,6 @@ class TableEditor {
     if (data.isEmpty) {
       data.add(List<String>.filled(columns.length, ''));
     }
-
-    final style = theme.style;
 
     // Create table renderer
     final renderer = TableRenderer.fromHeaders(
@@ -112,46 +110,53 @@ class TableEditor {
       if (selectedRow >= data.length) selectedRow = data.length - 1;
     }
 
+    void moveToNextCell() {
+      selectedCol = (selectedCol + 1) % columns.length;
+      if (selectedCol == 0) {
+        selectedRow = (selectedRow + 1) % data.length;
+      }
+    }
+
     void render(RenderOutput out) {
-      final frame = FramedLayout(title, theme: theme);
-      final top = frame.top();
-      out.writeln('${theme.bold}$top${theme.reset}');
+      final widgetFrame = WidgetFrame(
+        title: title,
+        theme: theme,
+        hintStyle: HintStyle.none, // Custom hints based on editing state
+      );
 
-      // Recompute widths (data may have changed)
-      renderer.computeWidths(data);
+      widgetFrame.render(out, (ctx) {
+        // Recompute widths (data may have changed)
+        renderer.computeWidths(data);
 
-      // Header and connector
-      out.writeln(renderer.headerLine());
-      out.writeln(renderer.connectorLine());
+        // Header and connector
+        ctx.line(renderer.headerLine());
+        ctx.line(renderer.connectorLine());
 
-      // Data rows with selection
-      for (var r = 0; r < data.length; r++) {
-        final row = data[r];
-        final isSelectedRow = r == selectedRow;
+        // Data rows with selection
+        for (var r = 0; r < data.length; r++) {
+          final row = data[r];
+          final isSelectedRow = r == selectedRow;
 
-        if (isSelectedRow) {
-          out.writeln(renderer.selectableRowLine(
-            row,
-            index: r,
-            selectedColumn: selectedCol,
-            isEditing: editing,
-            editBuffer: editBuffer.text,
-          ));
-        } else {
-          out.writeln(renderer.rowLine(row, index: r));
+          if (isSelectedRow) {
+            ctx.line(renderer.selectableRowLine(
+              row,
+              index: r,
+              selectedColumn: selectedCol,
+              isEditing: editing,
+              editBuffer: editBuffer.text,
+            ));
+          } else {
+            ctx.line(renderer.rowLine(row, index: r));
+          }
         }
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
+      });
 
       // Status line
       final status =
           '${theme.info}Row ${selectedRow + 1}/${data.length} · Col ${selectedCol + 1}/${columns.length}${theme.reset}';
       out.writeln(status);
 
-      // Hints
+      // Hints - dynamic based on editing state
       final rowsHints = <List<String>>[
         [Hints.key('↑/↓/←/→', theme), 'move'],
         [Hints.key('Enter', theme), editing ? 'commit edit' : 'edit / finish'],
@@ -164,86 +169,120 @@ class TableEditor {
       out.writeln(Hints.grid(rowsHints, theme));
     }
 
-    final runner = PromptRunner(hideCursor: true);
-    runner.run(
-      render: render,
-      onKey: (ev) {
-        if (!editing) {
-          if (ev.type == KeyEventType.enter) {
-            // Finish editor
-            return PromptResult.confirmed;
-          }
-          if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-            cancelled = true;
-            return PromptResult.cancelled;
-          }
-          if (ev.type == KeyEventType.arrowUp) {
-            selectedRow = (selectedRow - 1 + data.length) % data.length;
-          } else if (ev.type == KeyEventType.arrowDown) {
-            selectedRow = (selectedRow + 1) % data.length;
-          } else if (ev.type == KeyEventType.arrowLeft) {
-            selectedCol = (selectedCol - 1 + columns.length) % columns.length;
-          } else if (ev.type == KeyEventType.arrowRight ||
-              ev.type == KeyEventType.tab) {
-            selectedCol = (selectedCol + 1) % columns.length;
-            if (selectedCol == 0) {
+    // Use KeyBindings for declarative key handling
+    // Note: This widget has conditional behavior based on 'editing' state
+    final bindings = KeyBindings([
+          // Enter: commit edit (editing) or finish editor (not editing)
+          KeyBinding.single(
+            KeyEventType.enter,
+            (event) {
+              if (!editing) {
+                return KeyActionResult.confirmed;
+              } else {
+                commitEdit();
+                moveToNextCell();
+              }
+              ensureInBounds();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Esc/Ctrl+C: cancel edit (editing) or cancel editor (not editing)
+          KeyBinding.multi(
+            {KeyEventType.esc, KeyEventType.ctrlC},
+            (event) {
+              if (!editing) {
+                cancelled = true;
+                return KeyActionResult.cancelled;
+              } else {
+                cancelEdit();
+              }
+              ensureInBounds();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Arrow Up
+          KeyBinding.single(
+            KeyEventType.arrowUp,
+            (event) {
+              if (editing) commitEdit();
+              selectedRow = (selectedRow - 1 + data.length) % data.length;
+              ensureInBounds();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Arrow Down
+          KeyBinding.single(
+            KeyEventType.arrowDown,
+            (event) {
+              if (editing) commitEdit();
               selectedRow = (selectedRow + 1) % data.length;
-            }
-          } else if (ev.type == KeyEventType.char) {
-            final ch = ev.char ?? '';
-            if (ch == 'a') {
-              addRowBelow();
-            } else if (ch == 'd') {
-              deleteRow();
-            } else if (ch == 'e') {
-              startEditing(overwrite: true);
-            } else if (ch == 's') {
-              // Save/finish
-              return PromptResult.confirmed;
-            } else {
-              // Begin editing with first typed char overwriting existing content
-              startEditing(overwrite: true, firstChar: ch);
-            }
-          }
-        } else {
-          // Editing mode
-          if (ev.type == KeyEventType.enter) {
-            commitEdit();
-            // Move to next cell for quick data entry
-            selectedCol = (selectedCol + 1) % columns.length;
-            if (selectedCol == 0) {
-              selectedRow = (selectedRow + 1) % data.length;
-            }
-          } else if (ev.type == KeyEventType.esc ||
-              ev.type == KeyEventType.ctrlC) {
-            cancelEdit();
-          } else if (ev.type == KeyEventType.tab) {
-            commitEdit();
-            selectedCol = (selectedCol + 1) % columns.length;
-            if (selectedCol == 0) {
-              selectedRow = (selectedRow + 1) % data.length;
-            }
-          } else if (editBuffer.handleKey(ev)) {
-            // Text input (typing, backspace) - handled by centralized TextInputBuffer
-          } else if (ev.type == KeyEventType.arrowLeft) {
-            // Optional: left/right within cell could be supported; for simplicity, move cell
-            commitEdit();
-            selectedCol = (selectedCol - 1 + columns.length) % columns.length;
-          } else if (ev.type == KeyEventType.arrowRight) {
-            commitEdit();
-            selectedCol = (selectedCol + 1) % columns.length;
-          } else if (ev.type == KeyEventType.arrowUp) {
-            commitEdit();
-            selectedRow = (selectedRow - 1 + data.length) % data.length;
-          } else if (ev.type == KeyEventType.arrowDown) {
-            commitEdit();
-            selectedRow = (selectedRow + 1) % data.length;
-          }
-        }
+              ensureInBounds();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Arrow Left
+          KeyBinding.single(
+            KeyEventType.arrowLeft,
+            (event) {
+              if (editing) commitEdit();
+              selectedCol = (selectedCol - 1 + columns.length) % columns.length;
+              ensureInBounds();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Arrow Right / Tab
+          KeyBinding.multi(
+            {KeyEventType.arrowRight, KeyEventType.tab},
+            (event) {
+              if (editing) commitEdit();
+              moveToNextCell();
+              ensureInBounds();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Character input
+          KeyBinding.char(
+            (c) => true,
+            (event) {
+              final ch = event.char ?? '';
+              if (!editing) {
+                if (ch == 'a') {
+                  addRowBelow();
+                } else if (ch == 'd') {
+                  deleteRow();
+                } else if (ch == 'e') {
+                  startEditing(overwrite: true);
+                } else if (ch == 's') {
+                  return KeyActionResult.confirmed;
+                } else {
+                  // Begin editing with first typed char overwriting existing content
+                  startEditing(overwrite: true, firstChar: ch);
+                }
+              } else {
+                // Text input - handled by centralized TextInputBuffer
+                editBuffer.handleKey(event);
+              }
+              ensureInBounds();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Backspace (only in editing mode)
+          KeyBinding.single(
+            KeyEventType.backspace,
+            (event) {
+              if (editing) {
+                editBuffer.handleKey(event);
+              }
+              ensureInBounds();
+              return KeyActionResult.handled;
+            },
+          ),
+        ]);
 
-        ensureInBounds();
-        return null;
-      },
+    final runner = PromptRunner(hideCursor: true);
+    runner.runWithBindings(
+      render: render,
+      bindings: bindings,
     );
 
     if (cancelled) return original;

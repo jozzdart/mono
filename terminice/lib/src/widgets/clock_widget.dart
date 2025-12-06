@@ -3,10 +3,9 @@ import 'dart:math';
 import 'dart:async';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// ClockWidget – analog/digital terminal clock.
 ///
@@ -55,12 +54,6 @@ class ClockWidget {
               : 'Digital';
       final l = mode == ClockLayout.sideBySide ? 'Side-by-side' : 'Stacked';
       return '$s · $l';
-    }
-
-    String topTitle() {
-      final frame =
-          FramedLayout('$title · ${modeLabel()}', theme: currentTheme);
-      return frame.top();
     }
 
     String formatTime(DateTime t) {
@@ -208,53 +201,47 @@ class ClockWidget {
     }
 
     void render() {
-      final style = currentTheme.style;
       out.clear();
-      final top = topTitle();
-      out.writeln('${currentTheme.bold}$top${currentTheme.reset}');
-
-      if (style.showBorder) {
-        final frame = FramedLayout(title, theme: currentTheme);
-        out.writeln(frame.connector());
-      }
-
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(currentTheme);
-      final left = lb.gutter();
       final now = DateTime.now();
 
-      if (showAnalog && showDigital && mode == ClockLayout.sideBySide) {
-        final analogLines = renderAnalog(now);
-        final digitalLines = renderDigital(now);
-        final analogWidth = analogLines.isEmpty ? 0 : analogLines.first.length;
-        final gap = 4;
-        final height = analogLines.length;
-        for (var i = 0; i < height; i++) {
-          final a = analogLines[i];
-          final dLine = i < digitalLines.length ? digitalLines[i] : '';
-          final pad = ' ' * (analogWidth - a.length);
-          out.writeln('$left$a$pad${' ' * gap}$dLine');
-        }
-      } else {
-        if (showAnalog) {
-          final lines = renderAnalog(now);
-          for (final l in lines) {
-            out.writeln('$left$l');
-          }
-        }
-        if (showDigital) {
-          if (showAnalog) out.writeln(left);
-          final lines = renderDigital(now);
-          for (final l in lines) {
-            out.writeln('$left$l');
-          }
-        }
-      }
+      // Use WidgetFrame for consistent frame rendering
+      final frame = WidgetFrame(
+        title: '$title · ${modeLabel()}',
+        theme: currentTheme,
+        showConnector: true,
+        hintStyle: HintStyle.none, // Manual hints below
+      );
 
-      if (style.showBorder) {
-        final frame = FramedLayout(title, theme: currentTheme);
-        out.writeln(frame.bottom());
-      }
+      frame.showTo(out, (ctx) {
+        if (showAnalog && showDigital && mode == ClockLayout.sideBySide) {
+          final analogLines = renderAnalog(now);
+          final digitalLines = renderDigital(now);
+          final analogWidth =
+              analogLines.isEmpty ? 0 : analogLines.first.length;
+          final gap = 4;
+          final height = analogLines.length;
+          for (var i = 0; i < height; i++) {
+            final a = analogLines[i];
+            final dLine = i < digitalLines.length ? digitalLines[i] : '';
+            final pad = ' ' * (analogWidth - a.length);
+            ctx.gutterLine('$a$pad${' ' * gap}$dLine');
+          }
+        } else {
+          if (showAnalog) {
+            final lines = renderAnalog(now);
+            for (final l in lines) {
+              ctx.gutterLine(l);
+            }
+          }
+          if (showDigital) {
+            if (showAnalog) ctx.gutterEmpty();
+            final lines = renderDigital(now);
+            for (final l in lines) {
+              ctx.gutterLine(l);
+            }
+          }
+        }
+      });
 
       out.writeln(Hints.grid([
         [Hints.key('A', currentTheme), 'toggle analog'],

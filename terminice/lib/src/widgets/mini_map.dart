@@ -1,7 +1,6 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// MiniMap – ASCII representation of document position.
 ///
@@ -44,48 +43,36 @@ class MiniMap {
         markers = markers ?? const [];
 
   void show() {
-    final out = RenderOutput();
-    _render(out);
+    final title = (label == null || label!.isEmpty) ? 'Mini Map' : label!;
+    final frame = WidgetFrame(title: title, theme: theme);
+    frame.show(_renderContent);
   }
 
   /// Renders to the given [RenderOutput] for external line tracking.
   /// Use this when animating or updating the widget repeatedly.
-  void showTo(RenderOutput out) => _render(out);
-
-  void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final style = theme.style;
+  void showTo(RenderOutput out) {
     final title = (label == null || label!.isEmpty) ? 'Mini Map' : label!;
+    final frame = WidgetFrame(title: title, theme: theme);
+    frame.showTo(out, _renderContent);
+  }
 
-    final frame = FramedLayout(title, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
+  void _renderContent(FrameContext ctx) {
     // Render the map area
     for (int row = 0; row < height; row++) {
-      final line = StringBuffer();
-      // Left gutter aligned with ThemeDemo
-      line.write(lb.gutter());
-      line.write(_rowChunk(row));
-      out.writeln(line.toString());
+      ctx.gutterLine(_rowChunk(row));
     }
 
     // Metrics line beneath the map
     final percentTop = _percent(viewportStart, totalLines);
     final percentBottom = _percent(viewportStart + viewportSize, totalLines);
     final metrics = StringBuffer();
-    metrics.write(lb.gutter());
     metrics.write(
         '${theme.dim}Lines:${theme.reset} ${theme.accent}${_padInt(totalLines)}${theme.reset}   ');
     metrics.write(
         '${theme.dim}View:${theme.reset} ${theme.selection}${_padInt(viewportStart + 1)}${theme.reset}-${theme.selection}${_padInt((viewportStart + viewportSize).clamp(1, totalLines))}${theme.reset}   ');
     metrics.write(
         '${theme.dim}Pos:${theme.reset} ${theme.info}$percentTop%${theme.reset}-${theme.info}$percentBottom%${theme.reset}');
-    out.writeln(metrics.toString());
-
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
+    ctx.gutterLine(metrics.toString());
   }
 
   String _rowChunk(int row) {

@@ -1,0 +1,1036 @@
+import 'key_events.dart';
+export 'key_events.dart' show KeyEventType, KeyEvent;
+import 'prompt_runner.dart';
+import 'text_input_buffer.dart';
+import '../style/theme.dart';
+import 'hints.dart';
+
+// ============================================================================
+// KEY ACTION RESULT
+// ============================================================================
+
+/// Result of a key action handler.
+///
+/// - `handled`: Key was processed, continue the loop (re-render)
+/// - `confirmed`: End prompt with confirmed result
+/// - `cancelled`: End prompt with cancelled result
+/// - `ignored`: Key was not handled by this binding
+enum KeyActionResult {
+  /// Key was handled, continue the prompt loop (trigger re-render)
+  handled,
+
+  /// End prompt with confirmed result
+  confirmed,
+
+  /// End prompt with cancelled result
+  cancelled,
+
+  /// Key was not handled by this binding (try next binding)
+  ignored,
+}
+
+// ============================================================================
+// KEY BINDING
+// ============================================================================
+
+/// A single key binding that maps key events to actions.
+///
+/// This is the core building block of the KeyBindings system.
+/// Each binding can:
+/// - Match one or more key types
+/// - Execute an action when matched
+/// - Provide a hint label and description for UI display
+class KeyBinding {
+  /// Key types that trigger this binding.
+  final Set<KeyEventType> keys;
+
+  /// Optional character matcher (for `KeyEventType.char` events).
+  final bool Function(String char)? charMatcher;
+
+  /// The action to execute when this binding matches.
+  final KeyActionResult Function(KeyEvent event) action;
+
+  /// Short label for hints (e.g., "←/→", "Enter", "Esc")
+  final String? hintLabel;
+
+  /// Description for hints (e.g., "navigate", "confirm", "cancel")
+  final String? hintDescription;
+
+  const KeyBinding({
+    required this.keys,
+    required this.action,
+    this.charMatcher,
+    this.hintLabel,
+    this.hintDescription,
+  });
+
+  /// Creates a binding for a single key type.
+  factory KeyBinding.single(
+    KeyEventType key,
+    KeyActionResult Function(KeyEvent event) action, {
+    String? hintLabel,
+    String? hintDescription,
+  }) {
+    return KeyBinding(
+      keys: {key},
+      action: action,
+      hintLabel: hintLabel,
+      hintDescription: hintDescription,
+    );
+  }
+
+  /// Creates a binding for multiple key types.
+  factory KeyBinding.multi(
+    Set<KeyEventType> keys,
+    KeyActionResult Function(KeyEvent event) action, {
+    String? hintLabel,
+    String? hintDescription,
+  }) {
+    return KeyBinding(
+      keys: keys,
+      action: action,
+      hintLabel: hintLabel,
+      hintDescription: hintDescription,
+    );
+  }
+
+  /// Creates a binding for character input matching a predicate.
+  factory KeyBinding.char(
+    bool Function(String char) matcher,
+    KeyActionResult Function(KeyEvent event) action, {
+    String? hintLabel,
+    String? hintDescription,
+  }) {
+    return KeyBinding(
+      keys: {KeyEventType.char},
+      charMatcher: matcher,
+      action: action,
+      hintLabel: hintLabel,
+      hintDescription: hintDescription,
+    );
+  }
+
+  /// Checks if this binding matches the given event.
+  bool matches(KeyEvent event) {
+    if (!keys.contains(event.type)) return false;
+
+    // For char events, also check the character matcher
+    if (event.type == KeyEventType.char && charMatcher != null) {
+      return event.char != null && charMatcher!(event.char!);
+    }
+
+    return true;
+  }
+
+  /// Attempts to handle the event. Returns the result if matched, null otherwise.
+  KeyActionResult? tryHandle(KeyEvent event) {
+    if (matches(event)) {
+      return action(event);
+    }
+    return null;
+  }
+}
+
+// ============================================================================
+// KEY BINDINGS (composable collection)
+// ============================================================================
+
+/// A composable collection of key bindings.
+///
+/// KeyBindings can be:
+/// - Combined using `+` operator or `merge()`
+/// - Extended with additional bindings
+/// - Used to generate hints automatically
+///
+/// Example:
+/// ```dart
+/// final bindings = KeyBindings.cancel() +
+///     KeyBindings.confirm() +
+///     KeyBindings.navigation(onUp: moveUp, onDown: moveDown);
+/// ```
+class KeyBindings {
+  final List<KeyBinding> _bindings;
+
+  const KeyBindings(this._bindings);
+
+  /// Creates an empty KeyBindings collection.
+  const KeyBindings.empty() : _bindings = const [];
+
+  /// Creates KeyBindings from a list of bindings.
+  factory KeyBindings.from(List<KeyBinding> bindings) => KeyBindings(bindings);
+
+  /// All bindings in this collection.
+  List<KeyBinding> get bindings => List.unmodifiable(_bindings);
+
+  // --------------------------------------------------------------------------
+  // COMPOSITION
+  // --------------------------------------------------------------------------
+
+  /// Combines this with another KeyBindings collection.
+  /// Bindings from [other] are added after this collection's bindings.
+  KeyBindings operator +(KeyBindings other) {
+    return KeyBindings([..._bindings, ...other._bindings]);
+  }
+
+  /// Merges multiple KeyBindings collections.
+  static KeyBindings merge(List<KeyBindings> collections) {
+    return KeyBindings(collections.expand((c) => c._bindings).toList());
+  }
+
+  /// Adds a single binding to this collection.
+  KeyBindings add(KeyBinding binding) {
+    return KeyBindings([..._bindings, binding]);
+  }
+
+  /// Adds multiple bindings to this collection.
+  KeyBindings addAll(List<KeyBinding> bindings) {
+    return KeyBindings([..._bindings, ...bindings]);
+  }
+
+  // --------------------------------------------------------------------------
+  // HANDLING
+  // --------------------------------------------------------------------------
+
+  /// Processes a key event through all bindings.
+  ///
+  /// Returns the first non-ignored result, or [KeyActionResult.ignored]
+  /// if no binding matched.
+  KeyActionResult handle(KeyEvent event) {
+    for (final binding in _bindings) {
+      final result = binding.tryHandle(event);
+      if (result != null && result != KeyActionResult.ignored) {
+        return result;
+      }
+    }
+    return KeyActionResult.ignored;
+  }
+
+  /// Converts the result to PromptRunner's PromptResult.
+  ///
+  /// - `confirmed` → PromptResult.confirmed
+  /// - `cancelled` → PromptResult.cancelled
+  /// - `handled` / `ignored` → null (continue loop)
+  static PromptResult? toPromptResult(KeyActionResult result) {
+    switch (result) {
+      case KeyActionResult.confirmed:
+        return PromptResult.confirmed;
+      case KeyActionResult.cancelled:
+        return PromptResult.cancelled;
+      case KeyActionResult.handled:
+      case KeyActionResult.ignored:
+        return null;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // HINT GENERATION
+  // --------------------------------------------------------------------------
+
+  /// Generates hint entries from all bindings that have hints defined.
+  ///
+  /// Returns a list of [hintLabel, hintDescription] pairs suitable
+  /// for use with `Hints.grid()` or `Hints.bullets()`.
+  List<List<String>> toHintEntries() {
+    final hints = <List<String>>[];
+    for (final binding in _bindings) {
+      if (binding.hintLabel != null && binding.hintDescription != null) {
+        hints.add([binding.hintLabel!, binding.hintDescription!]);
+      }
+    }
+    return hints;
+  }
+
+  /// Generates a hints grid string for display.
+  String toHintsGrid(PromptTheme theme) {
+    return Hints.grid(toHintEntries(), theme);
+  }
+
+  /// Generates a hints bullets string for display.
+  String toHintsBullets(PromptTheme theme) {
+    final entries = toHintEntries();
+    final segments = entries.map((e) => Hints.hint(e[0], e[1], theme)).toList();
+    return Hints.bullets(segments, theme);
+  }
+
+  // --------------------------------------------------------------------------
+  // STANDARD BINDINGS FACTORIES
+  // --------------------------------------------------------------------------
+
+  /// Creates cancel bindings (Esc and Ctrl+C).
+  static KeyBindings cancel({
+    void Function()? onCancel,
+    String hintLabel = 'Esc',
+    String hintDescription = 'cancel',
+  }) {
+    return KeyBindings([
+      KeyBinding.multi(
+        {KeyEventType.esc, KeyEventType.ctrlC},
+        (event) {
+          onCancel?.call();
+          return KeyActionResult.cancelled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates confirm binding (Enter).
+  static KeyBindings confirm({
+    KeyActionResult Function()? onConfirm,
+    String hintLabel = 'Enter',
+    String hintDescription = 'confirm',
+  }) {
+    return KeyBindings([
+      KeyBinding.single(
+        KeyEventType.enter,
+        (event) => onConfirm?.call() ?? KeyActionResult.confirmed,
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates vertical navigation bindings (↑/↓).
+  static KeyBindings verticalNavigation({
+    required void Function() onUp,
+    required void Function() onDown,
+    String hintLabel = '↑/↓',
+    String hintDescription = 'navigate',
+  }) {
+    return KeyBindings([
+      KeyBinding.single(
+        KeyEventType.arrowUp,
+        (event) {
+          onUp();
+          return KeyActionResult.handled;
+        },
+      ),
+      KeyBinding.single(
+        KeyEventType.arrowDown,
+        (event) {
+          onDown();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates horizontal navigation bindings (←/→).
+  static KeyBindings horizontalNavigation({
+    required void Function() onLeft,
+    required void Function() onRight,
+    String hintLabel = '←/→',
+    String hintDescription = 'adjust',
+  }) {
+    return KeyBindings([
+      KeyBinding.single(
+        KeyEventType.arrowLeft,
+        (event) {
+          onLeft();
+          return KeyActionResult.handled;
+        },
+      ),
+      KeyBinding.single(
+        KeyEventType.arrowRight,
+        (event) {
+          onRight();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates all-direction navigation bindings (↑/↓/←/→).
+  static KeyBindings directionalNavigation({
+    void Function()? onUp,
+    void Function()? onDown,
+    void Function()? onLeft,
+    void Function()? onRight,
+    String hintLabel = '↑/↓/←/→',
+    String hintDescription = 'navigate',
+  }) {
+    final bindings = <KeyBinding>[];
+
+    if (onUp != null) {
+      bindings.add(KeyBinding.single(
+        KeyEventType.arrowUp,
+        (event) {
+          onUp();
+          return KeyActionResult.handled;
+        },
+      ));
+    }
+
+    if (onDown != null) {
+      bindings.add(KeyBinding.single(
+        KeyEventType.arrowDown,
+        (event) {
+          onDown();
+          return KeyActionResult.handled;
+        },
+      ));
+    }
+
+    if (onLeft != null) {
+      bindings.add(KeyBinding.single(
+        KeyEventType.arrowLeft,
+        (event) {
+          onLeft();
+          return KeyActionResult.handled;
+        },
+      ));
+    }
+
+    if (onRight != null) {
+      bindings.add(KeyBinding.single(
+        KeyEventType.arrowRight,
+        (event) {
+          onRight();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ));
+    }
+
+    return KeyBindings(bindings);
+  }
+
+  /// Creates toggle binding (Space).
+  static KeyBindings toggle({
+    required void Function() onToggle,
+    String hintLabel = 'Space',
+    String hintDescription = 'toggle',
+  }) {
+    return KeyBindings([
+      KeyBinding.single(
+        KeyEventType.space,
+        (event) {
+          onToggle();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates tab binding.
+  static KeyBindings tab({
+    required void Function() onTab,
+    String hintLabel = 'Tab',
+    String hintDescription = 'switch',
+  }) {
+    return KeyBindings([
+      KeyBinding.single(
+        KeyEventType.tab,
+        (event) {
+          onTab();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates search toggle binding (/).
+  static KeyBindings searchToggle({
+    required void Function() onToggle,
+    String hintLabel = '/',
+    String hintDescription = 'search',
+  }) {
+    return KeyBindings([
+      KeyBinding.single(
+        KeyEventType.slash,
+        (event) {
+          onToggle();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates number key bindings (1-9, optionally 0).
+  static KeyBindings numbers({
+    required void Function(int number) onNumber,
+    int max = 9,
+    bool includeZero = false,
+    String? hintLabel,
+    String? hintDescription,
+  }) {
+    return KeyBindings([
+      KeyBinding.char(
+        (char) {
+          if (!RegExp(r'^[0-9]$').hasMatch(char)) return false;
+          final n = int.parse(char);
+          if (n == 0 && !includeZero) return false;
+          if (n > max) return false;
+          return true;
+        },
+        (event) {
+          final n = int.parse(event.char!);
+          onNumber(n);
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel ?? (includeZero ? '0–$max' : '1–$max'),
+        hintDescription: hintDescription ?? 'set value',
+      ),
+    ]);
+  }
+
+  /// Creates letter key binding for a specific character.
+  static KeyBindings letter({
+    required String char,
+    required void Function() onPress,
+    String? hintLabel,
+    String? hintDescription,
+  }) {
+    final lower = char.toLowerCase();
+    final upper = char.toUpperCase();
+    return KeyBindings([
+      KeyBinding.char(
+        (c) => c == lower || c == upper,
+        (event) {
+          onPress();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel ?? upper,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  // --------------------------------------------------------------------------
+  // COMMON PRESETS
+  // --------------------------------------------------------------------------
+
+  /// Standard prompt bindings: confirm (Enter) + cancel (Esc/Ctrl+C).
+  static KeyBindings prompt({
+    KeyActionResult Function()? onConfirm,
+    void Function()? onCancel,
+  }) {
+    return confirm(onConfirm: onConfirm) + cancel(onCancel: onCancel);
+  }
+
+  /// Standard list bindings: navigation + confirm + cancel.
+  static KeyBindings list({
+    required void Function() onUp,
+    required void Function() onDown,
+    KeyActionResult Function()? onConfirm,
+    void Function()? onCancel,
+  }) {
+    return verticalNavigation(onUp: onUp, onDown: onDown) +
+        confirm(onConfirm: onConfirm) +
+        cancel(onCancel: onCancel);
+  }
+
+  /// Standard selection bindings: navigation + toggle + confirm + cancel.
+  static KeyBindings selection({
+    required void Function() onUp,
+    required void Function() onDown,
+    required void Function() onToggle,
+    KeyActionResult Function()? onConfirm,
+    void Function()? onCancel,
+  }) {
+    return verticalNavigation(onUp: onUp, onDown: onDown) +
+        toggle(onToggle: onToggle, hintDescription: 'select') +
+        confirm(onConfirm: onConfirm) +
+        cancel(onCancel: onCancel);
+  }
+
+  /// Standard slider bindings: horizontal navigation + confirm + cancel.
+  static KeyBindings slider({
+    required void Function() onLeft,
+    required void Function() onRight,
+    KeyActionResult Function()? onConfirm,
+    void Function()? onCancel,
+  }) {
+    return horizontalNavigation(onLeft: onLeft, onRight: onRight) +
+        confirm(onConfirm: onConfirm) +
+        cancel(onCancel: onCancel);
+  }
+
+  /// Standard toggle bindings: arrows toggle + space toggle + confirm + cancel.
+  static KeyBindings togglePrompt({
+    required void Function() onToggle,
+    KeyActionResult Function()? onConfirm,
+    void Function()? onCancel,
+    String toggleHint = 'toggle',
+  }) {
+    return KeyBindings([
+          // All arrow keys toggle
+          KeyBinding.multi(
+            {
+              KeyEventType.arrowLeft,
+              KeyEventType.arrowRight,
+              KeyEventType.arrowUp,
+              KeyEventType.arrowDown,
+            },
+            (event) {
+              onToggle();
+              return KeyActionResult.handled;
+            },
+            hintLabel: '←/→',
+            hintDescription: toggleHint,
+          ),
+          // Space also toggles
+          KeyBinding.single(
+            KeyEventType.space,
+            (event) {
+              onToggle();
+              return KeyActionResult.handled;
+            },
+          ),
+        ]) +
+        confirm(onConfirm: onConfirm) +
+        cancel(onCancel: onCancel);
+  }
+
+  // --------------------------------------------------------------------------
+  // EXTENDED BINDINGS
+  // --------------------------------------------------------------------------
+
+  /// Creates Ctrl+R binding (commonly used for reveal/toggle modes).
+  static KeyBindings ctrlR({
+    required void Function() onPress,
+    String hintLabel = 'Ctrl+R',
+    String hintDescription = 'reveal',
+  }) {
+    return KeyBindings([
+      KeyBinding.single(
+        KeyEventType.ctrlR,
+        (event) {
+          onPress();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates Ctrl+D binding.
+  static KeyBindings ctrlD({
+    required void Function() onPress,
+    String hintLabel = 'Ctrl+D',
+    String? hintDescription,
+  }) {
+    return KeyBindings([
+      KeyBinding.single(
+        KeyEventType.ctrlD,
+        (event) {
+          onPress();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates Tab binding for switching between items/modes.
+  static KeyBindings tabSwitch({
+    required void Function() onTab,
+    String hintLabel = 'Tab',
+    String hintDescription = 'switch',
+  }) {
+    return tab(
+        onTab: onTab, hintLabel: hintLabel, hintDescription: hintDescription);
+  }
+
+  /// Creates text input bindings that delegate to a TextInputBuffer.
+  ///
+  /// This handles typing, backspace, delete, and cursor movement.
+  /// Returns `handled` if the buffer processed the event, `ignored` otherwise.
+  static KeyBindings textInput({
+    required TextInputBuffer buffer,
+    void Function()? onInput,
+  }) {
+    return KeyBindings([
+      KeyBinding(
+        keys: {
+          KeyEventType.char,
+          KeyEventType.backspace,
+          KeyEventType.arrowLeft,
+          KeyEventType.arrowRight,
+        },
+        action: (event) {
+          if (buffer.handleKey(event)) {
+            onInput?.call();
+            return KeyActionResult.handled;
+          }
+          return KeyActionResult.ignored;
+        },
+      ),
+    ]);
+  }
+
+  /// Creates conditional text input bindings (only active when condition is true).
+  ///
+  /// Useful for search fields that can be toggled on/off.
+  static KeyBindings conditionalTextInput({
+    required TextInputBuffer buffer,
+    required bool Function() isEnabled,
+    void Function()? onInput,
+  }) {
+    return KeyBindings([
+      KeyBinding(
+        keys: {
+          KeyEventType.char,
+          KeyEventType.backspace,
+          KeyEventType.arrowLeft,
+          KeyEventType.arrowRight,
+        },
+        action: (event) {
+          if (!isEnabled()) return KeyActionResult.ignored;
+          if (buffer.handleKey(event)) {
+            onInput?.call();
+            return KeyActionResult.handled;
+          }
+          return KeyActionResult.ignored;
+        },
+      ),
+    ]);
+  }
+
+  /// Creates conditional toggle binding (Space only when condition is true).
+  ///
+  /// Useful for multi-select modes where toggle is only available when multiSelect is enabled.
+  static KeyBindings conditionalToggle({
+    required bool Function() isEnabled,
+    required void Function() onToggle,
+    String hintLabel = 'Space',
+    String hintDescription = 'select',
+  }) {
+    return KeyBindings([
+      KeyBinding.single(
+        KeyEventType.space,
+        (event) {
+          if (!isEnabled()) return KeyActionResult.ignored;
+          onToggle();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates row toggle binding (←/→ or Space to toggle current row).
+  ///
+  /// Used for toggle switches where horizontal arrows or space toggle the value.
+  static KeyBindings rowToggle({
+    required void Function() onToggle,
+    String hintLabel = '←/→ / Space',
+    String hintDescription = 'toggle',
+  }) {
+    return KeyBindings([
+      KeyBinding.multi(
+        {KeyEventType.arrowLeft, KeyEventType.arrowRight, KeyEventType.space},
+        (event) {
+          onToggle();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates 2D grid navigation bindings with custom move functions.
+  ///
+  /// Used for grid-based selection (GridSelect, ChoiceMap) where navigation
+  /// wraps around edges and needs custom logic.
+  static KeyBindings gridNavigation({
+    required void Function() onUp,
+    required void Function() onDown,
+    required void Function() onLeft,
+    required void Function() onRight,
+    String hintLabel = '↑/↓/←/→',
+    String hintDescription = 'navigate',
+  }) {
+    return KeyBindings([
+      KeyBinding.single(KeyEventType.arrowUp, (event) {
+        onUp();
+        return KeyActionResult.handled;
+      }),
+      KeyBinding.single(KeyEventType.arrowDown, (event) {
+        onDown();
+        return KeyActionResult.handled;
+      }),
+      KeyBinding.single(KeyEventType.arrowLeft, (event) {
+        onLeft();
+        return KeyActionResult.handled;
+      }),
+      KeyBinding.single(
+        KeyEventType.arrowRight,
+        (event) {
+          onRight();
+          return KeyActionResult.handled;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates 2D grid selection bindings (navigation + optional toggle + confirm + cancel).
+  static KeyBindings gridSelection({
+    required void Function() onUp,
+    required void Function() onDown,
+    required void Function() onLeft,
+    required void Function() onRight,
+    void Function()? onToggle,
+    bool showToggleHint = false,
+    KeyActionResult Function()? onConfirm,
+    void Function()? onCancel,
+  }) {
+    var bindings = gridNavigation(
+      onUp: onUp,
+      onDown: onDown,
+      onLeft: onLeft,
+      onRight: onRight,
+    );
+
+    if (onToggle != null) {
+      bindings = bindings +
+          KeyBindings([
+            KeyBinding.single(
+              KeyEventType.space,
+              (event) {
+                onToggle();
+                return KeyActionResult.handled;
+              },
+              hintLabel: showToggleHint ? 'Space' : null,
+              hintDescription: showToggleHint ? 'toggle selection' : null,
+            ),
+          ]);
+    }
+
+    return bindings +
+        confirm(onConfirm: onConfirm) +
+        cancel(onCancel: onCancel);
+  }
+
+  /// Creates toggle group bindings: vertical nav + row toggle + 'A' for all + prompt.
+  static KeyBindings toggleGroup({
+    required void Function() onUp,
+    required void Function() onDown,
+    required void Function() onToggle,
+    required void Function() onToggleAll,
+    KeyActionResult Function()? onConfirm,
+    void Function()? onCancel,
+  }) {
+    return verticalNavigation(onUp: onUp, onDown: onDown) +
+        rowToggle(onToggle: onToggle) +
+        letter(char: 'A', onPress: onToggleAll, hintDescription: 'toggle all') +
+        confirm(onConfirm: onConfirm) +
+        cancel(onCancel: onCancel);
+  }
+
+  /// Creates searchable list bindings: navigation + search toggle + conditional text input + prompt.
+  static KeyBindings searchableList({
+    required void Function() onUp,
+    required void Function() onDown,
+    required void Function() onSearchToggle,
+    required TextInputBuffer searchBuffer,
+    required bool Function() isSearchEnabled,
+    void Function()? onSearchInput,
+    void Function()? onToggle,
+    bool hasMultiSelect = false,
+    KeyActionResult Function()? onConfirm,
+    void Function()? onCancel,
+  }) {
+    var bindings = verticalNavigation(onUp: onUp, onDown: onDown) +
+        searchToggle(onToggle: onSearchToggle) +
+        conditionalTextInput(
+          buffer: searchBuffer,
+          isEnabled: isSearchEnabled,
+          onInput: onSearchInput,
+        );
+
+    if (hasMultiSelect && onToggle != null) {
+      bindings = bindings +
+          conditionalToggle(
+            isEnabled: () => true,
+            onToggle: onToggle,
+          );
+    }
+
+    return bindings +
+        confirm(onConfirm: onConfirm) +
+        cancel(onCancel: onCancel);
+  }
+
+  /// Creates password prompt bindings: text input + Ctrl+R reveal + prompt.
+  static KeyBindings password({
+    required TextInputBuffer buffer,
+    required void Function() onRevealToggle,
+    KeyActionResult Function()? onConfirm,
+    void Function()? onCancel,
+  }) {
+    return textInput(buffer: buffer) +
+        ctrlR(onPress: onRevealToggle) +
+        confirm(onConfirm: onConfirm) +
+        cancel(onCancel: onCancel);
+  }
+
+  /// Creates text prompt bindings: text input + prompt.
+  static KeyBindings textPrompt({
+    required TextInputBuffer buffer,
+    KeyActionResult Function()? onConfirm,
+    void Function()? onCancel,
+  }) {
+    return textInput(buffer: buffer) +
+        confirm(onConfirm: onConfirm) +
+        cancel(onCancel: onCancel);
+  }
+
+  // --------------------------------------------------------------------------
+  // WAIT / ANY KEY UTILITIES
+  // --------------------------------------------------------------------------
+
+  /// Creates bindings that exit on any of the specified keys.
+  ///
+  /// Useful for "press Enter to continue" or "press any key" scenarios.
+  static KeyBindings exitOn({
+    required Set<KeyEventType> keys,
+    void Function()? onExit,
+    String? hintLabel,
+    String? hintDescription,
+  }) {
+    return KeyBindings([
+      KeyBinding.multi(
+        keys,
+        (event) {
+          onExit?.call();
+          return KeyActionResult.confirmed;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+    ]);
+  }
+
+  /// Creates bindings that exit on common "continue" keys (Enter, Esc, Space).
+  static KeyBindings continuePrompt({
+    void Function()? onContinue,
+    String hintLabel = 'Enter',
+    String hintDescription = 'continue',
+  }) {
+    return exitOn(
+      keys: {KeyEventType.enter, KeyEventType.esc, KeyEventType.space},
+      onExit: onContinue,
+      hintLabel: hintLabel,
+      hintDescription: hintDescription,
+    );
+  }
+
+  /// Creates bindings for "press any key to continue" scenarios.
+  ///
+  /// This matches common navigation keys - not literally every key,
+  /// but the ones users typically expect to work.
+  static KeyBindings anyKeyToContinue({
+    void Function()? onContinue,
+    String hintLabel = 'any key',
+    String hintDescription = 'continue',
+  }) {
+    return KeyBindings([
+      KeyBinding.multi(
+        {
+          KeyEventType.enter,
+          KeyEventType.esc,
+          KeyEventType.space,
+          KeyEventType.arrowLeft,
+          KeyEventType.arrowRight,
+          KeyEventType.arrowUp,
+          KeyEventType.arrowDown,
+          KeyEventType.tab,
+          KeyEventType.ctrlC,
+        },
+        (event) {
+          onContinue?.call();
+          return KeyActionResult.confirmed;
+        },
+        hintLabel: hintLabel,
+        hintDescription: hintDescription,
+      ),
+      // Also handle any character press
+      KeyBinding.char(
+        (c) => true,
+        (event) {
+          onContinue?.call();
+          return KeyActionResult.confirmed;
+        },
+      ),
+    ]);
+  }
+
+  /// Creates "back" bindings (Left arrow, Esc, Enter) for viewer scenarios.
+  static KeyBindings back({
+    void Function()? onBack,
+    String hintLabel = '← / Esc / Enter',
+    String hintDescription = 'back',
+  }) {
+    return exitOn(
+      keys: {
+        KeyEventType.arrowLeft,
+        KeyEventType.esc,
+        KeyEventType.enter,
+        KeyEventType.ctrlC,
+      },
+      onExit: onBack,
+      hintLabel: hintLabel,
+      hintDescription: hintDescription,
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // UTILITY METHODS
+  // --------------------------------------------------------------------------
+
+  /// Waits for any matching key event using KeyEventReader.
+  ///
+  /// This is a convenience method for simple "wait for key" scenarios
+  /// that don't need a full render loop.
+  ///
+  /// Example:
+  /// ```dart
+  /// final bindings = KeyBindings.continuePrompt();
+  /// bindings.waitForKey(); // Blocks until Enter, Esc, or Space
+  /// ```
+  void waitForKey() {
+    while (true) {
+      final event = KeyEventReader.read();
+      final result = handle(event);
+      if (result != KeyActionResult.ignored && result != KeyActionResult.handled) {
+        break;
+      }
+      // For simple wait scenarios, also break on 'handled' if there are no 'ignored' results possible
+      if (result == KeyActionResult.handled) {
+        break;
+      }
+    }
+  }
+
+  /// Waits for a key and returns the result.
+  ///
+  /// Keeps reading keys until a binding returns confirmed, cancelled, or handled.
+  KeyActionResult waitForKeyWithResult() {
+    while (true) {
+      final event = KeyEventReader.read();
+      final result = handle(event);
+      if (result != KeyActionResult.ignored) {
+        return result;
+      }
+    }
+  }
+}

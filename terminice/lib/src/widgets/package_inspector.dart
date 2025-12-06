@@ -1,9 +1,7 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
-import '../system/rendering.dart';
+import '../system/widget_frame.dart';
 
 /// PackageInspector – explore package dependencies and info.
 ///
@@ -28,43 +26,33 @@ class PackageInspector {
         devDependencies = devDependencies ?? const {};
 
   void show() {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final style = theme.style;
-
-    final title = _title();
-    final frame = FramedLayout(title, theme: theme);
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-    stdout.writeln('${lb.gutter()}${sectionHeader(theme, 'Overview')}');
-    stdout.writeln(
-        '${lb.gutter()}${metric(theme, 'Package', packageName, color: theme.accent)}');
-    if ((sdkConstraint ?? '').trim().isNotEmpty) {
-      stdout.writeln(
-          '${lb.gutter()}${metric(theme, 'SDK', sdkConstraint!.trim(), color: theme.highlight)}');
-    }
-    stdout.writeln(
-        '${lb.gutter()}${metric(theme, 'Dependencies', '${dependencies.length}', color: theme.info)}');
-    stdout.writeln(
-        '${lb.gutter()}${metric(theme, 'Dev Dependencies', '${devDependencies.length}', color: theme.gray)}');
-
-    if (dependencies.isNotEmpty) {
-      stdout.writeln('${lb.gutter()}${sectionHeader(theme, 'Dependencies')}');
-      for (final entry in _sorted(dependencies)) {
-        stdout.writeln('${lb.gutter()}${_dep(entry.key, entry.value)}');
+    final frame = WidgetFrame(title: _title(), theme: theme);
+    frame.show((ctx) {
+      ctx.sectionHeader('Overview');
+      ctx.labeledAccent('Package', packageName);
+      if ((sdkConstraint ?? '').trim().isNotEmpty) {
+        ctx.gutterLine(
+            '${theme.dim}SDK:${theme.reset} ${theme.highlight}${sdkConstraint!.trim()}${theme.reset}');
       }
-    }
+      ctx.gutterLine(
+          '${theme.dim}Dependencies:${theme.reset} ${theme.info}${dependencies.length}${theme.reset}');
+      ctx.gutterLine(
+          '${theme.dim}Dev Dependencies:${theme.reset} ${theme.gray}${devDependencies.length}${theme.reset}');
 
-    if (devDependencies.isNotEmpty) {
-      stdout.writeln('${lb.gutter()}${sectionHeader(theme, 'Dev Dependencies')}');
-      for (final entry in _sorted(devDependencies)) {
-        stdout.writeln('${lb.gutter()}${_dep(entry.key, entry.value, dev: true)}');
+      if (dependencies.isNotEmpty) {
+        ctx.sectionHeader('Dependencies');
+        for (final entry in _sorted(dependencies)) {
+          ctx.gutterLine(_dep(entry.key, entry.value));
+        }
       }
-    }
 
-    if (style.showBorder) {
-      stdout.writeln(frame.bottom());
-    }
+      if (devDependencies.isNotEmpty) {
+        ctx.sectionHeader('Dev Dependencies');
+        for (final entry in _sorted(devDependencies)) {
+          ctx.gutterLine(_dep(entry.key, entry.value, dev: true));
+        }
+      }
+    });
   }
 
   String _title() => 'Package Inspector';

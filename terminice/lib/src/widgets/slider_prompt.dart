@@ -2,10 +2,10 @@ import 'dart:io' show sleep;
 import 'dart:math' as math;
 
 import '../style/theme.dart';
+import '../system/key_bindings.dart';
 import '../system/key_events.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// ⚡ Ultra-fast slider with left border and percent above the head.
 class SliderPrompt {
@@ -45,70 +45,65 @@ num _sliderPrompt(
   int width = 28,
   String unit = '%',
 }) {
-  final style = theme.style;
   final runner = PromptRunner(hideCursor: true);
 
   return runner.runCustom((out) {
     num value = initial.clamp(min, max);
     bool cancelled = false;
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.slider(
+      onLeft: () => value = math.max(min, value - step),
+      onRight: () => value = math.min(max, value + step),
+      onCancel: () => cancelled = true,
+    );
+
     double easeOutQuad(double t) => 1 - (1 - t) * (1 - t);
 
+    // Use WidgetFrame for consistent rendering
+    final frame = WidgetFrame(
+      title: label,
+      theme: theme,
+      bindings: bindings,
+      hintStyle: HintStyle.bullets,
+    );
+
     void render({bool pulse = false, bool flare = false}) {
-      // ─ Top line
-      final frame = FramedLayout(label, theme: theme);
-      final top = frame.top();
-      if (style.boldPrompt) out.writeln('${theme.bold}$top${theme.reset}');
+      frame.render(out, (ctx) {
+        // Calculate bar state
+        final ratio = (value - min) / (max - min);
+        final filledLength = (ratio * width).round().clamp(0, width);
+        final percent = (ratio * 100).round();
 
-      // Calculate bar state
-      final ratio = (value - min) / (max - min);
-      final filledLength = (ratio * width).round().clamp(0, width);
-      final percent = (ratio * 100).round();
+        // Gradient shades
+        final shades = ['░', '▒', '▓', '█'];
+        final shade = shades[(ratio * (shades.length - 1)).clamp(0, 3).round()];
 
-      // Gradient shades
-      final shades = ['░', '▒', '▓', '█'];
-      final shade = shades[(ratio * (shades.length - 1)).clamp(0, 3).round()];
+        final barColor = flare
+            ? theme.bold
+            : pulse
+                ? theme.bold
+                : theme.accent;
 
-      final barColor = flare
-          ? theme.bold
-          : pulse
-              ? theme.bold
-              : theme.accent;
+        final filledPart =
+            '$barColor${shade * math.max(0, filledLength)}${theme.reset}';
+        final emptyPart =
+            '${theme.dim}${'·' * (width - filledLength)}${theme.reset}';
 
-      final filledPart =
-          '$barColor${shade * math.max(0, filledLength)}${theme.reset}';
-      final emptyPart =
-          '${theme.dim}${'·' * (width - filledLength)}${theme.reset}';
+        final head = _sliderHead(percent, pulse, flare);
 
-      final head = _sliderHead(percent, pulse, flare);
+        // Tooltip directly above head (no arrow)
+        final tooltipOffset = filledLength;
+        final paddingLeft = ' ' * tooltipOffset;
 
-      // Tooltip directly above head (no arrow)
-      final tooltipOffset = 2 + filledLength; // +1 for border, +1 for space
-      final paddingLeft = ' ' * tooltipOffset;
+        final tooltipText = pulse || flare
+            ? '${theme.bold}$percent$unit${theme.reset}'
+            : '${theme.dim}$percent$unit${theme.reset}';
 
-      final tooltipText = pulse || flare
-          ? '${theme.bold}$percent$unit${theme.reset}'
-          : '${theme.dim}$percent$unit${theme.reset}';
-
-      // Render
-      // Left border is the vertical line ┃ (or │)
-      final border = '${theme.gray}┃${theme.reset}';
-
-      out.writeln('$border$paddingLeft$tooltipText');
-      out.writeln('$border $filledPart$barColor$head${theme.reset}$emptyPart');
-
-      if (style.showBorder) {
-        // Only bottom border — no full frame
-        final bottom = '${theme.gray}┗${'─' * (width + 2)}${theme.reset}';
-        out.writeln(bottom);
-      }
-
-      // Hints
-      out.writeln(Hints.bullets([
-        Hints.hint('←/→', 'adjust', theme),
-        Hints.hint('Enter', 'confirm', theme),
-        Hints.hint('Esc', 'cancel', theme),
-      ], theme));
+        // Render tooltip and bar using gutter lines
+        ctx.gutterLine('$paddingLeft$tooltipText');
+        ctx.gutterLine('$filledPart$barColor$head${theme.reset}$emptyPart');
+      });
     }
 
     // Entry animation
@@ -122,21 +117,13 @@ num _sliderPrompt(
 
     num prev = value;
 
-    // Main input loop
+    // Main input loop - using KeyBindings for handling
     while (true) {
       final ev = KeyEventReader.read();
+      final result = bindings.handle(ev);
 
-      if (ev.type == KeyEventType.enter) break;
-      if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-        cancelled = true;
-        break;
-      }
-
-      if (ev.type == KeyEventType.arrowLeft) {
-        value = math.max(min, value - step);
-      } else if (ev.type == KeyEventType.arrowRight) {
-        value = math.min(max, value + step);
-      }
+      if (result == KeyActionResult.confirmed) break;
+      if (result == KeyActionResult.cancelled) break;
 
       if (value != prev) {
         prev = value;

@@ -3,11 +3,9 @@ import 'dart:math' as math;
 
 import '../style/theme.dart';
 import '../system/terminal.dart';
-import '../system/key_events.dart';
-import '../system/hints.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// Interactive color picker with ANSI preview and hex output.
 ///
@@ -35,8 +33,6 @@ class ColorPickerPrompt {
         assert(rows >= 3 && rows <= 24);
 
   // ───────── Runtime state ─────────
-  late PromptStyle _style;
-  late LineBuilder _lb;
   int _selX = 0;
   int _selY = 0;
   double _saturation = 1.0;
@@ -46,9 +42,6 @@ class ColorPickerPrompt {
 
   /// Runs the picker and returns a hex string like "#RRGGBB" or null if cancelled.
   String? run() {
-    _style = theme.style;
-    // Use centralized line builder for consistent styling
-    _lb = LineBuilder(theme);
     _selX = 0;
     _selY = math.max(0, rows ~/ 2 - 1);
     _saturation = 1.0;
@@ -71,36 +64,77 @@ class ColorPickerPrompt {
       _setFromHex(initialHex!);
     }
 
+    // Build key bindings
+    final bindings = _buildBindings();
+
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: label,
+      theme: theme,
+      bindings: bindings,
+      showConnector: true,
+      hintStyle: HintStyle.grid,
+    );
+
     void render(RenderOutput out) {
-      _renderTitle(out);
-      _renderSubtitle(out);
-      if (_style.showBorder) {
-        final frame = FramedLayout(label, theme: theme);
-        out.writeln(frame.connector());
-      }
-      _renderCaretLine(out);
-      _renderGrid(out);
-      _renderPresets(out);
-      _renderSwatchAndHex(out);
-      if (_style.showBorder) {
-        final frame = FramedLayout(label, theme: theme);
-        out.writeln(frame.bottom());
-      }
-      _renderHints(out);
+      frame.render(out, (ctx) {
+        // Subtitle
+        ctx.gutterLine(
+            '${theme.accent}Pick visually. ${theme.reset}${theme.dim}(←/→ hue, ↑/↓ brightness, S saturation)${theme.reset}');
+
+        // Connector after subtitle
+        ctx.writeConnector();
+
+        // Caret line
+        final caretColumn = _selX * 2;
+        final caretPad = ' ' * caretColumn;
+        ctx.gutterLine('$caretPad${theme.selection}^^${theme.reset}');
+
+        // Color grid
+        for (int y = 0; y < rows; y++) {
+          final line = StringBuffer();
+          line.write(ctx.lb.gutter());
+          for (int x = 0; x < cols; x++) {
+            final hsv = _cellToHsv(x, y, cols, rows, _saturation);
+            final rgb = _hsvToRgb(hsv[0], hsv[1], hsv[2]);
+            final isSel = (x == _selX && y == _selY);
+            line
+              ..write(_bg(rgb[0], rgb[1], rgb[2]))
+              ..write(isSel ? '${theme.inverse}  ${theme.reset}' : '  ')
+              ..write(theme.reset);
+          }
+          ctx.line(line.toString());
+        }
+
+        // Presets line
+        final presetsLine = StringBuffer();
+        presetsLine.write(ctx.lb.gutter());
+        for (int i = 0; i < _presets.length; i++) {
+          final hex = _presets[i]['h']!;
+          final rgb = _hexToRgb(hex);
+          final isCur = i == _presetIndex;
+          final indexLabel = ((i + 1) % 10).toString();
+          final labelText =
+              isCur ? '${theme.inverse}$indexLabel${theme.reset}' : indexLabel;
+          presetsLine
+            ..write(_bg(rgb[0], rgb[1], rgb[2]))
+            ..write(' $labelText ')
+            ..write(theme.reset);
+        }
+        ctx.line(presetsLine.toString());
+
+        // Swatch and hex
+        final hex = _selectedHex();
+        final rgb = _hexToRgb(hex);
+        final swatch = '${_bg(rgb[0], rgb[1], rgb[2])}      ${theme.reset}';
+        ctx.gutterLine('$swatch ${theme.accent}$hex${theme.reset}');
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    final result = runner.run(
+    final result = runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
-        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-          _cancelled = true;
-          return PromptResult.cancelled;
-        }
-        _handleKey(ev);
-        return null;
-      },
+      bindings: bindings,
     );
 
     return (_cancelled || result == PromptResult.cancelled)
@@ -108,164 +142,125 @@ class ColorPickerPrompt {
         : _selectedHex();
   }
 
-  // ───────── Rendering ─────────
-  void _renderTitle(RenderOutput out) {
-    final frame = FramedLayout(label, theme: theme);
-    final top = frame.top();
-    if (_style.boldPrompt) out.writeln('${theme.bold}$top${theme.reset}');
-  }
-
-  void _renderSubtitle(RenderOutput out) {
-    final subtitle =
-        '${_lb.gutter()}${theme.accent}Pick visually. ${theme.reset}${theme.dim}(←/→ hue, ↑/↓ brightness, S saturation)${theme.reset}';
-    out.writeln(subtitle);
-  }
-
-  void _renderCaretLine(RenderOutput out) {
-    final caretColumn = _selX * 2;
-    final caretPad = ' ' * caretColumn;
-    final caretLine = '${_lb.gutter()}$caretPad${theme.selection}^^${theme.reset}';
-    out.writeln(caretLine);
-  }
-
-  void _renderGrid(RenderOutput out) {
-    for (int y = 0; y < rows; y++) {
-      final line = StringBuffer();
-      line.write(_lb.gutter());
-      for (int x = 0; x < cols; x++) {
-        final hsv = _cellToHsv(x, y, cols, rows, _saturation);
-        final rgb = _hsvToRgb(hsv[0], hsv[1], hsv[2]);
-        final isSel = (x == _selX && y == _selY);
-        line
-          ..write(_bg(rgb[0], rgb[1], rgb[2]))
-          ..write(isSel ? '${theme.inverse}  ${theme.reset}' : '  ')
-          ..write(theme.reset);
-      }
-      out.writeln(line.toString());
-    }
-  }
-
-  void _renderPresets(RenderOutput out) {
-    final presetsLine = StringBuffer();
-    presetsLine.write(_lb.gutter());
-    for (int i = 0; i < _presets.length; i++) {
-      final hex = _presets[i]['h']!;
-      final rgb = _hexToRgb(hex);
-      final isCur = i == _presetIndex;
-      final indexLabel = ((i + 1) % 10).toString();
-      final labelText =
-          isCur ? '${theme.inverse}$indexLabel${theme.reset}' : indexLabel;
-      presetsLine
-        ..write(_bg(rgb[0], rgb[1], rgb[2]))
-        ..write(' $labelText ')
-        ..write(theme.reset);
-    }
-    out.writeln(presetsLine.toString());
-  }
-
-  void _renderSwatchAndHex(RenderOutput out) {
-    final hex = _selectedHex();
-    final rgb = _hexToRgb(hex);
-    final swatch = '${_bg(rgb[0], rgb[1], rgb[2])}      ${theme.reset}';
-    out.writeln('${_lb.gutter()}$swatch ${theme.accent}$hex${theme.reset}');
-  }
-
-  void _renderHints(RenderOutput out) {
-    out.writeln(Hints.grid([
-      ['←/→', 'hue'],
-      ['↑/↓', 'brightness'],
-      ['[ / ]', 'sat − / +'],
-      ['- / =', 'bright − / +'],
-      ['S', 'cycle saturation'],
-      ['H', 'type hex'],
-      ['X', 'reset'],
-      ['1-0', 'presets'],
-      ['R', 'random'],
-      ['Enter', 'confirm'],
-      ['Esc', 'cancel'],
-    ], theme));
-  }
-
-  // ───────── Behavior ─────────
-  void _handleKey(KeyEvent ev) {
-    if (ev.type == KeyEventType.arrowLeft) {
-      _selX = (_selX - 1 + cols) % cols;
-      return;
-    }
-    if (ev.type == KeyEventType.arrowRight) {
-      _selX = (_selX + 1) % cols;
-      return;
-    }
-    if (ev.type == KeyEventType.arrowUp) {
-      _selY = math.max(0, _selY - 1);
-      return;
-    }
-    if (ev.type == KeyEventType.arrowDown) {
-      _selY = math.min(rows - 1, _selY + 1);
-      return;
-    }
-    if (ev.type == KeyEventType.char && ev.char != null) {
-      final c = ev.char!;
-      if (c == 's' || c == 'S') {
-        if (_saturation > 0.9) {
-          _saturation = 0.7;
-        } else if (_saturation > 0.6) {
-          _saturation = 0.4;
-        } else {
-          _saturation = 1.0;
-        }
-        return;
-      }
-      if (c == '[') {
-        _saturation = (_saturation - 0.1).clamp(0.0, 1.0);
-        return;
-      }
-      if (c == ']') {
-        _saturation = (_saturation + 0.1).clamp(0.0, 1.0);
-        return;
-      }
-      if (c == '-') {
-        _selY = math.min(rows - 1, _selY + 1);
-        return;
-      }
-      if (c == '=' || c == '+') {
-        _selY = math.max(0, _selY - 1);
-        return;
-      }
-      if (c == 'r' || c == 'R') {
-        _selX = math.Random().nextInt(cols);
-        _selY = math.Random().nextInt(rows);
-        _presetIndex = -1;
-        return;
-      }
-      if (c == 'x' || c == 'X') {
-        if (initialHex != null && _isValidHex(initialHex!)) {
-          _setFromHex(initialHex!);
-        } else {
-          _selX = 0;
-          _selY = math.max(0, rows ~/ 2 - 1);
-          _saturation = 1.0;
-          _presetIndex = -1;
-        }
-        return;
-      }
-      if (c == 'h' || c == 'H') {
-        final value = _promptHexSync();
-        if (value != null && _isValidHex(value)) {
-          _setFromHex(value);
-          _presetIndex = -1;
-        }
-        return;
-      }
-      if (RegExp(r'^[0-9]$').hasMatch(c)) {
-        int idx = c == '0' ? 9 : int.parse(c) - 1;
-        if (idx < _presets.length) {
-          _setFromHex(_presets[idx]['h']!);
-          _presetIndex = idx;
-        }
-        return;
-      }
-    }
+  KeyBindings _buildBindings() {
+    return KeyBindings.directionalNavigation(
+          onUp: () => _selY = math.max(0, _selY - 1),
+          onDown: () => _selY = math.min(rows - 1, _selY + 1),
+          onLeft: () => _selX = (_selX - 1 + cols) % cols,
+          onRight: () => _selX = (_selX + 1) % cols,
+        ) +
+        KeyBindings([
+          // Saturation controls
+          KeyBinding.char(
+            (c) => c == '[',
+            (event) {
+              _saturation = (_saturation - 0.1).clamp(0.0, 1.0);
+              return KeyActionResult.handled;
+            },
+            hintLabel: '[ / ]',
+            hintDescription: 'sat − / +',
+          ),
+          KeyBinding.char(
+            (c) => c == ']',
+            (event) {
+              _saturation = (_saturation + 0.1).clamp(0.0, 1.0);
+              return KeyActionResult.handled;
+            },
+          ),
+          // Brightness controls
+          KeyBinding.char(
+            (c) => c == '-',
+            (event) {
+              _selY = math.min(rows - 1, _selY + 1);
+              return KeyActionResult.handled;
+            },
+            hintLabel: '- / =',
+            hintDescription: 'bright − / +',
+          ),
+          KeyBinding.char(
+            (c) => c == '=' || c == '+',
+            (event) {
+              _selY = math.max(0, _selY - 1);
+              return KeyActionResult.handled;
+            },
+          ),
+          // Cycle saturation
+          KeyBinding.char(
+            (c) => c == 's' || c == 'S',
+            (event) {
+              if (_saturation > 0.9) {
+                _saturation = 0.7;
+              } else if (_saturation > 0.6) {
+                _saturation = 0.4;
+              } else {
+                _saturation = 1.0;
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'S',
+            hintDescription: 'cycle saturation',
+          ),
+          // Type hex
+          KeyBinding.char(
+            (c) => c == 'h' || c == 'H',
+            (event) {
+              final value = _promptHexSync();
+              if (value != null && _isValidHex(value)) {
+                _setFromHex(value);
+                _presetIndex = -1;
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'H',
+            hintDescription: 'type hex',
+          ),
+          // Reset
+          KeyBinding.char(
+            (c) => c == 'x' || c == 'X',
+            (event) {
+              if (initialHex != null && _isValidHex(initialHex!)) {
+                _setFromHex(initialHex!);
+              } else {
+                _selX = 0;
+                _selY = math.max(0, rows ~/ 2 - 1);
+                _saturation = 1.0;
+                _presetIndex = -1;
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'X',
+            hintDescription: 'reset',
+          ),
+          // Presets (1-0)
+          KeyBinding.char(
+            (c) => RegExp(r'^[0-9]$').hasMatch(c),
+            (event) {
+              final c = event.char!;
+              int idx = c == '0' ? 9 : int.parse(c) - 1;
+              if (idx < _presets.length) {
+                _setFromHex(_presets[idx]['h']!);
+                _presetIndex = idx;
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: '1-0',
+            hintDescription: 'presets',
+          ),
+          // Random
+          KeyBinding.char(
+            (c) => c == 'r' || c == 'R',
+            (event) {
+              _selX = math.Random().nextInt(cols);
+              _selY = math.Random().nextInt(rows);
+              _presetIndex = -1;
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'R',
+            hintDescription: 'random',
+          ),
+        ]) +
+        KeyBindings.confirm() +
+        KeyBindings.cancel(onCancel: () => _cancelled = true);
   }
 
   void _setFromHex(String hex) {

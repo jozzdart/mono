@@ -1,9 +1,7 @@
 import '../style/theme.dart';
-import '../system/key_events.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// ConfirmPrompt – elegant instant confirmation dialog (no timers or delays).
 ///
@@ -29,77 +27,45 @@ class ConfirmPrompt {
   });
 
   bool run() {
-    final style = theme.style;
     bool selectedYes = defaultYes;
 
+    // Use KeyBindings for declarative, composable key handling
+    final bindings = KeyBindings.togglePrompt(
+      onToggle: () => selectedYes = !selectedYes,
+    );
+
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: label,
+      theme: theme,
+      bindings: bindings,
+    );
+
     void render(RenderOutput out) {
-      // Header
-      final frame = FramedLayout(label, theme: theme);
-      final top = frame.top();
-      out.writeln(
-        style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top,
-      );
+      frame.render(out, (ctx) {
+        // Message with arrow
+        ctx.emptyLine();
+        ctx.line(
+            ' ${ctx.lb.arrowAccent()} ${theme.bold}$message${theme.reset}');
+        ctx.emptyLine();
 
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
+        // Static "highlighted" buttons (no animation)
+        final yes = selectedYes
+            ? '${theme.inverse}${theme.accent} $yesLabel ${theme.reset}'
+            : '${theme.dim}$yesLabel${theme.reset}';
+        final no = !selectedYes
+            ? '${theme.inverse}${theme.accent} $noLabel ${theme.reset}'
+            : '${theme.dim}$noLabel${theme.reset}';
 
-      // Message
-      out.writeln('');
-      out.writeln(
-        ' ${lb.arrowAccent()} ${theme.bold}$message${theme.reset}',
-      );
-      out.writeln('');
-
-      // Static "highlighted" buttons (no animation)
-      final yes = selectedYes
-          ? '${theme.inverse}${theme.accent} $yesLabel ${theme.reset}'
-          : '${theme.dim}$yesLabel${theme.reset}';
-      final no = !selectedYes
-          ? '${theme.inverse}${theme.accent} $noLabel ${theme.reset}'
-          : '${theme.dim}$noLabel${theme.reset}';
-
-      // Balanced layout
-      out.writeln('   $yes   $no\n');
-
-      // Optional bottom line
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      // Hints
-      out.writeln(Hints.bullets([
-        Hints.hint('←/→', 'toggle', theme),
-        Hints.hint('Enter', 'confirm', theme),
-        Hints.hint('Esc', 'cancel', theme),
-      ], theme));
+        // Balanced layout
+        ctx.line('   $yes   $no\n');
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    final result = runner.run(
+    final result = runner.runWithBindings(
       render: render,
-      onKey: (event) {
-        // Cancel instantly
-        if (event.type == KeyEventType.esc ||
-            event.type == KeyEventType.ctrlC) {
-          return PromptResult.cancelled;
-        }
-
-        // Confirm instantly
-        if (event.type == KeyEventType.enter) {
-          return PromptResult.confirmed;
-        }
-
-        // Toggle instantly
-        if (event.type == KeyEventType.arrowLeft ||
-            event.type == KeyEventType.arrowRight ||
-            event.type == KeyEventType.arrowUp ||
-            event.type == KeyEventType.arrowDown ||
-            event.type == KeyEventType.space) {
-          selectedYes = !selectedYes;
-        }
-
-        return null; // continue loop
-      },
+      bindings: bindings,
     );
 
     if (result == PromptResult.cancelled) return false;

@@ -1,9 +1,7 @@
 import '../style/theme.dart';
-import '../system/key_events.dart';
-import '../system/hints.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// Star rating prompt (1–5) with theme-aware, colored stars (no emojis).
 ///
@@ -29,8 +27,22 @@ class RatingPrompt {
         assert(initial >= 0);
 
   int run() {
-    final style = theme.style;
     int value = initial.clamp(1, maxStars);
+
+    // Use KeyBindings for declarative, composable key handling
+    final bindings = KeyBindings.horizontalNavigation(
+          onLeft: () => value = (value - 1).clamp(1, maxStars),
+          onRight: () => value = (value + 1).clamp(1, maxStars),
+        ) +
+        KeyBindings.numbers(
+          onNumber: (n) {
+            if (n >= 1 && n <= maxStars) value = n;
+          },
+          max: maxStars,
+          hintLabel: '1–$maxStars',
+          hintDescription: 'set exact',
+        ) +
+        KeyBindings.prompt();
 
     String starsLine(int current) {
       final buffer = StringBuffer();
@@ -58,73 +70,39 @@ class RatingPrompt {
       return buffer.toString();
     }
 
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: prompt,
+      theme: theme,
+      bindings: bindings,
+      showConnector: true,
+      hintStyle: HintStyle.grid,
+    );
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
+      frame.render(out, (ctx) {
+        // Stars line
+        final stars = starsLine(value);
+        ctx.gutterLine(stars);
 
-      // Title
-      final frame = FramedLayout(prompt, theme: theme);
-      final top = frame.top();
-      if (style.boldPrompt) out.writeln('${theme.bold}$top${theme.reset}');
-
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
-
-      // Stars line
-      final stars = starsLine(value);
-      out.writeln('${lb.gutter()}$stars');
-
-      // Optional label beneath stars (aligned start)
-      final effectiveLabels = labels;
-      if (effectiveLabels != null && effectiveLabels.length >= maxStars) {
-        final label = effectiveLabels[(value - 1).clamp(0, maxStars - 1)];
-        out.writeln(
-            '${lb.gutter()}${theme.dim}Rating:${theme.reset} ${theme.accent}$label${theme.reset}');
-      } else {
-        // Numeric scale and current value
-        final scale = scaleLine(value);
-        out.writeln(
-            '${lb.gutter()}$scale   ${theme.dim}(${theme.reset}${theme.accent}$value${theme.reset}${theme.dim}/$maxStars${theme.reset}${theme.dim})${theme.reset}');
-      }
-
-      // Bottom border
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      // Hints (grid layout for clarity)
-      out.writeln(Hints.grid([
-        [Hints.key('←/→', theme), 'adjust'],
-        ['1–$maxStars', 'set exact'],
-        [Hints.key('Enter', theme), 'confirm'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
+        // Optional label beneath stars (aligned start)
+        final effectiveLabels = labels;
+        if (effectiveLabels != null && effectiveLabels.length >= maxStars) {
+          final label = effectiveLabels[(value - 1).clamp(0, maxStars - 1)];
+          ctx.labeledAccent('Rating', label);
+        } else {
+          // Numeric scale and current value
+          final scale = scaleLine(value);
+          ctx.gutterLine(
+              '$scale   ${theme.dim}(${theme.reset}${theme.accent}$value${theme.reset}${theme.dim}/$maxStars${theme.reset}${theme.dim})${theme.reset}');
+        }
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    final result = runner.run(
+    final result = runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
-        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-          return PromptResult.cancelled;
-        }
-
-        if (ev.type == KeyEventType.arrowLeft) {
-          value = (value - 1).clamp(1, maxStars);
-        } else if (ev.type == KeyEventType.arrowRight) {
-          value = (value + 1).clamp(1, maxStars);
-        } else if (ev.type == KeyEventType.char && ev.char != null) {
-          final ch = ev.char!;
-          if (RegExp(r'^[0-9]$').hasMatch(ch)) {
-            final n = int.parse(ch);
-            if (n >= 1 && n <= maxStars) value = n;
-          }
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     return result == PromptResult.cancelled

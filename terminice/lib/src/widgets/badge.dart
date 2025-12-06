@@ -1,9 +1,12 @@
 import '../style/theme.dart';
+import '../system/widget_frame.dart' as wf;
 
 /// Badge – inline, theme-aware colored label (e.g., "SUCCESS", "FAILED").
 ///
 /// Designed to align with ThemeDemo styling and the shared PromptTheme system.
 /// Use it to decorate logs or inline outputs with compact, readable labels.
+///
+/// Uses the centralized [InlineStyle] system for consistent theming.
 ///
 /// Example:
 ///   stdout.writeln('Build: ' + Badge.success('SUCCESS').render());
@@ -95,48 +98,39 @@ class Badge {
           bold: bold,
         );
 
-  /// Returns the colored, inline badge string.
+  /// Returns the colored, inline badge string using InlineStyle.
   String render() {
-    final color = _toneColor(tone, theme);
-    final label = ' $text ';
-
-    if (bracketed) {
-      if (inverted) {
-        // Filled look: invert with the tone color across the whole chip
-        final body = '[$label]';
-        return '${bold ? theme.bold : ''}${theme.inverse}$color$body${theme.reset}';
-      }
-      // Outline look: keep brackets neutral, color the text
-      final inner = '${bold ? theme.bold : ''}$color$label${theme.reset}';
-      return '[$inner]';
-    }
-
-    if (inverted) {
-      return '${bold ? theme.bold : ''}${theme.inverse}$color$label${theme.reset}';
-    }
-    return '${bold ? theme.bold : ''}$color$label${theme.reset}';
+    final inline = wf.InlineStyle(theme);
+    return inline.badge(
+      text,
+      tone: _toInlineTone(tone),
+      inverted: inverted,
+      bracketed: bracketed,
+      bold: bold,
+    );
   }
 
   @override
   String toString() => render();
 
-  static String _toneColor(BadgeTone tone, PromptTheme theme) {
-    switch (tone) {
+  static wf.BadgeTone _toInlineTone(BadgeTone t) {
+    // Map local BadgeTone to InlineStyle's BadgeTone
+    switch (t) {
       case BadgeTone.neutral:
-        return theme.gray;
+        return wf.BadgeTone.neutral;
       case BadgeTone.info:
-        return theme.accent;
+        return wf.BadgeTone.info;
       case BadgeTone.success:
-        return theme.checkboxOn;
+        return wf.BadgeTone.success;
       case BadgeTone.warning:
-        return theme.highlight;
+        return wf.BadgeTone.warning;
       case BadgeTone.danger:
-        // Align with StatusLine.error which also uses highlight.
-        return theme.highlight;
+        return wf.BadgeTone.danger;
     }
   }
 }
 
+/// Tone for badges: influences the color.
 enum BadgeTone { neutral, info, success, warning, danger }
 
 

@@ -5,13 +5,13 @@ import 'package:terminice/terminice.dart';
 void main() {
   final items = <StatCardItem>[
     const StatCardItem(
-        label: 'Tests', value: '98%', icon: '✔', tone: StatTone.info),
+        label: 'Tests', value: '98%', icon: '✔', tone: StatCardTone.info),
     const StatCardItem(
-        label: 'Builds', value: '12', icon: '⬤', tone: StatTone.accent),
+        label: 'Builds', value: '12', icon: '⬤', tone: StatCardTone.accent),
     const StatCardItem(
-        label: 'Warnings', value: '2', icon: '⚠', tone: StatTone.warn),
+        label: 'Warnings', value: '2', icon: '⚠', tone: StatCardTone.warn),
     const StatCardItem(
-        label: 'Uptime', value: '24d', icon: '⏱', tone: StatTone.accent),
+        label: 'Uptime', value: '24d', icon: '⏱', tone: StatCardTone.accent),
   ];
 
   // Dark theme

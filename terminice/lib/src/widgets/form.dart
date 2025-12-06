@@ -1,11 +1,9 @@
 import '../style/theme.dart';
 import '../system/focus_navigation.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
+import '../system/widget_frame.dart';
 
 /// Form – multi-field form builder for CLI with auto validation and Tab navigation.
 ///
@@ -56,8 +54,6 @@ class Form {
 
   /// Runs the interactive form. Returns null if cancelled.
   FormResult? run() {
-    final style = theme.style;
-
     // State - use centralized focus navigation for index + error tracking
     final focus = FocusNavigation(itemCount: fields.length);
     // Use centralized text input for each field
@@ -86,60 +82,8 @@ class Form {
       return '${theme.accent}$value${theme.reset}';
     }
 
-    void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-
-      final frame = FramedLayout(title, theme: theme);
-      final baseTitle = frame.top();
-      final header = style.boldPrompt
-          ? '${theme.bold}$baseTitle${theme.reset}'
-          : baseTitle;
-      out.writeln(header);
-
-      // Optional connector line for separation
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
-
-      // Render each field line
-      for (var i = 0; i < fields.length; i++) {
-        final spec = fields[i];
-        final isFocused = focus.isFocused(i);
-        // Use LineBuilder for arrow
-        final arrow = lb.arrow(isFocused);
-
-        final labelPart = '${theme.selection}${spec.label}${theme.reset}';
-        final valuePart = renderValue(values[i], spec);
-        var line = '$arrow $labelPart: $valuePart';
-
-        // Use LineBuilder's writeLine for consistent highlight handling
-        lb.writeLine(out, line, highlighted: isFocused);
-
-        // Error line if invalid - use FocusNavigation's error tracking
-        final err = focus.getError(i);
-        if (err != null && err.isNotEmpty) {
-          out.writeln('${lb.gutter()}${theme.highlight}$err${theme.reset}');
-        }
-      }
-
-      // Bottom border
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      // Hints footer
-      out.writeln(Hints.grid([
-        [Hints.key('Tab', theme), 'next field'],
-        [Hints.key('↑/↓', theme), 'navigate'],
-        [Hints.key('Backspace', theme), 'delete'],
-        [Hints.key('Enter', theme), 'submit'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
-    }
-
-    void handleTextInput(KeyEvent ev) {
-      if (values[focus.focusedIndex].handleKey(ev)) {
+    void handleTextInput(KeyEvent event) {
+      if (values[focus.focusedIndex].handleKey(event)) {
         focus.validateOne(focus.focusedIndex, validateField);
       }
     }
@@ -147,33 +91,98 @@ class Form {
     // Initial validation pass for placeholders/initial
     focus.validateAll(validateField, focusFirstInvalid: false);
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings([
+          // Enter: submit
+          KeyBinding.single(
+            KeyEventType.enter,
+            (event) {
+              if (focus.validateAll(validateField, focusFirstInvalid: true)) {
+                submitted = true;
+                return KeyActionResult.confirmed;
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Enter',
+            hintDescription: 'submit',
+          ),
+          // Tab / Down: next field
+          KeyBinding.multi(
+            {KeyEventType.tab, KeyEventType.arrowDown},
+            (event) {
+              focus.moveDown();
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Tab',
+            hintDescription: 'next field',
+          ),
+          // Up: previous field
+          KeyBinding.single(
+            KeyEventType.arrowUp,
+            (event) {
+              focus.moveUp();
+              return KeyActionResult.handled;
+            },
+            hintLabel: '↑/↓',
+            hintDescription: 'navigate',
+          ),
+          // Text input (typing)
+          KeyBinding.char(
+            (c) => true,
+            (event) {
+              handleTextInput(event);
+              return KeyActionResult.handled;
+            },
+          ),
+          // Backspace
+          KeyBinding.single(
+            KeyEventType.backspace,
+            (event) {
+              handleTextInput(event);
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Backspace',
+            hintDescription: 'delete',
+          ),
+        ]) +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
+
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: title,
+      theme: theme,
+      bindings: bindings,
+      showConnector: true,
+      hintStyle: HintStyle.grid,
+    );
+
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
-      render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
+    runner.runWithBindings(
+      render: (out) {
+        frame.render(out, (ctx) {
+          // Render each field line
+          for (var i = 0; i < fields.length; i++) {
+            final spec = fields[i];
+            final isFocused = focus.isFocused(i);
+            // Use LineBuilder for arrow
+            final arrow = ctx.lb.arrow(isFocused);
 
-        if (ev.type == KeyEventType.enter) {
-          // Use FocusNavigation's validateAll with focusFirstInvalid
-          if (focus.validateAll(validateField, focusFirstInvalid: true)) {
-            submitted = true;
-            return PromptResult.confirmed;
+            final labelPart = '${theme.selection}${spec.label}${theme.reset}';
+            final valuePart = renderValue(values[i], spec);
+            var line = '$arrow $labelPart: $valuePart';
+
+            // Use LineBuilder's writeLine for consistent highlight handling
+            ctx.highlightedLine(line, highlighted: isFocused);
+
+            // Error line if invalid - use FocusNavigation's error tracking
+            final err = focus.getError(i);
+            if (err != null && err.isNotEmpty) {
+              ctx.gutterLine('${theme.highlight}$err${theme.reset}');
+            }
           }
-        } else if (ev.type == KeyEventType.tab ||
-            ev.type == KeyEventType.arrowDown) {
-          focus.moveDown();
-        } else if (ev.type == KeyEventType.arrowUp) {
-          focus.moveUp();
-        } else {
-          // Text input (typing, backspace) - handled by centralized TextInputBuffer
-          handleTextInput(ev);
-        }
-
-        return null;
+        });
       },
+      bindings: bindings,
     );
 
     if (cancelled || !submitted) return null;

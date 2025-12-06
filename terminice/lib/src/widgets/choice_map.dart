@@ -1,12 +1,10 @@
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
+import '../system/widget_frame.dart';
 
 /// ChoiceMap – visual dashboard-like grid of options.
 ///
@@ -60,7 +58,6 @@ List<String> _choiceMap(
   int? cardWidth,
   int? maxColumns,
 }) {
-  final style = theme.style;
   if (items.isEmpty) return [];
 
   // Layout
@@ -90,101 +87,7 @@ List<String> _choiceMap(
   final selected = <int>{};
   bool cancelled = false;
 
-  String pad(String text, int width) {
-    if (text.length > width) {
-      if (width <= 1) return text.substring(0, 1);
-      return '${text.substring(0, width - 1)}…';
-    }
-    return text.padRight(width);
-  }
-
-  ({String top, String bottom}) renderCard(
-    ChoiceMapItem item, {
-    required bool highlighted,
-    required bool checked,
-  }) {
-    final boxWidth = computedCardWidth;
-    final check = multiSelect ? (checked ? '[x] ' : '[ ] ') : '';
-    final titleMax = boxWidth - (multiSelect ? 4 : 0);
-    final title = pad(check + item.label, titleMax);
-    final subtitle = pad((item.subtitle ?? ''), boxWidth).trimRight();
-
-    String paint(String s) {
-      if (highlighted) {
-        if (style.useInverseHighlight) {
-          return '${theme.inverse}$s${theme.reset}';
-        }
-        return '${theme.selection}$s${theme.reset}';
-      }
-      return s;
-    }
-
-    final top = paint(title.padRight(boxWidth));
-    final bottom =
-        paint('${theme.dim}${subtitle.padRight(boxWidth)}${theme.reset}');
-    return (top: top, bottom: bottom);
-  }
-
-  void render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-
-    final frame = FramedLayout(prompt, theme: theme);
-    final header = frame.top();
-    out.writeln(
-        style.boldPrompt ? '${theme.bold}$header${theme.reset}' : header);
-
-    final colSep = '${theme.gray}│${theme.reset}';
-    for (int r = 0; r < rows; r++) {
-      // First line of cards in this row (titles) - using LineBuilder's gutter
-      final line1 = StringBuffer(lb.gutter());
-      // Second line (subtitles)
-      final line2 = StringBuffer(lb.gutter());
-
-      for (int c = 0; c < cols; c++) {
-        final idx = r * cols + c;
-        if (idx >= total) {
-          line1.write(''.padRight(computedCardWidth));
-          line2.write(''.padRight(computedCardWidth));
-        } else {
-          final card = renderCard(
-            items[idx],
-            highlighted: idx == focused,
-            checked: selected.contains(idx),
-          );
-          line1.write(card.top);
-          line2.write(card.bottom);
-        }
-        if (c != cols - 1) {
-          line1.write(colSep);
-          line2.write(colSep);
-        }
-      }
-
-      out.writeln(line1.toString());
-      out.writeln(line2.toString());
-
-      if (r != rows - 1) {
-        final rowLine = List.generate(
-          cols,
-          (i) => '${theme.gray}${'─' * computedCardWidth}${theme.reset}',
-        ).join('${theme.gray}┼${theme.reset}');
-        out.writeln('${lb.gutter()}$rowLine');
-      }
-    }
-
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
-
-    out.writeln(Hints.grid([
-      [Hints.key('↑/↓/←/→', theme), 'navigate'],
-      if (multiSelect) [Hints.key('Space', theme), 'toggle selection'],
-      [Hints.key('Enter', theme), 'confirm'],
-      [Hints.key('Esc', theme), 'cancel'],
-    ], theme));
-  }
-
+  // Grid navigation helpers
   int moveUp(int idx) {
     final col = idx % cols;
     final row = idx ~/ cols;
@@ -216,34 +119,115 @@ List<String> _choiceMap(
   int moveLeft(int idx) => idx == 0 ? total - 1 : idx - 1;
   int moveRight(int idx) => idx == total - 1 ? 0 : idx + 1;
 
-  final runner = PromptRunner(hideCursor: true);
-  final result = runner.run(
-    render: render,
-    onKey: (ev) {
-      if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
-      if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
-        cancelled = true;
-        return PromptResult.cancelled;
-      }
+  // Use KeyBindings for declarative key handling
+  final bindings = KeyBindings.gridSelection(
+    onUp: () => focused = moveUp(focused),
+    onDown: () => focused = moveDown(focused),
+    onLeft: () => focused = moveLeft(focused),
+    onRight: () => focused = moveRight(focused),
+    onToggle: multiSelect
+        ? () {
+            if (selected.contains(focused)) {
+              selected.remove(focused);
+            } else {
+              selected.add(focused);
+            }
+          }
+        : null,
+    showToggleHint: multiSelect,
+    onCancel: () => cancelled = true,
+  );
 
-      if (multiSelect && ev.type == KeyEventType.space) {
-        if (selected.contains(focused)) {
-          selected.remove(focused);
-        } else {
-          selected.add(focused);
+  String pad(String text, int width) {
+    if (text.length > width) {
+      if (width <= 1) return text.substring(0, 1);
+      return '${text.substring(0, width - 1)}…';
+    }
+    return text.padRight(width);
+  }
+
+  ({String top, String bottom}) renderCard(
+    ChoiceMapItem item, {
+    required bool highlighted,
+    required bool checked,
+  }) {
+    final boxWidth = computedCardWidth;
+    final check = multiSelect ? (checked ? '[x] ' : '[ ] ') : '';
+    final titleMax = boxWidth - (multiSelect ? 4 : 0);
+    final title = pad(check + item.label, titleMax);
+    final subtitle = pad((item.subtitle ?? ''), boxWidth).trimRight();
+
+    String paint(String s) {
+      if (highlighted) {
+        if (theme.style.useInverseHighlight) {
+          return '${theme.inverse}$s${theme.reset}';
         }
-      } else if (ev.type == KeyEventType.arrowUp) {
-        focused = moveUp(focused);
-      } else if (ev.type == KeyEventType.arrowDown) {
-        focused = moveDown(focused);
-      } else if (ev.type == KeyEventType.arrowLeft) {
-        focused = moveLeft(focused);
-      } else if (ev.type == KeyEventType.arrowRight) {
-        focused = moveRight(focused);
+        return '${theme.selection}$s${theme.reset}';
       }
+      return s;
+    }
 
-      return null;
-    },
+    final top = paint(title.padRight(boxWidth));
+    final bottom =
+        paint('${theme.dim}${subtitle.padRight(boxWidth)}${theme.reset}');
+    return (top: top, bottom: bottom);
+  }
+
+  // Use WidgetFrame for consistent frame rendering
+  final frame = WidgetFrame(
+    title: prompt,
+    theme: theme,
+    bindings: bindings,
+    hintStyle: HintStyle.grid,
+  );
+
+  void render(RenderOutput out) {
+    frame.render(out, (ctx) {
+      final colSep = '${theme.gray}│${theme.reset}';
+      for (int r = 0; r < rows; r++) {
+        // First line of cards in this row (titles)
+        final line1 = StringBuffer(ctx.lb.gutter());
+        // Second line (subtitles)
+        final line2 = StringBuffer(ctx.lb.gutter());
+
+        for (int c = 0; c < cols; c++) {
+          final idx = r * cols + c;
+          if (idx >= total) {
+            line1.write(''.padRight(computedCardWidth));
+            line2.write(''.padRight(computedCardWidth));
+          } else {
+            final card = renderCard(
+              items[idx],
+              highlighted: idx == focused,
+              checked: selected.contains(idx),
+            );
+            line1.write(card.top);
+            line2.write(card.bottom);
+          }
+          if (c != cols - 1) {
+            line1.write(colSep);
+            line2.write(colSep);
+          }
+        }
+
+        ctx.line(line1.toString());
+        ctx.line(line2.toString());
+
+        if (r != rows - 1) {
+          final rowLine = List.generate(
+            cols,
+            (i) => '${theme.gray}${'─' * computedCardWidth}${theme.reset}',
+          ).join('${theme.gray}┼${theme.reset}');
+          ctx.gutterLine(rowLine);
+        }
+      }
+    });
+  }
+
+  final runner = PromptRunner(hideCursor: true);
+  final result = runner.runWithBindings(
+    render: render,
+    bindings: bindings,
   );
 
   if (cancelled || result == PromptResult.cancelled) return [];

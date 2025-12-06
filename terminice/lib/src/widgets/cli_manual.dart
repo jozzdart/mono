@@ -1,15 +1,13 @@
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
 import '../system/highlighter.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
 import '../system/text_utils.dart' as text_utils;
+import '../system/widget_frame.dart';
 
 class ManualOption {
   final String flag; // e.g. "-f, --force"
@@ -65,8 +63,6 @@ class CLIManual {
 
   ManualPage? run() {
     if (pages.isEmpty) return null;
-
-    final style = theme.style;
 
     // Use centralized text input for search query handling
     final queryInput = TextInputBuffer();
@@ -212,103 +208,136 @@ class CLIManual {
       return lines;
     }
 
+    void moveSelection(int delta) {
+      nav.moveBy(delta);
+      pageScroll = 0;
+    }
+
+    ManualPage? result;
+
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.verticalNavigation(
+          onUp: () => moveSelection(-1),
+          onDown: () => moveSelection(1),
+        ) +
+        KeyBindings([
+          // Horizontal scroll
+          KeyBinding.single(
+            KeyEventType.arrowLeft,
+            (event) {
+              pageScroll = max(0, pageScroll - 1);
+              return KeyActionResult.handled;
+            },
+            hintLabel: '←/→',
+            hintDescription: 'scroll manual',
+          ),
+          KeyBinding.single(
+            KeyEventType.arrowRight,
+            (event) {
+              pageScroll = pageScroll + 1;
+              return KeyActionResult.handled;
+            },
+          ),
+        ]) +
+        KeyBindings.textInput(buffer: queryInput, onInput: updateFilter) +
+        KeyBindings.confirm(
+          onConfirm: () {
+            if (filtered.isNotEmpty) result = filtered[nav.selectedIndex];
+            return KeyActionResult.confirmed;
+          },
+          hintDescription: 'open',
+        ) +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
       final cols = cols0();
       final linesCount = lines0();
+      final style = theme.style;
 
-      final frame = FramedLayout(title, theme: theme);
-      final top = frame.top();
-      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      final widgetFrame = WidgetFrame(
+        title: title,
+        theme: theme,
+        hintStyle: HintStyle.none, // Custom hint handling for fixed layout
+        showConnector: true,
+      );
 
-      out.writeln('${lb.gutter()}${theme.accent}Search:${theme.reset} ${queryInput.text}');
+      widgetFrame.renderContent(out, (ctx) {
+        ctx.labeledValue('Search', queryInput.text, dimLabel: false);
 
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
+        ctx.writeConnector();
 
-      // Fixed layout budgeting: ensure we do not exceed fixed height
+        // Fixed layout budgeting: ensure we do not exceed fixed height
+        final staticBefore = 1 /*title*/ + 1 /*search*/ + (style.showBorder ? 1 : 0) /*top connector*/ + 1 /*results header*/;
+        final staticBetween = (style.showBorder ? 1 : 0) /*separator to preview*/;
+        final staticPreviewHeader = 1;
+        final staticAfter = (style.showBorder ? 1 : 0) /*bottom*/;
+
+        // First allocate rows to list and preview; hints will consume the remainder.
+        int availableRows = max(0, linesCount - (staticBefore + staticBetween + staticPreviewHeader + staticAfter));
+        int listRows = max(3, min(maxVisibleResults, availableRows ~/ 2));
+        int previewRows = max(3, max(0, availableRows - listRows));
+
+        // Results header
+        ctx.gutterLine('${theme.dim}Results (${filtered.length})${theme.reset}');
+
+        // Result window using ListNavigation
+        nav.maxVisible = listRows;
+        final window = nav.visibleWindow(filtered);
+
+        for (var i = 0; i < window.items.length; i++) {
+          final absoluteIdx = window.start + i;
+          final isSel = nav.isSelected(absoluteIdx);
+          final prefix = ctx.lb.arrow(isSel);
+          final label = _labelFor(window.items[i]);
+          final line = '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
+          ctx.highlightedLine(line, highlighted: isSel);
+        }
+
+        for (var pad = (window.items.length); pad < listRows; pad++) {
+          ctx.gutterLine('${theme.dim}·${theme.reset}');
+        }
+
+        ctx.writeConnector();
+
+        // Preview header
+        final selected = filtered.isEmpty ? null : filtered[nav.selectedIndex];
+        final previewTitle = selected == null
+            ? '${theme.dim}no selection${theme.reset}'
+            : '${theme.accent}Manual:${theme.reset} ${_labelFor(selected)}';
+        ctx.gutterLine(previewTitle);
+
+        // Preview content
+        if (selected == null) {
+          for (var i = 0; i < previewRows; i++) {
+            ctx.gutterEmpty();
+          }
+        } else {
+          final contentWidth = max(10, cols - 4);
+          final all = buildManualLines(selected, contentWidth);
+          final startLine = min(pageScroll, max(0, all.length - 1));
+          final endLine = min(startLine + previewRows, all.length);
+          for (var i = startLine; i < endLine; i++) {
+            final ln = text_utils.truncate(all[i], contentWidth);
+            ctx.gutterLine(ln);
+          }
+          for (var i = endLine; i < startLine + previewRows; i++) {
+            ctx.gutterEmpty();
+          }
+        }
+      });
+
+      // Custom hints handling for fixed layout
       final staticBefore = 1 /*title*/ + 1 /*search*/ + (style.showBorder ? 1 : 0) /*top connector*/ + 1 /*results header*/;
       final staticBetween = (style.showBorder ? 1 : 0) /*separator to preview*/;
       final staticPreviewHeader = 1;
       final staticAfter = (style.showBorder ? 1 : 0) /*bottom*/;
-
-      // First allocate rows to list and preview; hints will consume the remainder.
       int availableRows = max(0, linesCount - (staticBefore + staticBetween + staticPreviewHeader + staticAfter));
       int listRows = max(3, min(maxVisibleResults, availableRows ~/ 2));
       int previewRows = max(3, max(0, availableRows - listRows));
-
-      // Results header
-      final headerText = '${theme.dim}Results (${filtered.length})${theme.reset}';
-      out.writeln('${lb.gutter()}$headerText');
-
-      // Result window using ListNavigation
-      nav.maxVisible = listRows;
-      final window = nav.visibleWindow(filtered);
-
-      for (var i = 0; i < window.items.length; i++) {
-        final absoluteIdx = window.start + i;
-        final isSel = nav.isSelected(absoluteIdx);
-        // Use LineBuilder for arrow
-        final prefix = lb.arrow(isSel);
-        final label = _labelFor(window.items[i]);
-        final line = '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
-        // Use LineBuilder's writeLine for consistent highlight handling
-        lb.writeLine(out, line, highlighted: isSel);
-      }
-
-      for (var pad = (window.items.length); pad < listRows; pad++) {
-        out.writeln('${lb.gutter()}${theme.dim}·${theme.reset}');
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
-
-      // Preview header
-      final selected = filtered.isEmpty ? null : filtered[nav.selectedIndex];
-      final previewTitle = selected == null
-          ? lb.emptyMessage('no selection')
-          : '${theme.accent}Manual:${theme.reset} ${_labelFor(selected)}';
-      out.writeln('${lb.gutter()}$previewTitle');
-
-      // Preview content
-      if (selected == null) {
-        for (var i = 0; i < previewRows; i++) {
-          out.writeln(lb.gutterOnly());
-        }
-      } else {
-        final contentWidth = max(10, cols - 4);
-        final all = buildManualLines(selected, contentWidth);
-        final startLine = min(pageScroll, max(0, all.length - 1));
-        final endLine = min(startLine + previewRows, all.length);
-        for (var i = startLine; i < endLine; i++) {
-          final ln = text_utils.truncate(all[i], contentWidth);
-          out.writeln('${lb.gutter()}$ln');
-        }
-        for (var i = endLine; i < startLine + previewRows; i++) {
-          out.writeln(lb.gutterOnly());
-        }
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      // Hints: crop to remaining space to preserve fixed height
-      final hintsBlock = Hints.grid([
-        [Hints.key('type', theme), 'search'],
-        [Hints.key('↑/↓', theme), 'results'],
-        [Hints.key('←/→', theme), 'scroll manual'],
-        [Hints.key('Backspace', theme), 'erase'],
-        [Hints.key('Enter', theme), 'open'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme);
-
       final consumed = staticBefore + listRows + staticBetween + staticPreviewHeader + previewRows + staticAfter;
       final remaining = max(0, linesCount - consumed);
       if (remaining > 0) {
+        final hintsBlock = bindings.toHintsGrid(theme);
         final hintLines = hintsBlock.split('\n');
         final toShow = min(remaining, hintLines.length);
         for (var i = 0; i < toShow; i++) {
@@ -317,44 +346,12 @@ class CLIManual {
       }
     }
 
-    void moveSelection(int delta) {
-      nav.moveBy(delta);
-      pageScroll = 0;
-    }
-
     updateFilter();
 
-    ManualPage? result;
-
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
+    runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        if (ev.type == KeyEventType.enter) {
-          if (filtered.isNotEmpty) result = filtered[nav.selectedIndex];
-          return PromptResult.confirmed;
-        }
-
-        if (ev.type == KeyEventType.arrowUp) {
-          moveSelection(-1);
-        } else if (ev.type == KeyEventType.arrowDown) {
-          moveSelection(1);
-        } else if (ev.type == KeyEventType.arrowLeft) {
-          pageScroll = max(0, pageScroll - 1);
-        } else if (ev.type == KeyEventType.arrowRight) {
-          pageScroll = pageScroll + 1;
-        } else if (queryInput.handleKey(ev)) {
-          // Text input (typing, backspace) - handled by centralized TextInputBuffer
-          updateFilter();
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     return cancelled ? null : result;

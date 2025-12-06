@@ -1,9 +1,8 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/key_events.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// HotkeyGuide – displays available shortcuts in a themed frame.
 ///
@@ -31,39 +30,42 @@ class HotkeyGuide {
 
   /// Renders the guide to a RenderOutput.
   void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
+    final widgetFrame = WidgetFrame(
+      title: title,
+      theme: theme,
+      hintStyle: HintStyle.none,
+    );
 
-    final frame = FramedLayout(title, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
+    widgetFrame.render(out, (ctx) {
+      final body = Hints.grid(shortcuts, theme).split('\n');
+      for (final line in body) {
+        ctx.gutterLine(line);
+      }
 
-    final body = Hints.grid(shortcuts, theme).split('\n');
-    for (final line in body) {
-      out.writeln('${lb.gutter()}$line');
-    }
-
-    if (footerHints.isNotEmpty) {
-      out.writeln('${lb.gutter()}${Hints.comma(footerHints, theme)}');
-    }
-
-    final bottom = frame.bottom();
-    out.writeln(bottom);
+      if (footerHints.isNotEmpty) {
+        ctx.gutterLine(Hints.comma(footerHints, theme));
+      }
+    });
   }
 
   /// Displays the guide and waits for a close key: Esc, Enter, or '?'.
   void run() {
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings([
+      KeyBinding.multi(
+        {KeyEventType.esc, KeyEventType.enter},
+        (event) => KeyActionResult.confirmed,
+      ),
+      KeyBinding.char(
+        (c) => c == '?',
+        (event) => KeyActionResult.confirmed,
+      ),
+    ]) + KeyBindings.cancel();
+
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
+    runner.runWithBindings(
       render: _render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.esc ||
-            ev.type == KeyEventType.enter ||
-            (ev.type == KeyEventType.char && ev.char == '?') ||
-            ev.type == KeyEventType.ctrlC) {
-          return PromptResult.confirmed;
-        }
-        return null;
-      },
+      bindings: bindings,
     );
   }
 }

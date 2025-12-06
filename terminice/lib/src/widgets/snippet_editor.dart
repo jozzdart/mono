@@ -1,11 +1,9 @@
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/key_events.dart';
-import '../system/hints.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// SnippetEditor – small code editor with syntax highlighting.
 ///
@@ -38,168 +36,199 @@ class SnippetEditor {
   /// Runs the editor and returns the final snippet.
   /// Returns an empty string when cancelled.
   String run() {
-    final style = theme.style;
-
     final lines = initialText.isEmpty ? <String>[''] : initialText.split('\n');
     int cursorLine = 0;
     int cursorColumn = 0;
     int scrollOffset = 0;
     bool cancelled = false;
 
+    void updateScroll() {
+      if (cursorLine < scrollOffset) {
+        scrollOffset = cursorLine;
+      } else if (cursorLine >= scrollOffset + visibleLines) {
+        scrollOffset = cursorLine - visibleLines + 1;
+      }
+    }
+
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings([
+          // Vertical movement
+          KeyBinding.single(
+            KeyEventType.arrowUp,
+            (event) {
+              if (cursorLine > 0) cursorLine--;
+              cursorColumn = min(cursorColumn, lines[cursorLine].length);
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+            hintLabel: '↑/↓',
+            hintDescription: 'line',
+          ),
+          KeyBinding.single(
+            KeyEventType.arrowDown,
+            (event) {
+              if (cursorLine < lines.length - 1) cursorLine++;
+              cursorColumn = min(cursorColumn, lines[cursorLine].length);
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Horizontal movement
+          KeyBinding.single(
+            KeyEventType.arrowLeft,
+            (event) {
+              if (cursorColumn > 0) {
+                cursorColumn--;
+              } else if (cursorLine > 0) {
+                cursorLine--;
+                cursorColumn = lines[cursorLine].length;
+              }
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+            hintLabel: '←/→',
+            hintDescription: 'move',
+          ),
+          KeyBinding.single(
+            KeyEventType.arrowRight,
+            (event) {
+              if (cursorColumn < lines[cursorLine].length) {
+                cursorColumn++;
+              } else if (cursorLine < lines.length - 1) {
+                cursorLine++;
+                cursorColumn = 0;
+              }
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Tab → two spaces
+          KeyBinding.single(
+            KeyEventType.tab,
+            (event) {
+              final line = lines[cursorLine];
+              final before = line.substring(0, cursorColumn);
+              final after = line.substring(cursorColumn);
+              lines[cursorLine] = '$before  $after';
+              cursorColumn += 2;
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Tab',
+            hintDescription: 'indent',
+          ),
+          // Enter → new line
+          KeyBinding.single(
+            KeyEventType.enter,
+            (event) {
+              if (lines.length < maxLines) {
+                final line = lines[cursorLine];
+                final before = line.substring(0, cursorColumn);
+                final after = line.substring(cursorColumn);
+                lines[cursorLine] = before;
+                lines.insert(cursorLine + 1, after);
+                cursorLine++;
+                cursorColumn = 0;
+              }
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Enter',
+            hintDescription: 'newline',
+          ),
+          // Backspace
+          KeyBinding.single(
+            KeyEventType.backspace,
+            (event) {
+              if (cursorColumn > 0) {
+                final line = lines[cursorLine];
+                lines[cursorLine] = line.substring(0, cursorColumn - 1) +
+                    line.substring(cursorColumn);
+                cursorColumn--;
+              } else if (cursorLine > 0) {
+                final prev = lines[cursorLine - 1];
+                final current = lines.removeAt(cursorLine);
+                cursorLine--;
+                cursorColumn = prev.length;
+                lines[cursorLine] = prev + current;
+              }
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Typing
+          KeyBinding.char(
+            (c) => true,
+            (event) {
+              final ch = event.char!;
+              final line = lines[cursorLine];
+              final before = line.substring(0, cursorColumn);
+              final after = line.substring(cursorColumn);
+              lines[cursorLine] = '$before$ch$after';
+              cursorColumn++;
+              return KeyActionResult.handled;
+            },
+          ),
+          // Ctrl+D confirm (only if allowEmpty or non-empty)
+          KeyBinding.single(
+            KeyEventType.ctrlD,
+            (event) {
+              if (allowEmpty || lines.any((l) => l.trim().isNotEmpty)) {
+                return KeyActionResult.confirmed;
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Ctrl+D',
+            hintDescription: 'confirm',
+          ),
+        ]) +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
+      final widgetFrame = WidgetFrame(
+        title: _titleWithLang(title),
+        theme: theme,
+        bindings: bindings,
+        hintStyle: HintStyle.bullets,
+      );
 
-      // Header
-      final frame = FramedLayout(_titleWithLang(title), theme: theme);
-      final top = frame.top();
-      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      widgetFrame.render(out, (ctx) {
+        // Visible viewport
+        final start = scrollOffset;
+        final end = min(scrollOffset + visibleLines, lines.length);
+        for (var i = start; i < end; i++) {
+          final raw = lines[i];
+          final isCursorLine = i == cursorLine;
+          final prefix = ctx.lb.arrow(isCursorLine);
 
-      // Visible viewport
-      final start = scrollOffset;
-      final end = min(scrollOffset + visibleLines, lines.length);
-      for (var i = start; i < end; i++) {
-        final raw = lines[i];
-        final isCursorLine = i == cursorLine;
-        final prefix = lb.arrow(isCursorLine);
+          if (isCursorLine) {
+            final before = raw.substring(0, min(cursorColumn, raw.length));
+            final after = raw.substring(min(cursorColumn, raw.length));
+            final cursorChar = after.isEmpty ? ' ' : after[0];
+            final afterTail = after.length > 1 ? after.substring(1) : '';
 
-        if (isCursorLine) {
-          final before = raw.substring(0, min(cursorColumn, raw.length));
-          final after = raw.substring(min(cursorColumn, raw.length));
-          final cursorChar = after.isEmpty ? ' ' : after[0];
-          final afterTail = after.length > 1 ? after.substring(1) : '';
+            final lang = _resolveLanguage(raw);
+            final beforeH = _highlightLine(before, lang);
+            final afterH = _highlightLine(afterTail, lang);
+            final cursorCell = '${theme.inverse}$cursorChar${theme.reset}';
 
-          final lang = _resolveLanguage(raw);
-          final beforeH = _highlightLine(before, lang);
-          final afterH = _highlightLine(afterTail, lang);
-          final cursorCell = '${theme.inverse}$cursorChar${theme.reset}';
-
-          out.writeln('${lb.gutter()}$prefix $beforeH$cursorCell$afterH');
-        } else {
-          final lang = _resolveLanguage(raw);
-          out.writeln('${lb.gutter()}$prefix ${_highlightLine(raw, lang)}');
+            ctx.gutterLine('$prefix $beforeH$cursorCell$afterH');
+          } else {
+            final lang = _resolveLanguage(raw);
+            ctx.gutterLine('$prefix ${_highlightLine(raw, lang)}');
+          }
         }
-      }
 
-      // Fill remaining lines
-      for (var i = end; i < start + visibleLines; i++) {
-        out.writeln('${lb.gutterOnly()}   ${theme.dim}~${theme.reset}');
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      out.writeln(Hints.bullets([
-        Hints.hint('↑/↓', 'line', theme),
-        Hints.hint('←/→', 'move', theme),
-        Hints.hint('Tab', 'indent', theme),
-        Hints.hint('Enter', 'newline', theme),
-        Hints.hint('Ctrl+D', 'confirm', theme),
-        Hints.hint('Esc', 'cancel', theme),
-      ], theme));
+        // Fill remaining lines
+        for (var i = end; i < start + visibleLines; i++) {
+          ctx.line('${ctx.lb.gutterOnly()}   ${theme.dim}~${theme.reset}');
+        }
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
+    runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        // Cancel
-        if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        // Confirm
-        if (ev.type == KeyEventType.ctrlD) {
-          if (allowEmpty || lines.any((l) => l.trim().isNotEmpty)) {
-            return PromptResult.confirmed;
-          }
-        }
-
-        // Typing
-        if (ev.type == KeyEventType.char && ev.char != null) {
-          final ch = ev.char!;
-          final line = lines[cursorLine];
-          final before = line.substring(0, cursorColumn);
-          final after = line.substring(cursorColumn);
-          lines[cursorLine] = '$before$ch$after';
-          cursorColumn++;
-        }
-
-        // Tab → two spaces
-        else if (ev.type == KeyEventType.tab) {
-          final line = lines[cursorLine];
-          final before = line.substring(0, cursorColumn);
-          final after = line.substring(cursorColumn);
-          lines[cursorLine] = '$before  $after';
-          cursorColumn += 2;
-        }
-
-        // Backspace
-        else if (ev.type == KeyEventType.backspace) {
-          if (cursorColumn > 0) {
-            final line = lines[cursorLine];
-            lines[cursorLine] =
-                line.substring(0, cursorColumn - 1) + line.substring(cursorColumn);
-            cursorColumn--;
-          } else if (cursorLine > 0) {
-            final prev = lines[cursorLine - 1];
-            final current = lines.removeAt(cursorLine);
-            cursorLine--;
-            cursorColumn = prev.length;
-            lines[cursorLine] = prev + current;
-          }
-        }
-
-        // Enter → new line
-        else if (ev.type == KeyEventType.enter) {
-          if (lines.length < maxLines) {
-            final line = lines[cursorLine];
-            final before = line.substring(0, cursorColumn);
-            final after = line.substring(cursorColumn);
-            lines[cursorLine] = before;
-            lines.insert(cursorLine + 1, after);
-            cursorLine++;
-            cursorColumn = 0;
-          }
-        }
-
-        // Vertical movement
-        else if (ev.type == KeyEventType.arrowUp) {
-          if (cursorLine > 0) cursorLine--;
-          cursorColumn = min(cursorColumn, lines[cursorLine].length);
-        } else if (ev.type == KeyEventType.arrowDown) {
-          if (cursorLine < lines.length - 1) cursorLine++;
-          cursorColumn = min(cursorColumn, lines[cursorLine].length);
-        }
-
-        // Horizontal movement
-        else if (ev.type == KeyEventType.arrowLeft) {
-          if (cursorColumn > 0) {
-            cursorColumn--;
-          } else if (cursorLine > 0) {
-            cursorLine--;
-            cursorColumn = lines[cursorLine].length;
-          }
-        } else if (ev.type == KeyEventType.arrowRight) {
-          if (cursorColumn < lines[cursorLine].length) {
-            cursorColumn++;
-          } else if (cursorLine < lines.length - 1) {
-            cursorLine++;
-            cursorColumn = 0;
-          }
-        }
-
-        // Scroll viewport
-        if (cursorLine < scrollOffset) {
-          scrollOffset = cursorLine;
-        } else if (cursorLine >= scrollOffset + visibleLines) {
-          scrollOffset = cursorLine - visibleLines + 1;
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     if (cancelled) return '';
@@ -268,11 +297,44 @@ class SnippetEditor {
 
     // Keywords
     const keywords = [
-      'class', 'enum', 'import', 'as', 'show', 'hide', 'void', 'final',
-      'const', 'var', 'return', 'if', 'else', 'for', 'while', 'switch',
-      'case', 'break', 'continue', 'try', 'catch', 'on', 'throw', 'new',
-      'this', 'super', 'extends', 'with', 'implements', 'static', 'get',
-      'set', 'async', 'await', 'yield', 'true', 'false', 'null'
+      'class',
+      'enum',
+      'import',
+      'as',
+      'show',
+      'hide',
+      'void',
+      'final',
+      'const',
+      'var',
+      'return',
+      'if',
+      'else',
+      'for',
+      'while',
+      'switch',
+      'case',
+      'break',
+      'continue',
+      'try',
+      'catch',
+      'on',
+      'throw',
+      'new',
+      'this',
+      'super',
+      'extends',
+      'with',
+      'implements',
+      'static',
+      'get',
+      'set',
+      'async',
+      'await',
+      'yield',
+      'true',
+      'false',
+      'null'
     ];
     final kw = RegExp(r'\\b(' + keywords.join('|') + r')\\b');
     out = out.replaceAllMapped(
@@ -377,5 +439,3 @@ class SnippetEditor {
     return out;
   }
 }
-
-

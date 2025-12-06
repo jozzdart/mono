@@ -1,7 +1,5 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
-import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// StatCards – big numeric highlights (e.g., "✔ Tests: 98%")
 ///
@@ -21,65 +19,50 @@ class StatCards {
   });
 
   void show() {
-    final out = RenderOutput();
-    _render(out);
-  }
-
-  void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final style = theme.style;
-
     final label = title == null || title!.isEmpty ? 'Stats' : title!;
-    final frame = FramedLayout(label, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-    for (final item in items) {
-      final toneColor = _colorFor(item.tone, theme);
-      final icon = (item.icon == null || item.icon!.isEmpty) ? '✔' : item.icon!;
-
-      final line = StringBuffer();
-      line.write(lb.gutter());
-      line.write('$toneColor$icon${theme.reset} ');
-      line.write('${theme.dim}${item.label}:${theme.reset} ');
-      line.write('${theme.selection}${theme.bold}${item.value}${theme.reset}');
-
-      out.writeln(line.toString());
-    }
-
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
+    final frame = WidgetFrame(title: label, theme: theme);
+    frame.show((ctx) {
+      for (final item in items) {
+        final icon =
+            (item.icon == null || item.icon!.isEmpty) ? '✔' : item.icon!;
+        ctx.statItem(
+          item.label,
+          item.value,
+          icon: icon,
+          tone: _toStatTone(item.tone),
+        );
+      }
+    });
   }
 }
 
 /// Tone for a stat card: influences the icon color.
-enum StatTone { info, warn, error, accent }
+enum StatCardTone { info, warn, error, accent }
 
 class StatCardItem {
   final String label;
   final String value;
   final String? icon; // e.g., '✔', '⚠', '⏱'
-  final StatTone tone;
+  final StatCardTone tone;
 
   const StatCardItem({
     required this.label,
     required this.value,
     this.icon,
-    this.tone = StatTone.accent,
+    this.tone = StatCardTone.accent,
   });
 }
 
-String _colorFor(StatTone t, PromptTheme theme) {
+StatTone _toStatTone(StatCardTone t) {
   switch (t) {
-    case StatTone.info:
-      return theme.info;
-    case StatTone.warn:
-      return theme.warn;
-    case StatTone.error:
-      return theme.error;
-    case StatTone.accent:
-      return theme.accent;
+    case StatCardTone.info:
+      return StatTone.info;
+    case StatCardTone.warn:
+      return StatTone.warn;
+    case StatCardTone.error:
+      return StatTone.error;
+    case StatCardTone.accent:
+      return StatTone.accent;
   }
 }
 

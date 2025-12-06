@@ -1,6 +1,5 @@
 import '../style/theme.dart';
-import '../system/frame_renderer.dart';
-import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 enum InfoBoxType { info, warn, error }
 
@@ -30,30 +29,15 @@ class InfoBox {
 
   /// Render the box to stdout.
   void show() {
-    final out = RenderOutput();
-    _render(out);
-  }
-
-  void _render(RenderOutput out) {
-    final style = theme.style;
-
     final label = title ?? _defaultTitle(type);
-    final content = lines.isEmpty ? const <String>[] : lines;
-
-    final statusColor = _colorFor(type, theme);
-    final top = style.showBorder
-        ? FrameRenderer.titleWithBordersColored(label, theme, statusColor)
-        : FrameRenderer.plainTitleColored(label, theme, statusColor);
-    out.writeln('${theme.bold}$top${theme.reset}');
-
-    for (final line in content) {
-      out.writeln(
-          '$statusColor${style.borderVertical}${theme.reset} $statusColor$line${theme.reset}');
-    }
-
-    if (style.showBorder) {
-      out.writeln(FrameRenderer.bottomLineColored(label, theme, statusColor));
-    }
+    final frame = WidgetFrame(title: label, theme: theme);
+    frame.show((ctx) {
+      final tone = _toStatTone(type);
+      final icon = _iconFor(type);
+      for (final line in lines) {
+        ctx.styledMessage(line, icon: icon, tone: tone);
+      }
+    });
   }
 }
 
@@ -78,13 +62,24 @@ String _defaultTitle(InfoBoxType t) {
   }
 }
 
-String _colorFor(InfoBoxType t, PromptTheme theme) {
+StatTone _toStatTone(InfoBoxType t) {
   switch (t) {
     case InfoBoxType.info:
-      return theme.info;
+      return StatTone.info;
     case InfoBoxType.warn:
-      return theme.warn;
+      return StatTone.warn;
     case InfoBoxType.error:
-      return theme.error;
+      return StatTone.error;
+  }
+}
+
+String _iconFor(InfoBoxType t) {
+  switch (t) {
+    case InfoBoxType.info:
+      return 'ℹ';
+    case InfoBoxType.warn:
+      return '⚠';
+    case InfoBoxType.error:
+      return '✖';
   }
 }

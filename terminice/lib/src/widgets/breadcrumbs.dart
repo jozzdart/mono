@@ -1,8 +1,6 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
 import '../system/rendering.dart';
-import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// Breadcrumbs – file path navigation line.
 ///
@@ -26,25 +24,11 @@ class Breadcrumbs {
   });
 
   void show() {
-    final out = RenderOutput();
-    _render(out);
-  }
-
-  void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final style = theme.style;
     final titleText = label ?? 'Breadcrumbs';
-
-    final frame = FramedLayout(titleText, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-    final rendered = _renderBreadcrumbLine();
-    out.writeln('${lb.gutter()}$rendered');
-
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
+    final frame = WidgetFrame(title: titleText, theme: theme);
+    frame.show((ctx) {
+      ctx.gutterLine(_renderBreadcrumbLine());
+    });
   }
 
   String _renderBreadcrumbLine() {

@@ -4,16 +4,15 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/frame_renderer.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// Temperature units supported by the widget.
 enum TemperatureUnit { celsius, fahrenheit }
 
 /// A themed CLI widget that shows live weather using the Open‑Meteo API.
 ///
-/// Aligns with ThemeDemo styling via [PromptTheme] and [FrameRenderer].
+/// Aligns with ThemeDemo styling via [PromptTheme] and [WidgetFrame].
 class WeatherWidget {
   final String? city;
   final double? latitude;
@@ -40,8 +39,6 @@ class WeatherWidget {
 
   /// Fetches and renders the weather box.
   Future<void> show() async {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
     final out = RenderOutput();
     final style = theme.style;
 
@@ -52,22 +49,20 @@ class WeatherWidget {
       final unitSymbol = unit == TemperatureUnit.celsius ? '°C' : '°F';
       final iconDesc = _iconAndDescription(weather.weatherCode);
 
-      final frame = FramedLayout('$title – ${loc.displayName}', theme: theme);
-      out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-      out.writeln(
-          '${lb.gutter()}${theme.info}Now${theme.reset}: ${iconDesc.icon} ${iconDesc.description}');
-      out.writeln(
-          '${lb.gutter()}${theme.accent}${weather.temperature.toStringAsFixed(1)}$unitSymbol${theme.reset}  •  Wind ${weather.windSpeed.toStringAsFixed(0)} km/h ${_arrowForWind(weather.windDirection)}');
-      out.writeln(
-          '${lb.gutter()}${theme.dim}lat ${loc.latitude.toStringAsFixed(2)}, lon ${loc.longitude.toStringAsFixed(2)}${theme.reset}');
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
+      final frame =
+          WidgetFrame(title: '$title – ${loc.displayName}', theme: theme);
+      frame.showTo(out, (ctx) {
+        ctx.gutterLine(
+            '${theme.info}Now${theme.reset}: ${iconDesc.icon} ${iconDesc.description}');
+        ctx.gutterLine(
+            '${theme.accent}${weather.temperature.toStringAsFixed(1)}$unitSymbol${theme.reset}  •  Wind ${weather.windSpeed.toStringAsFixed(0)} km/h ${_arrowForWind(weather.windDirection)}');
+        ctx.dimMessage(
+            'lat ${loc.latitude.toStringAsFixed(2)}, lon ${loc.longitude.toStringAsFixed(2)}');
+      });
     } catch (e) {
       final label = '$title – Error';
-      final top = FrameRenderer.titleWithBordersColored(label, theme, theme.error);
+      final top =
+          FrameRenderer.titleWithBordersColored(label, theme, theme.error);
       out.writeln('${theme.bold}$top${theme.reset}');
       out.writeln(
           '${theme.error}${style.borderVertical}${theme.reset} ${theme.error}Failed to load weather: $e${theme.reset}');

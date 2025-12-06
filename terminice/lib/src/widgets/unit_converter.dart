@@ -2,12 +2,12 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
-import '../system/key_events.dart';
-import '../system/hints.dart';
+import '../system/key_bindings.dart';
 import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/rendering.dart';
 import '../system/text_input_buffer.dart';
+import '../system/widget_frame.dart';
 
 /// UnitConverter – quick conversion panel (cm↔in, USD↔EUR)
 ///
@@ -122,92 +122,119 @@ class UnitConverter {
     // Use centralized text input for numeric input handling
     final buffer = TextInputBuffer(initialText: _initialBuffer(mode, inputLeft));
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings([
+          // Numeric input
+          KeyBinding.char(
+            (c) => RegExp(r'[0-9]').hasMatch(c),
+            (event) {
+              buffer.insert(event.char!);
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'type',
+            hintDescription: 'enter amount',
+          ),
+          // Decimal point
+          KeyBinding.char(
+            (c) => c == '.' && !buffer.text.contains('.'),
+            (event) {
+              buffer.insert('.');
+              return KeyActionResult.handled;
+            },
+          ),
+          // Backspace
+          KeyBinding.single(
+            KeyEventType.backspace,
+            (event) {
+              buffer.backspace();
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Backspace',
+            hintDescription: 'delete',
+          ),
+          // Toggle sides
+          KeyBinding.char(
+            (c) => c == 't' || c == 'T',
+            (event) {
+              inputLeft = !inputLeft;
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'T',
+            hintDescription: 'flip sides',
+          ),
+          // Change converter
+          KeyBinding.char(
+            (c) => c == 'r' || c == 'R',
+            (event) {
+              mode = (mode + 1) % converters.length;
+              buffer.setText(_initialBuffer(mode, inputLeft, fallback: buffer.text));
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'R',
+            hintDescription: 'change converter',
+          ),
+          // Exit
+          KeyBinding.multi(
+            {KeyEventType.enter, KeyEventType.esc},
+            (event) => KeyActionResult.confirmed,
+            hintLabel: 'Enter / Esc',
+            hintDescription: 'exit',
+          ),
+        ]) +
+        KeyBindings.cancel();
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-      final style = theme.style;
       final conv = converters[mode];
+      final widgetFrame = WidgetFrame(
+        title: title,
+        theme: theme,
+        bindings: bindings,
+        hintStyle: HintStyle.grid,
+      );
 
-      final frame = FramedLayout(title, theme: theme);
-      final top = frame.top();
-      out.writeln('${theme.bold}$top${theme.reset}');
+      widgetFrame.render(out, (ctx) {
+        // Section
+        ctx.gutterLine(sectionHeader(theme, conv.name));
+        if (conv.details.isNotEmpty) {
+          ctx.gutterLine('${theme.gray}${conv.details}${theme.reset}');
+        }
 
-      // Section
-      out.writeln('${lb.gutter()}${sectionHeader(theme, conv.name)}');
-      if (conv.details.isNotEmpty) {
-        out.writeln('${lb.gutter()}${theme.gray}${conv.details}${theme.reset}');
-      }
+        // Compute values based on buffer and active side
+        final inputValue = _parseNum(buffer.text) ?? 0.0;
+        final leftVal = inputLeft ? inputValue : conv.bToA(inputValue);
+        final rightVal = inputLeft ? conv.aToB(inputValue) : inputValue;
 
-      // Compute values based on buffer and active side
-      final inputValue = _parseNum(buffer.text) ?? 0.0;
-      final leftVal = inputLeft ? inputValue : conv.bToA(inputValue);
-      final rightVal = inputLeft ? conv.aToB(inputValue) : inputValue;
+        // Active indicator
+        final lLabel = inputLeft
+            ? '${theme.inverse}${theme.highlight}${conv.leftLabel}${theme.reset}'
+            : '${theme.highlight}${conv.leftLabel}${theme.reset}';
+        final rLabel = !inputLeft
+            ? '${theme.inverse}${theme.highlight}${conv.rightLabel}${theme.reset}'
+            : '${theme.highlight}${conv.rightLabel}${theme.reset}';
 
-      // Active indicator
-      final lLabel = inputLeft
-          ? '${theme.inverse}${theme.highlight}${conv.leftLabel}${theme.reset}'
-          : '${theme.highlight}${conv.leftLabel}${theme.reset}';
-      final rLabel = !inputLeft
-          ? '${theme.inverse}${theme.highlight}${conv.rightLabel}${theme.reset}'
-          : '${theme.highlight}${conv.rightLabel}${theme.reset}';
+        ctx.gutterLine(_equation(
+          leftLabel: lLabel,
+          leftValue: leftVal,
+          rightLabel: rLabel,
+          rightValue: rightVal,
+          direction: '→',
+        ));
 
-      out.writeln('${lb.gutter()}${_equation(
-        leftLabel: lLabel,
-        leftValue: leftVal,
-        rightLabel: rLabel,
-        rightValue: rightVal,
-        direction: '→',
-      )}');
-
-      // Also show reverse for clarity
-      out.writeln('${lb.gutter()}${_equation(
-        leftLabel: rLabel,
-        leftValue: rightVal,
-        rightLabel: lLabel,
-        rightValue: leftVal,
-        direction: '→',
-      )}');
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      // Hints
-      out.writeln(Hints.grid([
-        [Hints.key('type', theme), 'enter amount'],
-        [Hints.key('Backspace', theme), 'delete'],
-        [Hints.key('T', theme), 'flip sides'],
-        [Hints.key('R', theme), 'change converter'],
-        [Hints.key('Enter / Esc', theme), 'exit'],
-      ], theme));
+        // Also show reverse for clarity
+        ctx.gutterLine(_equation(
+          leftLabel: rLabel,
+          leftValue: rightVal,
+          rightLabel: lLabel,
+          rightValue: leftVal,
+          direction: '→',
+        ));
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
+    runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.enter || ev.type == KeyEventType.esc) {
-          return PromptResult.confirmed;
-        }
-        if (ev.type == KeyEventType.backspace) {
-          buffer.backspace();
-        } else if (ev.type == KeyEventType.char && ev.char != null) {
-          final ch = ev.char!;
-          if (RegExp(r'[0-9]').hasMatch(ch)) {
-            buffer.insert(ch);
-          } else if (ch == '.' && !buffer.text.contains('.')) {
-            buffer.insert(ch);
-          } else if ((ch == 't' || ch == 'T')) {
-            inputLeft = !inputLeft;
-          } else if ((ch == 'r' || ch == 'R')) {
-            mode = (mode + 1) % converters.length;
-            // Reset buffer to keep the same physical quantity when switching
-            buffer.setText(_initialBuffer(mode, inputLeft, fallback: buffer.text));
-          }
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
   }
 

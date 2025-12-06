@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import '../style/theme.dart';
+import '../system/widget_frame.dart';
 
 /// StatusLine – persistent, theme-aware line rendered at the bottom
 /// of the terminal for live status updates.
+///
+/// Uses the centralized [InlineStyle] system for consistent theming.
 ///
 /// Usage:
 ///   final s = StatusLine(label: 'Build', theme: PromptTheme.pastel)..start();
@@ -18,6 +21,7 @@ class StatusLine {
   final bool showSpinner;
   final Duration spinnerInterval;
 
+  late final InlineStyle _inline;
   Timer? _spinnerTimer;
   int _spinnerPhase = 0;
   String _message = '';
@@ -28,7 +32,9 @@ class StatusLine {
     this.theme = PromptTheme.dark,
     this.showSpinner = true,
     this.spinnerInterval = const Duration(milliseconds: 120),
-  });
+  }) {
+    _inline = InlineStyle(theme);
+  }
 
   /// Begin rendering the persistent status line.
   void start() {
@@ -37,7 +43,7 @@ class StatusLine {
     _render();
     if (showSpinner) {
       _spinnerTimer = Timer.periodic(spinnerInterval, (_) {
-        _spinnerPhase = (_spinnerPhase + 1) % _spinnerFrames.length;
+        _spinnerPhase++;
         _render();
       });
     }
@@ -52,14 +58,21 @@ class StatusLine {
   /// Show a success state and freeze the spinner.
   void success(String message) {
     _message = message;
-    _render(icon: '${theme.checkboxOn}✔${theme.reset}');
+    _render(icon: _inline.successIcon());
     _stopSpinner();
   }
 
   /// Show an error state and freeze the spinner.
   void error(String message) {
     _message = message;
-    _render(icon: '${theme.highlight}✖${theme.reset}');
+    _render(icon: _inline.errorIcon());
+    _stopSpinner();
+  }
+
+  /// Show a warning state.
+  void warning(String message) {
+    _message = message;
+    _render(icon: _inline.warnIcon());
     _stopSpinner();
   }
 
@@ -78,25 +91,22 @@ class StatusLine {
     if (!_running) return;
     final s = theme.style;
 
-    // Build content line aligned with ThemeDemo borders/accents.
-    final prefix = '${theme.gray}${s.borderBottom}${theme.reset}';
-    final title = '${theme.selection} $label ${theme.reset}';
-    final spin = icon ?? (showSpinner ? _spinnerFrames[_spinnerPhase] : ' ');
+    // Build content line using InlineStyle for consistent theming
+    final prefix = _inline.gray(s.borderBottom);
+    final title = _inline.selection(' $label ');
+    final spin = icon ?? (showSpinner ? _inline.spinner(_spinnerPhase) : ' ');
+    final msg = _message.isEmpty ? '' : _inline.gray(_message);
+
     final line = StringBuffer()
       ..write(prefix)
       ..write(' ')
       ..write(title)
       ..write('  ')
-      ..write('${theme.accent}$spin${theme.reset}')
+      ..write(spin)
       ..write('  ')
-      ..write(_styledMessage(_message));
+      ..write(msg);
 
     _writeBottom(line.toString());
-  }
-
-  String _styledMessage(String msg) {
-    if (msg.isEmpty) return '';
-    return '${theme.gray}$msg${theme.reset}';
   }
 
   void _writeBottom(String text) {
@@ -111,17 +121,4 @@ class StatusLine {
     // Restore cursor position
     stdout.write('\x1B8');
   }
-
-  static const List<String> _spinnerFrames = [
-    '⠋',
-    '⠙',
-    '⠹',
-    '⠸',
-    '⠼',
-    '⠴',
-    '⠦',
-    '⠧',
-    '⠇',
-    '⠏'
-  ];
 }

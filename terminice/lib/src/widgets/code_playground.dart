@@ -1,11 +1,9 @@
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// CodePlayground – mini REPL with input/output area.
 ///
@@ -51,8 +49,6 @@ class CodePlayground {
   /// Runs the interactive playground. Returns the last code snippet entered,
   /// or an empty string when cancelled.
   String run() {
-    final style = theme.style;
-
     // Input state
     final lines = <String>[''];
     int cursorLine = 0;
@@ -104,183 +100,222 @@ class CodePlayground {
       }
     }
 
+    void updateScroll() {
+      if (cursorLine < scrollOffset) {
+        scrollOffset = cursorLine;
+      } else if (cursorLine >= scrollOffset + inputVisibleLines) {
+        scrollOffset = cursorLine - inputVisibleLines + 1;
+      }
+    }
+
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings([
+          // Run
+          KeyBinding.single(
+            KeyEventType.ctrlR,
+            (event) {
+              doRun();
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Ctrl+R',
+            hintDescription: 'run',
+          ),
+          // Clear output (Ctrl+L)
+          KeyBinding.single(
+            KeyEventType.ctrlGeneric,
+            (event) {
+              if (event.char == 'l') {
+                clearOutput();
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Ctrl+L',
+            hintDescription: 'clear output',
+          ),
+          // Enter → new line
+          KeyBinding.single(
+            KeyEventType.enter,
+            (event) {
+              if (lines.length < maxInputLines) {
+                final line = lines[cursorLine];
+                final before = line.substring(0, cursorColumn);
+                final after = line.substring(cursorColumn);
+                lines[cursorLine] = before;
+                lines.insert(cursorLine + 1, after);
+                cursorLine++;
+                cursorColumn = 0;
+              }
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Enter',
+            hintDescription: 'new line',
+          ),
+          // Movement
+          KeyBinding.single(
+            KeyEventType.arrowUp,
+            (event) {
+              if (cursorLine > 0) cursorLine--;
+              cursorColumn = min(cursorColumn, lines[cursorLine].length);
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+            hintLabel: '↑/↓/←/→',
+            hintDescription: 'move',
+          ),
+          KeyBinding.single(
+            KeyEventType.arrowDown,
+            (event) {
+              if (cursorLine < lines.length - 1) cursorLine++;
+              cursorColumn = min(cursorColumn, lines[cursorLine].length);
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+          ),
+          KeyBinding.single(
+            KeyEventType.arrowLeft,
+            (event) {
+              if (cursorColumn > 0) {
+                cursorColumn--;
+              } else if (cursorLine > 0) {
+                cursorLine--;
+                cursorColumn = lines[cursorLine].length;
+              }
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+          ),
+          KeyBinding.single(
+            KeyEventType.arrowRight,
+            (event) {
+              if (cursorColumn < lines[cursorLine].length) {
+                cursorColumn++;
+              } else if (cursorLine < lines.length - 1) {
+                cursorLine++;
+                cursorColumn = 0;
+              }
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Tab → two spaces
+          KeyBinding.single(
+            KeyEventType.tab,
+            (event) {
+              final line = lines[cursorLine];
+              final before = line.substring(0, cursorColumn);
+              final after = line.substring(cursorColumn);
+              lines[cursorLine] = '$before  $after';
+              cursorColumn += 2;
+              return KeyActionResult.handled;
+            },
+          ),
+          // Backspace
+          KeyBinding.single(
+            KeyEventType.backspace,
+            (event) {
+              if (cursorColumn > 0) {
+                final line = lines[cursorLine];
+                lines[cursorLine] = line.substring(0, cursorColumn - 1) +
+                    line.substring(cursorColumn);
+                cursorColumn--;
+              } else if (cursorLine > 0) {
+                final prev = lines[cursorLine - 1];
+                final current = lines.removeAt(cursorLine);
+                cursorLine--;
+                cursorColumn = prev.length;
+                lines[cursorLine] = prev + current;
+              }
+              updateScroll();
+              return KeyActionResult.handled;
+            },
+          ),
+          // Typing
+          KeyBinding.char(
+            (c) => true,
+            (event) {
+              final ch = event.char!;
+              final line = lines[cursorLine];
+              final before = line.substring(0, cursorColumn);
+              final after = line.substring(cursorColumn);
+              lines[cursorLine] = '$before$ch$after';
+              cursorColumn++;
+              return KeyActionResult.handled;
+            },
+          ),
+        ]) +
+        KeyBindings([
+          KeyBinding.single(
+            KeyEventType.ctrlD,
+            (event) => KeyActionResult.confirmed,
+            hintLabel: 'Ctrl+D',
+            hintDescription: 'confirm/exit',
+          ),
+        ]) +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
+      final widgetFrame = WidgetFrame(
+        title: title,
+        theme: theme,
+        bindings: bindings,
+        hintStyle: HintStyle.grid,
+      );
 
-      // Header
-      final frame = FramedLayout(title, theme: theme);
-      final top = frame.top();
-      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      widgetFrame.render(out, (ctx) {
+        final style = theme.style;
 
-      // Input section title connector
-      out.writeln(
-          '${theme.gray}${style.borderConnector}${theme.reset} ${theme.dim}Input${theme.reset}');
+        // Input section title connector
+        ctx.line(
+            '${theme.gray}${style.borderConnector}${theme.reset} ${theme.dim}Input${theme.reset}');
 
-      // Visible input viewport
-      final start = scrollOffset;
-      final end = min(scrollOffset + inputVisibleLines, lines.length);
-      for (var i = start; i < end; i++) {
-        final raw = lines[i];
-        final isCursorLine = i == cursorLine;
-        final prefix = lb.arrow(isCursorLine);
+        // Visible input viewport
+        final start = scrollOffset;
+        final end = min(scrollOffset + inputVisibleLines, lines.length);
+        for (var i = start; i < end; i++) {
+          final raw = lines[i];
+          final isCursorLine = i == cursorLine;
+          final prefix = ctx.lb.arrow(isCursorLine);
 
-        if (isCursorLine) {
-          final safeCol = min(cursorColumn, raw.length);
-          final before = raw.substring(0, safeCol);
-          final after = raw.substring(safeCol);
-          final cursorChar = after.isEmpty ? ' ' : after[0];
-          final afterTail = after.length > 1 ? after.substring(1) : '';
-          out.writeln(
-              '${lb.gutter()}$prefix $before${theme.inverse}$cursorChar${theme.reset}$afterTail');
-        } else {
-          out.writeln('${lb.gutter()}$prefix $raw');
+          if (isCursorLine) {
+            final safeCol = min(cursorColumn, raw.length);
+            final before = raw.substring(0, safeCol);
+            final after = raw.substring(safeCol);
+            final cursorChar = after.isEmpty ? ' ' : after[0];
+            final afterTail = after.length > 1 ? after.substring(1) : '';
+            ctx.gutterLine(
+                '$prefix $before${theme.inverse}$cursorChar${theme.reset}$afterTail');
+          } else {
+            ctx.gutterLine('$prefix $raw');
+          }
         }
-      }
 
-      // Fill remaining input lines
-      for (var i = end; i < start + inputVisibleLines; i++) {
-        out.writeln('${lb.gutterOnly()}   ${theme.dim}~${theme.reset}');
-      }
+        // Fill remaining input lines
+        for (var i = end; i < start + inputVisibleLines; i++) {
+          ctx.line('${ctx.lb.gutterOnly()}   ${theme.dim}~${theme.reset}');
+        }
 
-      // Output section title connector
-      out.writeln(
-          '${theme.gray}${style.borderConnector}${theme.reset} ${theme.dim}Output${theme.reset}');
+        // Output section title connector
+        ctx.line(
+            '${theme.gray}${style.borderConnector}${theme.reset} ${theme.dim}Output${theme.reset}');
 
-      // Render output (tail)
-      final outStart = max(0, output.length - outputVisibleLines);
-      final outSlice = output.sublist(outStart);
-      for (final line in outSlice) {
-        out.writeln('${lb.gutterOnly()}   $line');
-      }
-      // Pad remaining rows
-      for (int i = outSlice.length; i < outputVisibleLines; i++) {
-        out.writeln('${lb.gutterOnly()}   ');
-      }
-
-      // Bottom border
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      // Hints
-      out.writeln(Hints.grid([
-        [Hints.key('Ctrl+R', theme), 'run'],
-        [Hints.key('Ctrl+L', theme), 'clear output'],
-        [Hints.key('Enter', theme), 'new line'],
-        [Hints.key('↑/↓/←/→', theme), 'move'],
-        [Hints.key('Ctrl+D', theme), 'confirm/exit'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
+        // Render output (tail)
+        final outStart = max(0, output.length - outputVisibleLines);
+        final outSlice = output.sublist(outStart);
+        for (final line in outSlice) {
+          ctx.line('${ctx.lb.gutterOnly()}   $line');
+        }
+        // Pad remaining rows
+        for (int i = outSlice.length; i < outputVisibleLines; i++) {
+          ctx.line('${ctx.lb.gutterOnly()}   ');
+        }
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
+    runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        // Cancel
-        if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        // Confirm/exit
-        if (ev.type == KeyEventType.ctrlD) {
-          return PromptResult.confirmed;
-        }
-
-        // Run
-        if (ev.type == KeyEventType.ctrlR) {
-          doRun();
-          return null;
-        }
-
-        // Clear output (Ctrl+L)
-        if (ev.type == KeyEventType.ctrlGeneric && ev.char == 'l') {
-          clearOutput();
-          return null;
-        }
-
-        // Typing
-        if (ev.type == KeyEventType.char && ev.char != null) {
-          final ch = ev.char!;
-          final line = lines[cursorLine];
-          final before = line.substring(0, cursorColumn);
-          final after = line.substring(cursorColumn);
-          lines[cursorLine] = '$before$ch$after';
-          cursorColumn++;
-        }
-
-        // Tab → two spaces
-        else if (ev.type == KeyEventType.tab) {
-          final line = lines[cursorLine];
-          final before = line.substring(0, cursorColumn);
-          final after = line.substring(cursorColumn);
-          lines[cursorLine] = '$before  $after';
-          cursorColumn += 2;
-        }
-
-        // Backspace
-        else if (ev.type == KeyEventType.backspace) {
-          if (cursorColumn > 0) {
-            final line = lines[cursorLine];
-            lines[cursorLine] = line.substring(0, cursorColumn - 1) +
-                line.substring(cursorColumn);
-            cursorColumn--;
-          } else if (cursorLine > 0) {
-            final prev = lines[cursorLine - 1];
-            final current = lines.removeAt(cursorLine);
-            cursorLine--;
-            cursorColumn = prev.length;
-            lines[cursorLine] = prev + current;
-          }
-        }
-
-        // Enter → new line
-        else if (ev.type == KeyEventType.enter) {
-          if (lines.length < maxInputLines) {
-            final line = lines[cursorLine];
-            final before = line.substring(0, cursorColumn);
-            final after = line.substring(cursorColumn);
-            lines[cursorLine] = before;
-            lines.insert(cursorLine + 1, after);
-            cursorLine++;
-            cursorColumn = 0;
-          }
-        }
-
-        // Movement
-        else if (ev.type == KeyEventType.arrowUp) {
-          if (cursorLine > 0) cursorLine--;
-          cursorColumn = min(cursorColumn, lines[cursorLine].length);
-        } else if (ev.type == KeyEventType.arrowDown) {
-          if (cursorLine < lines.length - 1) cursorLine++;
-          cursorColumn = min(cursorColumn, lines[cursorLine].length);
-        } else if (ev.type == KeyEventType.arrowLeft) {
-          if (cursorColumn > 0) {
-            cursorColumn--;
-          } else if (cursorLine > 0) {
-            cursorLine--;
-            cursorColumn = lines[cursorLine].length;
-          }
-        } else if (ev.type == KeyEventType.arrowRight) {
-          if (cursorColumn < lines[cursorLine].length) {
-            cursorColumn++;
-          } else if (cursorLine < lines.length - 1) {
-            cursorLine++;
-            cursorColumn = 0;
-          }
-        }
-
-        // Scroll viewport for input
-        if (cursorLine < scrollOffset) {
-          scrollOffset = cursorLine;
-        } else if (cursorLine >= scrollOffset + inputVisibleLines) {
-          scrollOffset = cursorLine - inputVisibleLines + 1;
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     if (cancelled) return '';

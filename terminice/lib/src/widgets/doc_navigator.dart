@@ -2,11 +2,10 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/hints.dart';
-import '../system/framed_layout.dart';
-import '../system/key_events.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 import 'markdown_viewer.dart';
 
 /// DocNavigator – navigate a Markdown docs tree.
@@ -32,8 +31,6 @@ class DocNavigator {
 
   /// Returns the selected Markdown file path, or null if cancelled.
   String? run() {
-    final style = theme.style;
-
     // Expanded state is tracked by absolute path
     final Map<String, bool> expanded = {root.path: true};
 
@@ -133,139 +130,167 @@ class DocNavigator {
       return abs;
     }
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.verticalNavigation(
+          onUp: () => nav.moveUp(),
+          onDown: () => nav.moveDown(),
+        ) +
+        KeyBindings([
+          // Right - expand
+          KeyBinding.single(
+            KeyEventType.arrowRight,
+            (event) {
+              final list = visible();
+              if (list.isEmpty) return KeyActionResult.ignored;
+              nav.itemCount = list.length;
+              expand(list[nav.selectedIndex]);
+              return KeyActionResult.handled;
+            },
+            hintLabel: '→ / Enter',
+            hintDescription: 'Expand dir / Open file',
+          ),
+          // Left - collapse
+          KeyBinding.single(
+            KeyEventType.arrowLeft,
+            (event) {
+              final list = visible();
+              if (list.isEmpty) return KeyActionResult.ignored;
+              nav.itemCount = list.length;
+              collapse(list[nav.selectedIndex]);
+              return KeyActionResult.handled;
+            },
+            hintLabel: '←',
+            hintDescription: 'Collapse / Parent',
+          ),
+          // Space - toggle
+          KeyBinding.single(
+            KeyEventType.space,
+            (event) {
+              final list = visible();
+              if (list.isEmpty) return KeyActionResult.ignored;
+              nav.itemCount = list.length;
+              toggle(list[nav.selectedIndex]);
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Space',
+            hintDescription: 'Toggle',
+          ),
+          // Enter - toggle dir or open file
+          KeyBinding.single(
+            KeyEventType.enter,
+            (event) {
+              final list = visible();
+              if (list.isEmpty) return KeyActionResult.ignored;
+              nav.itemCount = list.length;
+              final current = list[nav.selectedIndex];
+              if (current.isDir) {
+                toggle(current);
+              } else {
+                _viewMarkdown(current.path);
+              }
+              return KeyActionResult.handled;
+            },
+          ),
+          // Ctrl+D - select file
+          KeyBinding.single(
+            KeyEventType.ctrlD,
+            (event) {
+              final list = visible();
+              if (list.isEmpty) return KeyActionResult.ignored;
+              nav.itemCount = list.length;
+              final current = list[nav.selectedIndex];
+              if (!current.isDir) {
+                result = current.path;
+                return KeyActionResult.confirmed;
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Ctrl+D',
+            hintDescription: 'Select file',
+          ),
+          // Esc - exit
+          KeyBinding.single(
+            KeyEventType.esc,
+            (event) => KeyActionResult.confirmed,
+            hintLabel: 'Esc',
+            hintDescription: 'Exit',
+          ),
+        ]) +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
+      final widgetFrame = WidgetFrame(
+        title: title,
+        theme: theme,
+        bindings: bindings,
+        hintStyle: HintStyle.grid,
+        showConnector: true,
+      );
 
-      final frame = FramedLayout(title, theme: theme);
-      final titleLine = frame.top();
-      out.writeln(style.boldPrompt
-          ? '${theme.bold}$titleLine${theme.reset}'
-          : titleLine);
+      widgetFrame.render(out, (ctx) {
+        final currentList = visible();
+        final currentSel = selectedPath(currentList);
+        final relSel = relPath(currentSel);
 
-      final currentList = visible();
-      final currentSel = selectedPath(currentList);
-      final relSel = relPath(currentSel);
+        // Root line and selection line
+        ctx.labeledValue('Root', _shortPath(root.path), dimLabel: false);
+        ctx.labeledValue('Selected', relSel.isEmpty ? '.' : relSel, dimLabel: false);
 
-      // Root line and selection line - using LineBuilder's gutter
-      out.writeln(
-          '${lb.gutter()}${theme.accent}Root:${theme.reset} ${_shortPath(root.path)}');
-      out.writeln(
-          '${lb.gutter()}${theme.accent}Selected:${theme.reset} ${relSel.isEmpty ? '.' : relSel}');
+        ctx.writeConnector();
 
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
+        // Update nav's item count as tree structure changes
+        nav.itemCount = currentList.length;
 
-      // Update nav's item count as tree structure changes
-      nav.itemCount = currentList.length;
+        // Use ListNavigation's viewport
+        final window = nav.visibleWindow(currentList);
 
-      // Use ListNavigation's viewport
-      final window = nav.visibleWindow(currentList);
+        if (window.hasOverflowAbove) {
+          ctx.overflowIndicator();
+        }
 
-      // Use LineBuilder for overflow indicator
-      if (window.hasOverflowAbove) {
-        out.writeln(lb.overflowLine());
-      }
+        for (var i = 0; i < window.items.length; i++) {
+          final e = window.items[i];
+          final absoluteIdx = window.start + i;
+          final isHighlighted = nav.isSelected(absoluteIdx);
+          final prefix = ctx.lb.arrow(isHighlighted);
+          final branch = _treeBranchGlyph(e, theme);
+          final toggleGlyph = e.isDir
+              ? ((expanded[e.path] ?? false)
+                  ? '${theme.accent}>${theme.reset}'
+                  : '${theme.accent}+${theme.reset}')
+              : ' ';
+          final indent = _indentString(e);
+          final labelColor = e.isDir
+              ? theme.highlight
+              : (e.name.toLowerCase().endsWith('.md')
+                  ? theme.selection
+                  : theme.gray);
+          final lineText =
+              '$prefix $indent$branch $toggleGlyph $labelColor${e.name}${theme.reset}';
+          ctx.highlightedLine(lineText, highlighted: isHighlighted);
+        }
 
-      for (var i = 0; i < window.items.length; i++) {
-        final e = window.items[i];
-        final absoluteIdx = window.start + i;
-        final isHighlighted = nav.isSelected(absoluteIdx);
-        // Use LineBuilder for arrow
-        final prefix = lb.arrow(isHighlighted);
-        final branch = _treeBranchGlyph(e, theme);
-        final toggleGlyph = e.isDir
-            ? ((expanded[e.path] ?? false)
-                ? '${theme.accent}>${theme.reset}'
-                : '${theme.accent}+${theme.reset}')
-            : ' ';
-        final indent = _indentString(e);
-        final labelColor = e.isDir
-            ? theme.highlight
-            : (e.name.toLowerCase().endsWith('.md')
-                ? theme.selection
-                : theme.gray);
-        final lineText =
-            '$prefix $indent$branch $toggleGlyph $labelColor${e.name}${theme.reset}';
-        // Use LineBuilder's writeLine for consistent highlight handling
-        lb.writeLine(out, lineText, highlighted: isHighlighted);
-      }
+        if (window.hasOverflowBelow) {
+          ctx.overflowIndicator();
+        }
 
-      // Use LineBuilder for overflow indicator
-      if (window.hasOverflowBelow) {
-        out.writeln(lb.overflowLine());
-      }
+        if (currentList.isEmpty) {
+          ctx.emptyMessage('no markdown files');
+        }
 
-      if (currentList.isEmpty) {
-        out.writeln(lb.emptyLine('no markdown files'));
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      // Bottom controls and (optional) quick preview of first heading for files
-      final sPath = selectedPath(currentList);
-      final heading = _firstHeadingIfAny(sPath);
-      if (heading != null && heading.isNotEmpty) {
-        out.writeln('${theme.dim}Preview:${theme.reset} $heading');
-      }
-
-      out.writeln(Hints.grid([
-        [Hints.key('↑/↓', theme), 'Navigate'],
-        [Hints.key('→ / Enter', theme), 'Expand dir / Open file'],
-        [Hints.key('←', theme), 'Collapse / Parent'],
-        [Hints.key('Space', theme), 'Toggle'],
-        [Hints.key('Ctrl+D', theme), 'Select file'],
-        [Hints.key('Esc', theme), 'Exit'],
-      ], theme));
+        // Bottom controls and (optional) quick preview of first heading for files
+        final sPath = selectedPath(currentList);
+        final heading = _firstHeadingIfAny(sPath);
+        if (heading != null && heading.isNotEmpty) {
+          ctx.line('${theme.dim}Preview:${theme.reset} $heading');
+        }
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
+    runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.esc) return PromptResult.confirmed;
-        if (ev.type == KeyEventType.ctrlC) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        final list = visible();
-        if (list.isEmpty) {
-          return null;
-        }
-        nav.itemCount = list.length; // Keep in sync
-        final current = list[nav.selectedIndex];
-
-        if (ev.type == KeyEventType.arrowUp) {
-          nav.moveUp();
-        } else if (ev.type == KeyEventType.arrowDown) {
-          nav.moveDown();
-        } else if (ev.type == KeyEventType.arrowRight) {
-          expand(current);
-        } else if (ev.type == KeyEventType.arrowLeft) {
-          collapse(current);
-        } else if (ev.type == KeyEventType.space) {
-          toggle(current);
-        } else if (ev.type == KeyEventType.enter) {
-          if (current.isDir) {
-            toggle(current);
-          } else {
-            // Open viewer for markdown file, then return to tree
-            _viewMarkdown(current.path);
-          }
-        } else if (ev.type == KeyEventType.ctrlD) {
-          // Quick select current file and exit
-          if (!current.isDir) {
-            result = current.path;
-            return PromptResult.confirmed;
-          }
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     if (cancelled) return null;
@@ -286,19 +311,12 @@ class DocNavigator {
       title: label,
     ).showTo(viewerOut);
 
-    viewerOut.writeln(Hints.grid([
-      [Hints.key('← / Esc / Enter', theme), 'Back to tree'],
-    ], theme));
+    // Use KeyBindings.back() for "back to tree" scenario
+    final backBindings = KeyBindings.back(hintDescription: 'Back to tree');
+    viewerOut.writeln(Hints.grid(backBindings.toHintEntries(), theme));
 
-    while (true) {
-      final ev = KeyEventReader.read();
-      if (ev.type == KeyEventType.esc ||
-          ev.type == KeyEventType.arrowLeft ||
-          ev.type == KeyEventType.enter ||
-          ev.type == KeyEventType.ctrlC) {
-        break;
-      }
-    }
+    // Wait for back key
+    backBindings.waitForKey();
 
     // Clear just the viewer content when returning to tree
     viewerOut.clear();

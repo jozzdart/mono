@@ -1,10 +1,8 @@
 import '../style/theme.dart';
 import '../system/focus_navigation.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// ToggleGroup – manage multiple on/off toggles with elegant keyboard flipping.
 ///
@@ -39,10 +37,6 @@ class ToggleGroup {
   /// Returns a map of label -> on/off after confirmation.
   /// If cancelled, returns the original initial states.
   Map<String, bool> run() {
-    final style = theme.style;
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-
     if (items.isEmpty) return const {};
 
     // Use centralized focus navigation
@@ -62,89 +56,59 @@ class ToggleGroup {
       return w;
     }
 
-    // Use centralized switch control from LineBuilder
-    String switchCtrl(bool on, {bool highlighted = false}) =>
-        lb.switchControlHighlighted(on, highlight: highlighted);
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.toggleGroup(
+      onUp: () => focus.moveUp(),
+      onDown: () => focus.moveDown(),
+      onToggle: () => states[focus.focusedIndex] = !states[focus.focusedIndex],
+      onToggleAll: () {
+        final anyOff = states.any((s) => s == false);
+        for (var i = 0; i < states.length; i++) {
+          states[i] = anyOff;
+        }
+      },
+      onCancel: () => cancelled = true,
+    );
+
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: title,
+      theme: theme,
+      bindings: bindings,
+      showConnector: true,
+      hintStyle: HintStyle.grid,
+    );
 
     void render(RenderOutput out) {
-      final frame = FramedLayout(title, theme: theme);
-      final top = frame.top();
-      if (style.boldPrompt) out.writeln('${theme.bold}$top${theme.reset}');
+      frame.render(out, (ctx) {
+        final gap = 2;
+        final labelWidth = maxLabelWidth();
 
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
+        for (var i = 0; i < items.length; i++) {
+          final isFocused = focus.isFocused(i);
+          final item = items[i];
 
-      final gap = 2;
-      final labelWidth = maxLabelWidth();
+          var label = item.label;
+          if (label.length > labelWidth) {
+            label = '${label.substring(0, labelWidth - 1)}…';
+          }
+          final paddedLabel = label.padRight(labelWidth);
 
-      for (var i = 0; i < items.length; i++) {
-        final isFocused = focus.isFocused(i);
-        final item = items[i];
+          // Use LineBuilder for arrow and switch
+          final arrow = ctx.lb.arrow(isFocused);
+          final switchTxt =
+              ctx.lb.switchControlHighlighted(states[i], highlight: isFocused);
 
-        var label = item.label;
-        if (label.length > labelWidth) {
-          label = '${label.substring(0, labelWidth - 1)}…';
+          final lineCore = '$arrow $paddedLabel${' ' * gap}$switchTxt';
+          ctx.gutterLine(lineCore);
         }
-        final paddedLabel = label.padRight(labelWidth);
-
-        // Use LineBuilder for arrow
-        final arrow = lb.arrow(isFocused);
-        final switchTxt = switchCtrl(states[i], highlighted: isFocused);
-
-        final lineCore = '$arrow $paddedLabel${' ' * gap}$switchTxt';
-        out.writeln('${lb.gutter()}$lineCore');
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      out.writeln(Hints.grid([
-        [Hints.key('↑/↓', theme), 'navigate'],
-        [Hints.key('←/→ / Space', theme), 'toggle'],
-        [Hints.key('A', theme), 'toggle all'],
-        [Hints.key('Enter', theme), 'confirm'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
-    }
-
-    void toggle(int i) {
-      states[i] = !states[i];
-    }
-
-    void toggleAll() {
-      final anyOff = states.any((s) => s == false);
-      for (var i = 0; i < states.length; i++) {
-        states[i] = anyOff; // if any off, turn all on; else turn all off
-      }
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    final result = runner.run(
+    final result = runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
-        if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        if (ev.type == KeyEventType.arrowUp) {
-          focus.moveUp();
-        } else if (ev.type == KeyEventType.arrowDown) {
-          focus.moveDown();
-        } else if (ev.type == KeyEventType.arrowLeft ||
-            ev.type == KeyEventType.arrowRight ||
-            ev.type == KeyEventType.space) {
-          toggle(focus.focusedIndex);
-        } else if (ev.type == KeyEventType.char && ev.char != null) {
-          final ch = ev.char!;
-          if (ch.toLowerCase() == 'a') toggleAll();
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     final resultMap = <String, bool>{};

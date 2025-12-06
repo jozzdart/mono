@@ -1,10 +1,8 @@
 import 'package:intl/intl.dart';
 import '../style/theme.dart';
-import '../system/key_events.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// ─────────────────────────────────────────────────────────────
 /// DateFieldsPrompt – elegant multi-field date selector
@@ -28,7 +26,6 @@ class DateFieldsPrompt {
   }) : initial = initial ?? DateTime.now();
 
   DateTime? run() {
-    final style = theme.style;
     const innerPadding = 4;
 
     DateTime selected = DateTime(initial.year, initial.month, initial.day);
@@ -57,93 +54,100 @@ class DateFieldsPrompt {
       }
     }
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings([
+          // ←/→ switch field
+          KeyBinding.single(
+            KeyEventType.arrowLeft,
+            (event) {
+              fieldIndex = (fieldIndex - 1).clamp(0, 2);
+              return KeyActionResult.handled;
+            },
+            hintLabel: '←/→',
+            hintDescription: 'switch',
+          ),
+          KeyBinding.single(
+            KeyEventType.arrowRight,
+            (event) {
+              fieldIndex = (fieldIndex + 1).clamp(0, 2);
+              return KeyActionResult.handled;
+            },
+          ),
+          // ↑/↓ adjust field
+          KeyBinding.single(
+            KeyEventType.arrowUp,
+            (event) {
+              adjustField(1);
+              return KeyActionResult.handled;
+            },
+            hintLabel: '↑/↓',
+            hintDescription: 'adjust',
+          ),
+          KeyBinding.single(
+            KeyEventType.arrowDown,
+            (event) {
+              adjustField(-1);
+              return KeyActionResult.handled;
+            },
+          ),
+          // Ctrl+E - today
+          KeyBinding.single(
+            KeyEventType.cnrlE,
+            (event) {
+              selected = DateTime.now();
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Ctrl+E',
+            hintDescription: 'today',
+          ),
+        ]) +
+        KeyBindings.confirm() +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-
       final title = '$label — Choose Date';
-      final paddedTitle = '  $title  ';
-      if (style.showBorder) {
-        final frame = FramedLayout(paddedTitle, theme: theme);
-        out.writeln(frame.top());
-      } else {
-        out.writeln('${theme.accent}$paddedTitle${theme.reset}');
-      }
+      final widgetFrame = WidgetFrame(
+        title: '  $title  ',
+        theme: theme,
+        bindings: bindings,
+        hintStyle: HintStyle.bullets,
+      );
 
-      final leftPad = ' ' * innerPadding;
-      final monthName = DateFormat('MMMM').format(selected);
+      widgetFrame.render(out, (ctx) {
+        final leftPad = ' ' * innerPadding;
+        final monthName = DateFormat('MMMM').format(selected);
 
-      // Field highlighting
-      String fmt(String label, String value, bool active) {
-        if (active) {
-          return '${theme.inverse} $label: $value ${theme.reset}';
-        } else {
-          return '${theme.dim}$label:${theme.reset} $value';
+        // Field highlighting
+        String fmt(String label, String value, bool active) {
+          if (active) {
+            return '${theme.inverse} $label: $value ${theme.reset}';
+          } else {
+            return '${theme.dim}$label:${theme.reset} $value';
+          }
         }
-      }
 
-      // Fields
-      final fields = [
-        fmt('Day', selected.day.toString().padLeft(2), fieldIndex == 0),
-        fmt('Month', monthName, fieldIndex == 1),
-        fmt('Year', selected.year.toString(), fieldIndex == 2),
-      ];
+        // Fields
+        final fields = [
+          fmt('Day', selected.day.toString().padLeft(2), fieldIndex == 0),
+          fmt('Month', monthName, fieldIndex == 1),
+          fmt('Year', selected.year.toString(), fieldIndex == 2),
+        ];
 
-      // Layout
-      out.writeln('${lb.gutter()}$leftPad${fields.join('   ')}');
+        // Layout
+        ctx.gutterLine('$leftPad${fields.join('   ')}');
 
-      // Preview
-      final formatted =
-          DateFormat('EEE, d MMM yyyy').format(selected).padLeft(10);
-      out.writeln(
-          '${lb.gutter()}$leftPad${theme.gray}Preview:${theme.reset} ${theme.accent}$formatted${theme.reset}');
-
-      // Footer
-      if (style.showBorder) {
-        final frame = FramedLayout(title, theme: theme);
-        out.writeln(frame.bottom());
-      }
-
-      out.writeln(Hints.bullets([
-        Hints.hint('←/→', 'switch', theme),
-        Hints.hint('↑/↓', 'adjust', theme),
-        Hints.hint('Ctrl+E', 'today', theme),
-        Hints.hint('Enter', 'confirm', theme),
-        Hints.hint('Esc', 'cancel', theme),
-      ], theme));
+        // Preview
+        final formatted =
+            DateFormat('EEE, d MMM yyyy').format(selected).padLeft(10);
+        ctx.gutterLine(
+            '$leftPad${theme.gray}Preview:${theme.reset} ${theme.accent}$formatted${theme.reset}');
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    final result = runner.run(
+    final result = runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
-
-        if (ev.type == KeyEventType.cnrlE) {
-          selected = DateTime.now();
-        }
-
-        // ←/→ switch field
-        if (ev.type == KeyEventType.arrowLeft) {
-          fieldIndex = (fieldIndex - 1).clamp(0, 2);
-        } else if (ev.type == KeyEventType.arrowRight) {
-          fieldIndex = (fieldIndex + 1).clamp(0, 2);
-        }
-
-        // ↑/↓ adjust field
-        else if (ev.type == KeyEventType.arrowUp) {
-          adjustField(1);
-        } else if (ev.type == KeyEventType.arrowDown) {
-          adjustField(-1);
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     return (cancelled || result == PromptResult.cancelled) ? null : selected;

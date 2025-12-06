@@ -2,9 +2,8 @@ import 'dart:io' show sleep;
 
 import '../style/theme.dart';
 import '../system/hints.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// Theme-aware loading spinner with multiple visual styles.
 ///
@@ -38,7 +37,6 @@ class LoadingSpinner {
   }) : assert(fps > 0);
 
   void run() {
-    final styleCfg = theme.style;
     final frames = _framesForStyle(style);
     final int frameMs = (1000 / fps).clamp(12, 200).round();
 
@@ -48,24 +46,13 @@ class LoadingSpinner {
     }
 
     void render(RenderOutput out, int frameIndex) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-      final frame = FramedLayout(label, theme: theme);
-      final top = frame.top();
-      out.writeln('${theme.bold}$top${theme.reset}');
-
-      final spin = frames[frameIndex % frames.length];
-      final color = colorForPhase(frameIndex);
-
-      final line = StringBuffer();
-      line.write(lb.gutter());
-      line.write('${theme.dim}$message${theme.reset}  ');
-      line.write('${theme.bold}$color$spin${theme.reset}');
-      out.writeln(line.toString());
-
-      if (styleCfg.showBorder) {
-        out.writeln(frame.bottom());
-      }
+      final widgetFrame = WidgetFrame(title: label, theme: theme);
+      widgetFrame.showTo(out, (ctx) {
+        final spin = frames[frameIndex % frames.length];
+        final color = colorForPhase(frameIndex);
+        ctx.gutterLine(
+            '${theme.dim}$message${theme.reset}  ${theme.bold}$color$spin${theme.reset}');
+      });
 
       out.writeln(Hints.bullets([
         'Theme-aware spinner',

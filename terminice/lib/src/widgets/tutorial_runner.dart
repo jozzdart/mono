@@ -1,11 +1,10 @@
 import '../style/theme.dart';
 import '../system/focus_navigation.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
+import '../system/key_bindings.dart';
 import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
+import '../system/widget_frame.dart';
 
 /// TutorialRunner – interactive tutorial that tracks progress.
 ///
@@ -38,7 +37,6 @@ class TutorialRunner {
   List<TutorialStep> run() {
     if (steps.isEmpty) return steps;
 
-    final style = theme.style;
     // Use centralized line builder for consistent styling
     final lb = LineBuilder(theme);
     // Use centralized focus navigation
@@ -112,95 +110,94 @@ class TutorialRunner {
       }
     }
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.verticalNavigation(
+          onUp: () => focus.moveUp(),
+          onDown: () => focus.moveDown(),
+        ) +
+        KeyBindings([
+          // Toggle done
+          KeyBinding.single(
+            KeyEventType.space,
+            (event) {
+              toggleDone(focus.focusedIndex);
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Space',
+            hintDescription: 'toggle done',
+          ),
+          // Reset progress
+          KeyBinding.single(
+            KeyEventType.ctrlR,
+            (event) {
+              resetAll();
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'R',
+            hintDescription: 'reset progress',
+          ),
+          KeyBinding.char(
+            (c) => c.toLowerCase() == 'r',
+            (event) {
+              resetAll();
+              return KeyActionResult.handled;
+            },
+          ),
+        ]) +
+        KeyBindings.confirm() +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
+      final widgetFrame = WidgetFrame(
+        title: title,
+        theme: theme,
+        bindings: bindings,
+        hintStyle: HintStyle.grid,
+        showConnector: true,
+      );
 
-      // Title
-      final frame = FramedLayout(title, theme: theme);
-      final top = frame.top();
-      out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
+      widgetFrame.render(out, (ctx) {
+        final l = layout();
 
-      final l = layout();
+        // Progress section
+        final done = doneCount();
+        final total = current.length;
+        final pct = total == 0 ? 0 : ((done / total) * 100).round();
+        ctx.gutterLine(
+            '${theme.dim}Progress${theme.reset} ${theme.accent}$done${theme.reset}/${theme.accent}$total${theme.reset} (${theme.highlight}$pct%${theme.reset})');
+        ctx.gutterLine(progressBar(done, total, width: 28));
 
-      // Optional connector
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
+        // Underline-like connector sized to content
+        ctx.line(
+            '${theme.gray}${theme.style.borderConnector}${'─' * (l.content)}${theme.reset}');
 
-      // Progress section - using LineBuilder's gutter
-      final done = doneCount();
-      final total = current.length;
-      final pct = total == 0 ? 0 : ((done / total) * 100).round();
-      out.writeln(
-          '${lb.gutter()}${theme.dim}Progress${theme.reset} ${theme.accent}$done${theme.reset}/${theme.accent}$total${theme.reset} (${theme.highlight}$pct%${theme.reset})');
-      out.writeln('${lb.gutter()}${progressBar(done, total, width: 28)}');
+        // Steps list
+        for (var i = 0; i < current.length; i++) {
+          final isFocused = focus.isFocused(i);
+          final s = current[i];
+          final arrow = lb.arrow(isFocused);
+          final cb = checkbox(s.done, highlight: isFocused);
+          final titleTxt = truncate(s.title, l.titleWidth).padRight(l.titleWidth);
 
-      // Underline-like connector sized to content
-      out.writeln(
-          '${theme.gray}${style.borderConnector}${'─' * (l.content)}${theme.reset}');
+          final line = StringBuffer();
+          line.write('$arrow $cb ');
+          line.write(titleTxt);
+          ctx.gutterLine(line.toString());
 
-      // Steps list
-      for (var i = 0; i < current.length; i++) {
-        final isFocused = focus.isFocused(i);
-        final s = current[i];
-        // Use LineBuilder for arrow and checkbox
-        final arrow = lb.arrow(isFocused);
-        final cb = checkbox(s.done, highlight: isFocused);
-        final titleTxt = truncate(s.title, l.titleWidth).padRight(l.titleWidth);
-
-        final line = StringBuffer();
-        line.write(lb.gutter());
-        line.write('$arrow $cb ');
-        line.write(titleTxt);
-        out.writeln(line.toString());
-
-        if (isFocused && s.description.trim().isNotEmpty) {
-          final wrapped = wrap(s.description, l.descWidth);
-          for (final w in wrapped) {
-            out.writeln('${lb.gutter()}  ${theme.dim}$w${theme.reset}');
+          if (isFocused && s.description.trim().isNotEmpty) {
+            final wrapped = wrap(s.description, l.descWidth);
+            for (final w in wrapped) {
+              ctx.gutterLine('  ${theme.dim}$w${theme.reset}');
+            }
           }
         }
-      }
-
-      // Bottom
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      // Hints
-      out.writeln(Hints.grid([
-        [Hints.key('↑/↓', theme), 'navigate'],
-        [Hints.key('Space', theme), 'toggle done'],
-        [Hints.key('R', theme), 'reset progress'],
-        [Hints.key('Enter', theme), 'confirm'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
+    runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
-        if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        if (ev.type == KeyEventType.arrowUp) {
-          focus.moveUp();
-        } else if (ev.type == KeyEventType.arrowDown) {
-          focus.moveDown();
-        } else if (ev.type == KeyEventType.space) {
-          toggleDone(focus.focusedIndex);
-        } else if (ev.type == KeyEventType.ctrlR ||
-            (ev.type == KeyEventType.char && ev.char?.toLowerCase() == 'r')) {
-          resetAll();
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     return cancelled ? initial : current;

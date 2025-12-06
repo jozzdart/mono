@@ -15,7 +15,7 @@ void main() {
     title: 'Bar Chart · Demo',
     barWidth: 32,
     showValues: true,
-    style: BarStyle.thin,
+    barStyle: BarStyle.thin,
     valueFormatter: (v) => v.toStringAsFixed(0),
   );
 

@@ -2,12 +2,12 @@ import 'dart:io';
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/key_events.dart';
-import '../system/hints.dart';
 import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
-import '../system/rendering.dart';
+import '../system/hints.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
+import '../system/rendering.dart';
+import '../system/widget_frame.dart';
 
 /// Flashcards – spaced repetition deck in terminal.
 ///
@@ -40,98 +40,132 @@ class Flashcards {
     CardItem? current = _nextDueCard();
     bool userQuit = false;
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings([
+          // Quit
+          KeyBinding.multi(
+            {KeyEventType.esc},
+            (event) {
+              userQuit = true;
+              return KeyActionResult.cancelled;
+            },
+            hintLabel: 'q',
+            hintDescription: 'Quit',
+          ),
+          KeyBinding.char(
+            (c) => c == 'q',
+            (event) {
+              userQuit = true;
+              return KeyActionResult.cancelled;
+            },
+          ),
+          // Flip card
+          KeyBinding.single(
+            KeyEventType.space,
+            (event) {
+              flipped = !flipped;
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'Space',
+            hintDescription: 'Show/hide answer',
+          ),
+          KeyBinding.char(
+            (c) => c == 'f',
+            (event) {
+              flipped = !flipped;
+              return KeyActionResult.handled;
+            },
+          ),
+          // Grade 1-5
+          KeyBinding.char(
+            (c) => RegExp(r'^[1-5]$').hasMatch(c),
+            (event) {
+              if (current == null) return KeyActionResult.confirmed;
+              final ch = event.char!;
+              if (!flipped) {
+                // First numeric press reveals the answer for quick flow.
+                flipped = true;
+                return KeyActionResult.handled;
+              }
+              final score = int.parse(ch);
+              _grade(current!, score);
+              totalReviews += 1;
+              if (score >= 4) correctReviews += 1;
+              flipped = false;
+              current = _nextDueCard();
+              if (current == null) {
+                return KeyActionResult.confirmed;
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: '1-5',
+            hintDescription: 'Grade (first press reveals)',
+          ),
+          // Skip card
+          KeyBinding.single(
+            KeyEventType.arrowRight,
+            (event) {
+              flipped = false;
+              current = _nextDueCard(skipCurrent: current);
+              if (current == null) {
+                return KeyActionResult.confirmed;
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: 'n',
+            hintDescription: 'Skip card',
+          ),
+          KeyBinding.char(
+            (c) => c == 'n',
+            (event) {
+              flipped = false;
+              current = _nextDueCard(skipCurrent: current);
+              if (current == null) {
+                return KeyActionResult.confirmed;
+              }
+              return KeyActionResult.handled;
+            },
+          ),
+        ]) +
+        KeyBindings.cancel(onCancel: () => userQuit = true);
+
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: title,
+      theme: theme,
+      bindings: null, // We handle hints manually for this complex widget
+    );
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
+      frame.renderContent(out, (ctx) {
+        // Summary line
+        ctx.gutterLine(_summaryLine());
 
-      _renderHeader(out);
-      if (current == null) {
-        out.writeln('${lb.gutter()}${theme.info}Session complete. No due cards.${theme.reset}');
-        out.writeln('${lb.gutter()}${_summaryLine()}');
-        if (theme.style.showBorder) {
-          final frame = FramedLayout(title, theme: theme);
-          out.writeln(frame.bottom());
+        if (current == null) {
+          ctx.infoMessage('Session complete. No due cards.');
+          ctx.gutterLine(_summaryLine());
+          return;
         }
-        return;
-      }
 
-      if (userQuit) {
-        out.writeln('${lb.gutter()}${theme.warn}Session ended by user.${theme.reset}');
-        out.writeln('${lb.gutter()}${_summaryLine()}');
-        if (theme.style.showBorder) {
-          final frame = FramedLayout(title, theme: theme);
-          out.writeln(frame.bottom());
+        if (userQuit) {
+          ctx.warnMessage('Session ended by user.');
+          ctx.gutterLine(_summaryLine());
+          return;
         }
-        return;
-      }
 
-      _renderCard(out, current!, flipped: flipped);
-      _renderHints(out, flipped: flipped);
+        // Render card
+        _renderCard(ctx, current!, flipped: flipped);
+      });
+
+      // Render hints (manually for complex layout)
+      _renderHints(out, flipped: flipped, bindings: bindings);
     }
 
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
+    runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (current == null) {
-          return PromptResult.confirmed;
-        }
-
-        if (ev.type == KeyEventType.esc ||
-            ev.type == KeyEventType.ctrlC ||
-            (ev.type == KeyEventType.char && ev.char == 'q')) {
-          userQuit = true;
-          return PromptResult.cancelled;
-        }
-
-        if (ev.type == KeyEventType.space ||
-            (ev.type == KeyEventType.char && ev.char == 'f')) {
-          flipped = !flipped;
-          return null;
-        }
-
-        if (ev.type == KeyEventType.char) {
-          final ch = ev.char!;
-          if (RegExp(r'^[1-5]$').hasMatch(ch)) {
-            if (!flipped) {
-              // First numeric press reveals the answer for quick flow.
-              flipped = true;
-              return null;
-            }
-            final score = int.parse(ch);
-            _grade(current!, score);
-            totalReviews += 1;
-            if (score >= 4) correctReviews += 1;
-            flipped = false;
-            current = _nextDueCard();
-            if (current == null) {
-              return PromptResult.confirmed;
-            }
-            return null;
-          }
-        }
-
-        if (ev.type == KeyEventType.arrowRight ||
-            (ev.type == KeyEventType.char && ev.char == 'n')) {
-          flipped = false;
-          current = _nextDueCard(skipCurrent: current);
-          if (current == null) {
-            return PromptResult.confirmed;
-          }
-          return null;
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
-  }
-
-  void _renderHeader(RenderOutput out) {
-    final lb = LineBuilder(theme);
-    final frame = FramedLayout(title, theme: theme);
-    final top = frame.top();
-    out.writeln('${theme.bold}$top${theme.reset}');
-    out.writeln('${lb.gutter()}${_summaryLine()}');
   }
 
   String _summaryLine() {
@@ -149,37 +183,28 @@ class Flashcards {
         '${theme.dim}Time:${theme.reset} ${mins}m ${secs}s';
   }
 
-  void _renderCard(RenderOutput out, CardItem card, {required bool flipped}) {
-    final lb = LineBuilder(theme);
+  void _renderCard(FrameContext ctx, CardItem card, {required bool flipped}) {
     final face = flipped ? card.back : card.front;
     final label = flipped ? 'Answer' : 'Question';
     final color = flipped ? theme.accent : theme.highlight;
-    out.writeln('${lb.gutter()}${sectionHeader(theme, label)}');
+    ctx.gutterLine(sectionHeader(theme, label));
     for (final line in face.split('\n')) {
-      out.writeln('${lb.gutter()}$color$line${theme.reset}');
+      ctx.gutterLine('$color$line${theme.reset}');
     }
 
     if (!flipped && card.hint != null && card.hint!.isNotEmpty) {
-      out.writeln('${lb.gutter()}${sectionHeader(theme, 'Hint')}');
-      out.writeln('${lb.gutter()}${theme.gray}${card.hint}${theme.reset}');
+      ctx.gutterLine(sectionHeader(theme, 'Hint'));
+      ctx.gutterLine('${theme.gray}${card.hint}${theme.reset}');
     }
   }
 
-  void _renderHints(RenderOutput out, {required bool flipped}) {
-    final lb = LineBuilder(theme);
+  void _renderHints(RenderOutput out,
+      {required bool flipped, required KeyBindings bindings}) {
+    final lb = theme.style.borderVertical;
     out.writeln('');
-    final rows = <List<String>>[
-      [Hints.key('Space', theme), flipped ? 'Hide answer' : 'Show answer'],
-      [
-        Hints.key('1-5', theme),
-        'Grade (1 again … 5 easy; first press reveals)'
-      ],
-      [Hints.key('n', theme), 'Skip card'],
-      [Hints.key('q', theme), 'Quit'],
-    ];
-    final s = Hints.grid(rows, theme).split('\n');
+    final s = Hints.grid(bindings.toHintEntries(), theme).split('\n');
     for (final line in s) {
-      out.writeln('${lb.gutter()}$line');
+      out.writeln('${theme.gray}$lb${theme.reset} $line');
     }
     if (theme.style.showBorder) {
       final frame = FramedLayout(title, theme: theme);
@@ -217,8 +242,6 @@ class Flashcards {
     final wait = delays[card.box] ?? const Duration(seconds: 30);
     card.dueAt = DateTime.now().add(wait);
   }
-
-
 }
 
 class CardItem {

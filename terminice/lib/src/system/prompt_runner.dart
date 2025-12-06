@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'terminal.dart';
 import 'key_events.dart';
+import 'key_bindings.dart';
 
 /// Result from a prompt indicating whether it was confirmed or cancelled.
 enum PromptResult { confirmed, cancelled }
@@ -336,6 +337,35 @@ class PromptRunner {
     }
   }
 
+  /// Runs the prompt loop using a [KeyBindings] instance.
+  ///
+  /// This is the recommended way to use PromptRunner with the KeyBindings system.
+  /// It automatically handles the mapping from KeyActionResult to PromptResult.
+  ///
+  /// Example:
+  /// ```dart
+  /// final bindings = KeyBindings.togglePrompt(
+  ///   onToggle: () => selectedYes = !selectedYes,
+  /// );
+  ///
+  /// final result = runner.runWithBindings(
+  ///   render: (out) => renderMyWidget(out),
+  ///   bindings: bindings,
+  /// );
+  /// ```
+  PromptResult runWithBindings({
+    required void Function(RenderOutput out) render,
+    required KeyBindings bindings,
+  }) {
+    return run(
+      render: render,
+      onKey: (event) {
+        final result = bindings.handle(event);
+        return KeyBindings.toPromptResult(result);
+      },
+    );
+  }
+
   /// Runs the prompt loop asynchronously with optional blinking cursor support.
   ///
   /// [render] is called with a [RenderOutput] to write content.
@@ -408,6 +438,24 @@ class PromptRunner {
     }
 
     return result;
+  }
+
+  /// Runs the prompt loop asynchronously using a [KeyBindings] instance.
+  ///
+  /// This is the async version of [runWithBindings] with optional cursor blinking.
+  Future<PromptResult> runAsyncWithBindings({
+    required void Function(RenderOutput out) render,
+    required KeyBindings bindings,
+    CursorBlink? cursorBlink,
+  }) {
+    return runAsync(
+      render: render,
+      cursorBlink: cursorBlink,
+      onKey: (event) {
+        final result = bindings.handle(event);
+        return KeyBindings.toPromptResult(result);
+      },
+    );
   }
 }
 

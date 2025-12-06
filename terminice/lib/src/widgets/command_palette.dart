@@ -1,15 +1,13 @@
 import 'dart:math';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/key_events.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 import '../system/text_input_buffer.dart';
 import '../system/text_utils.dart' as text;
+import '../system/widget_frame.dart';
 
 /// Represents a command in the palette.
 class CommandEntry {
@@ -46,8 +44,6 @@ class CommandPalette {
   CommandEntry? run() {
     if (commands.isEmpty) return null;
 
-    final style = theme.style;
-
     // Use centralized text input for query handling
     final queryInput = TextInputBuffer();
     bool useFuzzy = true;
@@ -66,126 +62,95 @@ class CommandPalette {
       nav.itemCount = ranked.length;
     }
 
-    void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
+    CommandEntry? result;
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.verticalNavigation(
+          onUp: () => nav.moveUp(),
+          onDown: () => nav.moveDown(),
+        ) +
+        KeyBindings.textInput(buffer: queryInput, onInput: updateRanking) +
+        KeyBindings.ctrlR(
+          onPress: () {
+            useFuzzy = !useFuzzy;
+            updateRanking();
+          },
+          hintDescription: 'toggle mode',
+        ) +
+        KeyBindings.confirm(onConfirm: () {
+          if (ranked.isNotEmpty) {
+            result = ranked[nav.selectedIndex].entry;
+          }
+          return KeyActionResult.confirmed;
+        }) +
+        KeyBindings.cancel(onCancel: () => cancelled = true);
+
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: label,
+      theme: theme,
+      bindings: bindings,
+      showConnector: true,
+      hintStyle: HintStyle.grid,
+    );
+
+    void render(RenderOutput out) {
       // Responsive rows based on current terminal size
       final cols = TerminalInfo.columns;
       final lines = TerminalInfo.rows;
       // Reserve: 1 title + 1 query + 1 connector + 1 mode line + 1 bottom + 4 hints ≈ 8
       nav.maxVisible = (lines - 8).clamp(5, maxVisible);
 
-      final frame = FramedLayout(label, theme: theme);
-      final title = frame.top();
-      out.writeln(
-          style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
+      frame.render(out, (ctx) {
+        // Query line
+        ctx.headerLine('Command', queryInput.text);
 
-      // Query line - using LineBuilder's gutter
-      out.writeln(
-          '${lb.gutter()}${theme.accent}Command:${theme.reset} ${queryInput.text}');
+        // Connector after query
+        ctx.writeConnector();
 
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
+        // Mode and counts line
+        final mode = useFuzzy ? 'Fuzzy' : 'Substring';
+        final countText = 'Matches: ${ranked.length}';
+        ctx.infoLine([mode, countText]);
 
-      // Mode and counts line
-      final mode = useFuzzy ? 'Fuzzy' : 'Substring';
-      final countText = 'Matches: ${ranked.length}';
-      final infoLine = '$mode   $countText';
-      out.writeln('${lb.gutter()}${theme.dim}$infoLine${theme.reset}');
+        // Use ListNavigation's viewport for visible window
+        final window = nav.visibleWindow(ranked);
 
-      // Use ListNavigation's viewport for visible window
-      final window = nav.visibleWindow(ranked);
+        ctx.listWindow(
+          window,
+          selectedIndex: nav.selectedIndex,
+          renderItem: (rankedItem, index, isFocused) {
+            final prefixSel = ctx.lb.arrow(isFocused);
 
-      // Use LineBuilder for overflow indicator
-      if (window.hasOverflowAbove) {
-        out.writeln(lb.overflowLine());
-      }
+            // Compose display text with highlighted match spans
+            final highlightedTitle = _highlightSpans(
+              rankedItem.entry.title,
+              rankedItem.titleSpans,
+              theme,
+            );
+            final subtitle = rankedItem.entry.subtitle;
+            final subtitlePart = subtitle == null
+                ? ''
+                : '  ${theme.dim}${text.truncate(subtitle, cols ~/ 2)}${theme.reset}';
 
-      for (var i = 0; i < window.items.length; i++) {
-        final absoluteIdx = window.start + i;
-        final isHighlighted = nav.isSelected(absoluteIdx);
-        // Use LineBuilder for arrow
-        final prefixSel = lb.arrow(isHighlighted);
-
-        // Compose display text with highlighted match spans
-        final rankedItem = window.items[i];
-        final highlightedTitle = _highlightSpans(
-          rankedItem.entry.title,
-          rankedItem.titleSpans,
-          theme,
+            final lineCore = '$prefixSel $highlightedTitle$subtitlePart';
+            ctx.highlightedLine(lineCore, highlighted: isFocused);
+          },
         );
-        final subtitle = rankedItem.entry.subtitle;
-        final subtitlePart = subtitle == null
-            ? ''
-            : '  ${theme.dim}${text.truncate(subtitle, cols ~/ 2)}${theme.reset}';
 
-        final lineCore = '$prefixSel $highlightedTitle$subtitlePart';
-
-        // Use LineBuilder's writeLine for consistent highlight handling
-        lb.writeLine(out, lineCore, highlighted: isHighlighted);
-      }
-
-      // Use LineBuilder for overflow indicator
-      if (window.hasOverflowBelow) {
-        out.writeln(lb.overflowLine());
-      }
-
-      if (ranked.isEmpty) {
-        out.writeln(lb.emptyLine('no matches'));
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      out.writeln(Hints.grid([
-        [Hints.key('type', theme), 'search commands'],
-        [Hints.key('↑/↓', theme), 'navigate'],
-        [Hints.key('Enter', theme), 'run'],
-        [Hints.key('Backspace', theme), 'erase'],
-        [Hints.key('Ctrl+R', theme), 'toggle mode'],
-        [Hints.key('Esc', theme), 'cancel'],
-      ], theme));
+        if (ranked.isEmpty) {
+          ctx.emptyMessage('no matches');
+        }
+      });
     }
 
     // Initial
     updateRanking();
 
-    CommandEntry? result;
-
     final runner = PromptRunner(hideCursor: true);
-    runner.run(
+    runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.ctrlC) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        }
-
-        if (ev.type == KeyEventType.arrowUp) {
-          nav.moveUp();
-        } else if (ev.type == KeyEventType.arrowDown) {
-          nav.moveDown();
-        } else if (ev.type == KeyEventType.enter) {
-          if (ranked.isNotEmpty) {
-            result = ranked[nav.selectedIndex].entry;
-          }
-          return PromptResult.confirmed;
-        } else if (ev.type == KeyEventType.esc) {
-          cancelled = true;
-          return PromptResult.cancelled;
-        } else if (ev.type == KeyEventType.ctrlR) {
-          useFuzzy = !useFuzzy;
-          updateRanking();
-        } else if (queryInput.handleKey(ev)) {
-          // TextInputBuffer handled the key (typing, backspace, etc.)
-          updateRanking();
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
     return cancelled ? null : result;
@@ -316,5 +281,3 @@ String _highlightSpans(String text, List<int> indices, PromptTheme theme) {
   if (inSpan) buf.write(theme.reset);
   return buf.toString();
 }
-
-// Uses text.truncate from text_utils.dart

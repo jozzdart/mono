@@ -1,11 +1,9 @@
 import 'dart:math' as math;
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
-import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 import '../system/text_utils.dart' as text;
+import '../system/widget_frame.dart';
 
 /// ResourceGrid – tabular boxes with CPU/Memory/IO graphs.
 ///
@@ -38,76 +36,63 @@ class ResourceGrid {
   }) : assert(cellWidth >= 20, 'cellWidth must be at least 20');
 
   void show() {
-    final out = RenderOutput();
-    _render(out);
-  }
+    final frame = WidgetFrame(title: title, theme: theme);
+    frame.show((ctx) {
+      final style = theme.style;
 
-  void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final style = theme.style;
-
-    // Title
-    final frame = FramedLayout(title, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
-    if (resources.isEmpty) {
-      out.writeln(lb.emptyLine('no resources'));
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
+      if (resources.isEmpty) {
+        ctx.emptyMessage('no resources');
+        return;
       }
-      return;
-    }
 
-    // Layout
-    final int cols = _computeColumns();
-    final int rows = (resources.length + cols - 1) ~/ cols;
-    final String colSep = ' ${theme.gray}${style.borderVertical}${theme.reset} ';
+      // Layout
+      final int cols = _computeColumns();
+      final int rows = (resources.length + cols - 1) ~/ cols;
+      final String colSep =
+          ' ${theme.gray}${style.borderVertical}${theme.reset} ';
 
-    // Render row-by-row; each cell expands to the same number of lines
-    for (int r = 0; r < rows; r++) {
-      final start = r * cols;
-      final end = math.min(start + cols, resources.length);
-      final slice = resources.sublist(start, end);
+      // Render row-by-row; each cell expands to the same number of lines
+      for (int r = 0; r < rows; r++) {
+        final start = r * cols;
+        final end = math.min(start + cols, resources.length);
+        final slice = resources.sublist(start, end);
 
-      final List<List<String>> renderedCells = slice
-          .map((cell) => _renderCell(cell, width: cellWidth, spark: sparklineWidth))
-          .toList(growable: false);
+        final List<List<String>> renderedCells = slice
+            .map((cell) =>
+                _renderCell(cell, width: cellWidth, spark: sparklineWidth))
+            .toList(growable: false);
 
-      // Normalize height across cells in this row
-      final int linesPerCell = renderedCells
-          .map((c) => c.length)
-          .fold<int>(0, (a, b) => math.max(a, b));
-      for (final c in renderedCells) {
-        while (c.length < linesPerCell) {
-          c.add(' ' * cellWidth);
+        // Normalize height across cells in this row
+        final int linesPerCell = renderedCells
+            .map((c) => c.length)
+            .fold<int>(0, (a, b) => math.max(a, b));
+        for (final c in renderedCells) {
+          while (c.length < linesPerCell) {
+            c.add(' ' * cellWidth);
+          }
+        }
+
+        // Print each visual line across the row
+        for (int line = 0; line < linesPerCell; line++) {
+          final buf = StringBuffer();
+          for (int i = 0; i < renderedCells.length; i++) {
+            if (i > 0) buf.write(colSep);
+            buf.write(renderedCells[i][line]);
+          }
+          ctx.gutterLine(buf.toString());
+        }
+
+        // After each row of cells, print a subtle connector
+        if (r < rows - 1) {
+          final connector = StringBuffer();
+          connector
+              .write('${theme.gray}${style.borderConnector}${theme.reset}');
+          connector.write(
+              '${theme.gray}${'─' * _rowContentWidth(renderedCells.length)}${theme.reset}');
+          ctx.line(connector.toString());
         }
       }
-
-      // Print each visual line across the row
-      for (int line = 0; line < linesPerCell; line++) {
-        final buf = StringBuffer();
-        buf.write(lb.gutter());
-        for (int i = 0; i < renderedCells.length; i++) {
-          if (i > 0) buf.write(colSep);
-          buf.write(renderedCells[i][line]);
-        }
-        out.writeln(buf.toString());
-      }
-
-      // After each row of cells, print a subtle connector
-      if (r < rows - 1) {
-        final connector = StringBuffer();
-        connector.write('${theme.gray}${style.borderConnector}${theme.reset}');
-        connector.write('${theme.gray}${'─' * _rowContentWidth(renderedCells.length)}${theme.reset}');
-        out.writeln(connector.toString());
-      }
-    }
-
-    // Bottom border line to balance the title
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
+    });
   }
 
   int _computeColumns() {

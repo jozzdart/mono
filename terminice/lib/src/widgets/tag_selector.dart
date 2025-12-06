@@ -1,10 +1,9 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/key_events.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
+import '../system/widget_frame.dart';
 
 /// TagSelector – choose multiple "chips" (tags) from a list.
 ///
@@ -36,8 +35,6 @@ class TagSelector {
 
   List<String> run() {
     if (tags.isEmpty) return [];
-
-    final style = theme.style;
 
     // State
     int focusedIndex = 0;
@@ -74,76 +71,6 @@ class TagSelector {
         cols: cols,
         rows: rows
       );
-    }
-
-    String renderChip(
-        int index, bool isFocused, bool isSelected, int colWidth) {
-      final base = tags[index];
-      final raw = '[ $base ]';
-      final padding = (colWidth - raw.length).clamp(0, 1000);
-      final padded = raw + ' ' * padding;
-
-      if (isFocused) {
-        return '${theme.inverse}${theme.selection}$padded${theme.reset}';
-      }
-      if (isSelected) {
-        // Accentuate text while preserving bracket structure
-        final colored =
-            padded.replaceFirst(base, '${theme.accent}$base${theme.reset}');
-        return colored;
-      }
-      return '${theme.dim}$padded${theme.reset}';
-    }
-
-    void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-
-      final frame = FramedLayout(prompt, theme: theme);
-      final title = frame.top();
-      out.writeln(
-          style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
-
-      // Selected summary
-      final count = selected.length;
-      final summary = count == 0
-          ? lb.emptyMessage('none selected')
-          : '${theme.accent}$count selected${theme.reset}';
-      out.writeln(
-          '${lb.gutter()}${Hints.comma([
-            'Space to toggle',
-            'Enter to confirm',
-            'Esc to cancel'
-          ], theme)}  $summary');
-
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
-
-      final l = layout();
-      for (var r = 0; r < l.rows; r++) {
-        final pieces = <String>[];
-        for (var c = 0; c < l.cols; c++) {
-          final idx = r * l.cols + c;
-          if (idx >= tags.length) break;
-          pieces.add(
-            renderChip(
-                idx, idx == focusedIndex, selected.contains(idx), l.colWidth),
-          );
-        }
-        out.writeln('${lb.gutter()}${pieces.join(' ')}');
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      out.writeln(Hints.bullets([
-        Hints.hint('←/→/↑/↓', 'navigate', theme),
-        Hints.hint('Space', 'toggle', theme),
-        Hints.hint('Enter', 'confirm', theme),
-        Hints.hint('Esc', 'cancel', theme),
-      ], theme));
     }
 
     void moveLeft() {
@@ -188,34 +115,86 @@ class TagSelector {
       }
     }
 
-    final runner = PromptRunner(hideCursor: true);
-    final result = runner.run(
-      render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
-        if (ev.type == KeyEventType.ctrlC || ev.type == KeyEventType.esc) {
-          cancelled = true;
-          return PromptResult.cancelled;
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.gridSelection(
+      onUp: moveUp,
+      onDown: moveDown,
+      onLeft: moveLeft,
+      onRight: moveRight,
+      onToggle: () {
+        if (selected.contains(focusedIndex)) {
+          selected.remove(focusedIndex);
+        } else {
+          selected.add(focusedIndex);
         }
-
-        if (ev.type == KeyEventType.space) {
-          if (selected.contains(focusedIndex)) {
-            selected.remove(focusedIndex);
-          } else {
-            selected.add(focusedIndex);
-          }
-        } else if (ev.type == KeyEventType.arrowLeft) {
-          moveLeft();
-        } else if (ev.type == KeyEventType.arrowRight) {
-          moveRight();
-        } else if (ev.type == KeyEventType.arrowUp) {
-          moveUp();
-        } else if (ev.type == KeyEventType.arrowDown) {
-          moveDown();
-        }
-
-        return null;
       },
+      showToggleHint: true,
+      onCancel: () => cancelled = true,
+    );
+
+    String renderChip(
+        int index, bool isFocused, bool isSelected, int colWidth) {
+      final base = tags[index];
+      final raw = '[ $base ]';
+      final padding = (colWidth - raw.length).clamp(0, 1000);
+      final padded = raw + ' ' * padding;
+
+      if (isFocused) {
+        return '${theme.inverse}${theme.selection}$padded${theme.reset}';
+      }
+      if (isSelected) {
+        // Accentuate text while preserving bracket structure
+        final colored =
+            padded.replaceFirst(base, '${theme.accent}$base${theme.reset}');
+        return colored;
+      }
+      return '${theme.dim}$padded${theme.reset}';
+    }
+
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: prompt,
+      theme: theme,
+      bindings: bindings,
+      showConnector: true,
+    );
+
+    void render(RenderOutput out) {
+      frame.render(out, (ctx) {
+        // Selected summary
+        final count = selected.length;
+        final summary = count == 0
+            ? ctx.lb.emptyMessage('none selected')
+            : '${theme.accent}$count selected${theme.reset}';
+        ctx.gutterLine('${Hints.comma([
+              'Space to toggle',
+              'Enter to confirm',
+              'Esc to cancel'
+            ], theme)}  $summary');
+
+        // Connector after summary
+        ctx.writeConnector();
+
+        final l = layout();
+        for (var r = 0; r < l.rows; r++) {
+          final pieces = <String>[];
+          for (var c = 0; c < l.cols; c++) {
+            final idx = r * l.cols + c;
+            if (idx >= tags.length) break;
+            pieces.add(
+              renderChip(
+                  idx, idx == focusedIndex, selected.contains(idx), l.colWidth),
+            );
+          }
+          ctx.gutterLine(pieces.join(' '));
+        }
+      });
+    }
+
+    final runner = PromptRunner(hideCursor: true);
+    final result = runner.runWithBindings(
+      render: render,
+      bindings: bindings,
     );
 
     if (cancelled || result == PromptResult.cancelled) return [];

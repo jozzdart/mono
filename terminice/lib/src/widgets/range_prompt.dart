@@ -1,12 +1,10 @@
 import 'dart:math' as math;
 
 import '../style/theme.dart';
-import '../system/key_events.dart';
-import '../system/framed_layout.dart';
-import '../system/hints.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
+import '../system/widget_frame.dart';
 
 /// RangePrompt – select a numeric or percent range with two handles.
 ///
@@ -65,8 +63,6 @@ class RangePrompt {
   int width = 28,
   String unit = '%',
 }) {
-  final style = theme.style;
-
   num start = math.min(startInitial, endInitial).clamp(min, max);
   num end = math.max(startInitial, endInitial).clamp(min, max);
   bool editingStart = true;
@@ -79,129 +75,118 @@ class RangePrompt {
 
   String handleGlyph(bool active) => active ? '█' : '█';
 
+  // Use KeyBindings for declarative key handling
+  final bindings = KeyBindings([
+        // Toggle handle (↑/↓/Space)
+        KeyBinding.multi(
+          {KeyEventType.arrowUp, KeyEventType.arrowDown, KeyEventType.space},
+          (event) {
+            editingStart = !editingStart;
+            return KeyActionResult.handled;
+          },
+          hintLabel: '↑/↓/Space',
+          hintDescription: 'toggle handle',
+        ),
+      ]) +
+      KeyBindings.horizontalNavigation(
+        onLeft: () {
+          if (editingStart) {
+            start = math.max(min, start - step);
+            if (start > end) end = start;
+          } else {
+            end = math.max(min, end - step);
+            if (end < start) start = end;
+          }
+          start = start.clamp(min, max);
+          end = end.clamp(min, max);
+        },
+        onRight: () {
+          if (editingStart) {
+            start = math.min(max, start + step);
+            if (start > end) end = start;
+          } else {
+            end = math.min(max, end + step);
+            if (end < start) start = end;
+          }
+          start = start.clamp(min, max);
+          end = end.clamp(min, max);
+        },
+      ) +
+      KeyBindings.prompt(onCancel: () => cancelled = true);
+
+  // Use WidgetFrame for consistent frame rendering
+  final frame = WidgetFrame(
+    title: label,
+    theme: theme,
+    bindings: bindings,
+  );
+
   void render(RenderOutput out) {
-    // Header
-    final frame = FramedLayout(label, theme: theme);
-    final top = frame.top();
-    final title = style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top;
-    out.writeln(title);
+    frame.render(out, (ctx) {
+      // Effective width (responsive to terminal columns)
+      final effWidth = math.max(10, math.min(width, TerminalInfo.columns - 8));
 
-    // Effective width (responsive to terminal columns)
-    final effWidth = math.max(10, math.min(width, TerminalInfo.columns - 8));
+      // Compute positions
+      final startIdx = valueToIndex(start, effWidth);
+      final endIdx = valueToIndex(end, effWidth);
 
-    // Compute positions
-    final startIdx = valueToIndex(start, effWidth);
-    final endIdx = valueToIndex(end, effWidth);
+      // Tooltip line (single centered label above the selected range)
+      final border = '${theme.gray}┃${theme.reset}';
+      final sRaw = (start == start.roundToDouble()
+              ? start.toInt().toString()
+              : start.toStringAsFixed(1)) +
+          unit;
+      final eRaw = (end == end.roundToDouble()
+              ? end.toInt().toString()
+              : end.toStringAsFixed(1)) +
+          unit;
+      final displayLen = sRaw.length + 1 + eRaw.length; // without color codes
+      final centerIdx = ((startIdx + endIdx) / 2).round();
+      final leftPad = math.max(0, centerIdx - (displayLen ~/ 2));
+      final rangeTxt = '${theme.bold}${theme.accent}$sRaw—$eRaw${theme.reset}';
 
-    // Tooltip line (single centered label above the selected range)
-    final border = '${theme.gray}┃${theme.reset}';
-    final sRaw = (start == start.roundToDouble()
-            ? start.toInt().toString()
-            : start.toStringAsFixed(1)) +
-        unit;
-    final eRaw = (end == end.roundToDouble()
-            ? end.toInt().toString()
-            : end.toStringAsFixed(1)) +
-        unit;
-    final displayLen = sRaw.length + 1 + eRaw.length; // without color codes
-    final centerIdx = ((startIdx + endIdx) / 2).round();
-    final leftPad = math.max(0, centerIdx - (displayLen ~/ 2));
-    final rangeTxt = '${theme.bold}${theme.accent}$sRaw—$eRaw${theme.reset}';
+      // Caret pointer to active handle (visual switch indicator)
+      final activeIdx = editingStart ? startIdx : endIdx;
+      ctx.line(
+          '$border${' ' * (2 + activeIdx)}${theme.accent}^${theme.reset}');
+      ctx.line('$border${' ' * (2 + leftPad)}$rangeTxt');
 
-    // Caret pointer to active handle (visual switch indicator)
-    final activeIdx = editingStart ? startIdx : endIdx;
-    out.writeln(
-        '$border${' ' * (2 + activeIdx)}${theme.accent}^${theme.reset}');
-    out.writeln('$border${' ' * (2 + leftPad)}$rangeTxt');
+      // Bar with handles
+      final startHandle = handleGlyph(editingStart);
+      final endHandle = handleGlyph(!editingStart);
 
-    // Bar with handles
-    final startHandle = handleGlyph(editingStart);
-    final endHandle = handleGlyph(!editingStart);
-
-    final barLine = StringBuffer();
-    barLine.write('$border ');
-    for (int i = 0; i <= effWidth; i++) {
-      if (i == startIdx) {
-        final isActive = editingStart;
-        final glyph = isActive
-            ? '${theme.inverse}${theme.accent}$startHandle${theme.reset}'
-            : '${theme.accent}$startHandle${theme.reset}';
-        barLine.write(glyph);
-      } else if (i == endIdx) {
-        final isActive = !editingStart;
-        final glyph = isActive
-            ? '${theme.inverse}${theme.accent}$endHandle${theme.reset}'
-            : '${theme.accent}$endHandle${theme.reset}';
-        barLine.write(glyph);
-      } else if (i > startIdx && i < endIdx) {
-        barLine.write('${theme.accent}━${theme.reset}');
-      } else if (i < effWidth) {
-        barLine.write('${theme.dim}·${theme.reset}');
+      final barLine = StringBuffer();
+      barLine.write('$border ');
+      for (int i = 0; i <= effWidth; i++) {
+        if (i == startIdx) {
+          final isActive = editingStart;
+          final glyph = isActive
+              ? '${theme.inverse}${theme.accent}$startHandle${theme.reset}'
+              : '${theme.accent}$startHandle${theme.reset}';
+          barLine.write(glyph);
+        } else if (i == endIdx) {
+          final isActive = !editingStart;
+          final glyph = isActive
+              ? '${theme.inverse}${theme.accent}$endHandle${theme.reset}'
+              : '${theme.accent}$endHandle${theme.reset}';
+          barLine.write(glyph);
+        } else if (i > startIdx && i < endIdx) {
+          barLine.write('${theme.accent}━${theme.reset}');
+        } else if (i < effWidth) {
+          barLine.write('${theme.dim}·${theme.reset}');
+        }
       }
-    }
-    out.writeln(barLine.toString());
+      ctx.line(barLine.toString());
 
-    // Active handle label - using LineBuilder's gutter
-    final lb = LineBuilder(theme);
-    out.writeln(
-        '${lb.gutter()}Active: ${theme.accent}${editingStart ? 'start' : 'end'}${theme.reset}');
-
-    // Bottom border
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
-
-    // Hints
-    out.writeln(Hints.bullets([
-      Hints.hint('↑/↓', 'toggle handle', theme),
-      Hints.hint('Space', 'toggle handle', theme),
-      Hints.hint('←/→', 'adjust', theme),
-      Hints.hint('Enter', 'confirm', theme),
-      Hints.hint('Esc', 'cancel', theme),
-    ], theme));
+      // Active handle label
+      ctx.labeledAccent('Active', editingStart ? 'start' : 'end');
+    });
   }
 
   final runner = PromptRunner(hideCursor: true);
-  final result = runner.run(
+  final result = runner.runWithBindings(
     render: render,
-    onKey: (ev) {
-      if (ev.type == KeyEventType.enter) return PromptResult.confirmed;
-      if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-        cancelled = true;
-        return PromptResult.cancelled;
-      }
-
-      // Toggle active handle
-      if (ev.type == KeyEventType.arrowUp ||
-          ev.type == KeyEventType.arrowDown ||
-          ev.type == KeyEventType.space) {
-        editingStart = !editingStart;
-      }
-
-      // Adjust
-      else if (ev.type == KeyEventType.arrowLeft) {
-        if (editingStart) {
-          start = math.max(min, start - step);
-          if (start > end) end = start; // keep order
-        } else {
-          end = math.max(min, end - step);
-          if (end < start) start = end; // keep order
-        }
-      } else if (ev.type == KeyEventType.arrowRight) {
-        if (editingStart) {
-          start = math.min(max, start + step);
-          if (start > end) end = start;
-        } else {
-          end = math.min(max, end + step);
-          if (end < start) start = end;
-        }
-      }
-
-      // Clamp
-      start = start.clamp(min, max);
-      end = end.clamp(min, max);
-      return null;
-    },
+    bindings: bindings,
   );
 
   return (cancelled || result == PromptResult.cancelled)

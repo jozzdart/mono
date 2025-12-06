@@ -1,8 +1,8 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
 import '../system/line_builder.dart';
 import '../system/rendering.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// MarkdownViewer – renders markdown with colors and headers
 ///
@@ -16,7 +16,7 @@ class MarkdownViewer {
   final String? title;
   final bool color;
 
-  late RenderOutput _out;
+  late FrameContext _ctx;
 
   MarkdownViewer(
     this.markdown, {
@@ -26,23 +26,26 @@ class MarkdownViewer {
   });
 
   void show() {
-    _out = RenderOutput();
-    _render(_out);
+    final label = title ?? 'Markdown';
+    final frame = WidgetFrame(title: label, theme: theme);
+    frame.show((ctx) {
+      _ctx = ctx;
+      _renderContent();
+    });
   }
 
   /// Renders to the given [RenderOutput] for external line tracking.
   /// Use this when animating or updating the widget repeatedly.
   void showTo(RenderOutput out) {
-    _out = out;
-    _render(out);
+    final label = title ?? 'Markdown';
+    final frame = WidgetFrame(title: label, theme: theme);
+    frame.showTo(out, (ctx) {
+      _ctx = ctx;
+      _renderContent();
+    });
   }
 
-  void _render(RenderOutput out) {
-    final style = theme.style;
-    final label = title ?? 'Markdown';
-    final frame = FramedLayout(label, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
+  void _renderContent() {
     final lines = markdown.split('\n');
     bool inCode = false;
     String? codeLang;
@@ -152,19 +155,14 @@ class MarkdownViewer {
         _gutter(tl);
       }
     }
-
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
   }
 
   void _gutter(String content) {
-    final lb = LineBuilder(theme);
     final text = color ? content : stripAnsi(content);
     if (text.trim().isEmpty) {
-      _out.writeln(lb.gutterOnly());
+      _ctx.gutterEmpty();
     } else {
-      _out.writeln('${lb.gutter()}$text');
+      _ctx.gutterLine(text);
     }
   }
 

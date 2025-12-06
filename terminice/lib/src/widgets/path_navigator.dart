@@ -1,12 +1,10 @@
 import 'dart:io';
 
 import '../style/theme.dart';
-import '../system/key_events.dart';
-import '../system/hints.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// PathNavigator – interactive directory (and optional file) navigation.
 ///
@@ -34,8 +32,6 @@ class PathNavigator {
 
   /// Returns a selected path, or empty string if cancelled.
   String run() {
-    final style = theme.style;
-
     Directory current = startDir;
     String? selectedPath;
 
@@ -51,7 +47,9 @@ class PathNavigator {
         final aDir = a is Directory;
         final bDir = b is Directory;
         if (aDir != bDir) return aDir ? -1 : 1;
-        return _basename(a.path).toLowerCase().compareTo(_basename(b.path).toLowerCase());
+        return _basename(a.path)
+            .toLowerCase()
+            .compareTo(_basename(b.path).toLowerCase());
       });
 
       final filtered = raw
@@ -67,11 +65,13 @@ class PathNavigator {
       }
 
       // Select current directory entry
-      list.add(_Entry('✓ Select this directory', dir.path, _EntryType.confirmDir));
+      list.add(
+          _Entry('✓ Select this directory', dir.path, _EntryType.confirmDir));
 
       for (final e in filtered) {
         if (e is Directory) {
-          list.add(_Entry('▸ ${_basename(e.path)}', e.path, _EntryType.directory));
+          list.add(
+              _Entry('▸ ${_basename(e.path)}', e.path, _EntryType.directory));
         } else if (allowFiles && e is File) {
           list.add(_Entry('· ${_basename(e.path)}', e.path, _EntryType.file));
         }
@@ -83,110 +83,102 @@ class PathNavigator {
       return path.length > 60 ? '...${path.substring(path.length - 57)}' : path;
     }
 
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.verticalNavigation(
+          onUp: () => nav.moveUp(),
+          onDown: () => nav.moveDown(),
+        ) +
+        KeyBindings([
+          // Left - parent directory
+          KeyBinding.single(
+            KeyEventType.arrowLeft,
+            (event) {
+              if (current.parent.path != current.path) {
+                current = current.parent;
+                nav.reset();
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: '←',
+            hintDescription: 'Parent directory',
+          ),
+          // Right / Enter - enter directory or select
+          KeyBinding.multi(
+            {KeyEventType.arrowRight, KeyEventType.enter},
+            (event) {
+              final entries = readEntries(current);
+              if (entries.isEmpty) return KeyActionResult.ignored;
+              nav.itemCount = entries.length;
+              final cur = entries[nav.selectedIndex];
+              if (cur.type == _EntryType.up) {
+                current = Directory(cur.path);
+                nav.reset();
+              } else if (cur.type == _EntryType.confirmDir) {
+                selectedPath = current.path;
+                return KeyActionResult.confirmed;
+              } else if (cur.type == _EntryType.directory) {
+                current = Directory(cur.path);
+                nav.reset();
+              } else if (cur.type == _EntryType.file && allowFiles) {
+                selectedPath = cur.path;
+                return KeyActionResult.confirmed;
+              }
+              return KeyActionResult.handled;
+            },
+            hintLabel: '→ / Enter',
+            hintDescription: 'Enter directory / Select',
+          ),
+        ]) +
+        KeyBindings.cancel();
+
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: label,
+      theme: theme,
+      bindings: bindings,
+      showConnector: true,
+      hintStyle: HintStyle.grid,
+    );
+
     void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
+      frame.render(out, (ctx) {
+        // Current path line
+        ctx.headerLine('Path', shortPath(current.path));
 
-      final frame = FramedLayout(label, theme: theme);
-      final title = frame.top();
-      out.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
+        // Connector after path
+        ctx.writeConnector();
 
-      // Current path line - using LineBuilder's gutter
-      out.writeln('${lb.gutter()}${theme.accent}Path:${theme.reset} ${shortPath(current.path)}');
+        final entries = readEntries(current);
+        nav.itemCount = entries.length;
 
-      if (style.showBorder) {
-        out.writeln(frame.connector());
-      }
+        if (entries.isEmpty) {
+          ctx.emptyMessage('empty');
+        }
 
-      final entries = readEntries(current);
-      nav.itemCount = entries.length;
+        // Use ListNavigation's viewport
+        final window = nav.visibleWindow(entries);
 
-      if (entries.isEmpty) {
-        out.writeln(lb.emptyLine('empty'));
-      }
-
-      // Use ListNavigation's viewport
-      final window = nav.visibleWindow(entries);
-
-      // Use LineBuilder for overflow indicator
-      if (window.hasOverflowAbove) {
-        out.writeln(lb.overflowLine());
-      }
-
-      for (var i = 0; i < window.items.length; i++) {
-        final absoluteIdx = window.start + i;
-        final e = window.items[i];
-        final isHighlighted = nav.isSelected(absoluteIdx);
-        // Use LineBuilder for arrow
-        final prefix = lb.arrow(isHighlighted);
-        final lineText = '$prefix ${e.label}';
-        // Use LineBuilder's writeLine for consistent highlight handling
-        lb.writeLine(out, lineText, highlighted: isHighlighted);
-      }
-
-      // Use LineBuilder for overflow indicator
-      if (window.hasOverflowBelow) {
-        out.writeln(lb.overflowLine());
-      }
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-
-      out.writeln(Hints.grid([
-        [Hints.key('↑/↓', theme), 'Navigate'],
-        [Hints.key('→ / Enter', theme), 'Enter directory / Select'],
-        [Hints.key('←', theme), 'Parent directory'],
-        [Hints.key('Esc', theme), 'Cancel'],
-      ], theme));
+        ctx.listWindow(
+          window,
+          selectedIndex: nav.selectedIndex,
+          renderItem: (entry, index, isFocused) {
+            final prefix = ctx.lb.arrow(isFocused);
+            final lineText = '$prefix ${entry.label}';
+            ctx.highlightedLine(lineText, highlighted: isFocused);
+          },
+        );
+      });
     }
 
     final runner = PromptRunner(hideCursor: true);
-    final result = runner.run(
+    final result = runner.runWithBindings(
       render: render,
-      onKey: (ev) {
-        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-          return PromptResult.cancelled;
-        }
-
-        final entries = readEntries(current);
-        if (entries.isEmpty) {
-          return null;
-        }
-        nav.itemCount = entries.length; // Keep in sync
-
-        if (ev.type == KeyEventType.arrowUp) {
-          nav.moveUp();
-        } else if (ev.type == KeyEventType.arrowDown) {
-          nav.moveDown();
-        } else if (ev.type == KeyEventType.arrowLeft) {
-          // go to parent
-          if (current.parent.path != current.path) {
-            current = current.parent;
-            nav.reset();
-          }
-        } else if (ev.type == KeyEventType.arrowRight || ev.type == KeyEventType.enter) {
-          final cur = entries[nav.selectedIndex];
-          if (cur.type == _EntryType.up) {
-            current = Directory(cur.path);
-            nav.reset();
-          } else if (cur.type == _EntryType.confirmDir) {
-            selectedPath = current.path;
-            return PromptResult.confirmed;
-          } else if (cur.type == _EntryType.directory) {
-            current = Directory(cur.path);
-            nav.reset();
-          } else if (cur.type == _EntryType.file && allowFiles) {
-            selectedPath = cur.path;
-            return PromptResult.confirmed;
-          }
-        }
-
-        return null;
-      },
+      bindings: bindings,
     );
 
-    return (result == PromptResult.confirmed && selectedPath != null) ? selectedPath! : '';
+    return (result == PromptResult.confirmed && selectedPath != null)
+        ? selectedPath!
+        : '';
   }
 }
 
@@ -203,5 +195,3 @@ String _basename(String path) {
   final parts = path.split(Platform.pathSeparator);
   return parts.isEmpty ? path : parts.last;
 }
-
-

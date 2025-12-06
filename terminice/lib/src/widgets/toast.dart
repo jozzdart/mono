@@ -2,9 +2,8 @@ import 'dart:io' show sleep;
 
 import '../style/theme.dart';
 import '../system/hints.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// Toast — a transient, theme-aware popup message that gently fades away.
 ///
@@ -30,7 +29,6 @@ class Toast {
   }) : assert(fps > 0);
 
   void run() {
-    final style = theme.style;
     int frameMs = (1000 / fps).clamp(12, 200).round();
 
     String iconForVariant() {
@@ -60,12 +58,6 @@ class Toast {
     }
 
     void render(RenderOutput out, double opacity) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-
-      final frame = FramedLayout(label, theme: theme);
-      final top = frame.top();
-
       // Fade styling: blend dim/gray as opacity decreases.
       final bool dimPhase = opacity < 0.85;
       final bool grayPhase = opacity < 0.55;
@@ -78,17 +70,12 @@ class Toast {
         return s;
       }
 
-      out.writeln('${theme.bold}$top${theme.reset}');
-
-      final line = StringBuffer();
-      line.write(lb.gutter());
-      line.write(applyFade('${theme.bold}$color$icon${theme.reset} '));
-      line.write(applyFade(message));
-      out.writeln(line.toString());
-
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
+      final widgetFrame = WidgetFrame(title: label, theme: theme);
+      widgetFrame.showTo(out, (ctx) {
+        final iconPart = applyFade('${theme.bold}$color$icon${theme.reset}');
+        final msgPart = applyFade(message);
+        ctx.gutterLine('$iconPart $msgPart');
+      });
 
       out.writeln(Hints.bullets([
         'Fades automatically',

@@ -1,11 +1,10 @@
 import '../style/theme.dart';
 import 'search_select.dart';
 import '../system/focus_navigation.dart';
-import '../system/key_events.dart';
-import '../system/framed_layout.dart';
+import '../system/key_bindings.dart';
 import '../system/hints.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/widget_frame.dart';
 
 /// A simple interactive demo to iterate through themes
 /// and preview how they affect the prompt appearance.
@@ -36,20 +35,25 @@ class ThemeDemo {
     bool showPromptPreview = false;
 
     void renderThemePreview(RenderOutput out, String name, PromptTheme theme) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
       final style = theme.style;
 
-      final frame = FramedLayout('Theme Preview', theme: theme);
-      out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-      out.writeln('${lb.gutter()}Theme: ${theme.accent}$name${theme.reset}');
-      out.writeln('${lb.gutter()}Arrow: ${theme.accent}${style.arrow}${theme.reset}');
-      out.writeln(
-          '${lb.gutter()}Checkbox: ${theme.checkboxOn}${style.checkboxOnSymbol}${theme.reset} / ${theme.checkboxOff}${style.checkboxOffSymbol}${theme.reset}');
-      out.writeln(
-          '${lb.gutter()}Border: ${theme.selection}${style.borderTop}${style.borderConnector}${style.borderBottom}${theme.reset}');
-      out.writeln('${lb.gutter()}Highlight: ${theme.highlight}Highlight text${theme.reset}');
-      out.writeln('${lb.gutter()}Inverse: ${theme.inverse} Inverted line ${theme.reset}');
+      final widgetFrame = WidgetFrame(
+        title: 'Theme Preview',
+        theme: theme,
+        hintStyle: HintStyle.none,
+      );
+
+      widgetFrame.render(out, (ctx) {
+        ctx.labeledAccent('Theme', name);
+        ctx.gutterLine('Arrow: ${theme.accent}${style.arrow}${theme.reset}');
+        ctx.gutterLine(
+            'Checkbox: ${theme.checkboxOn}${style.checkboxOnSymbol}${theme.reset} / ${theme.checkboxOff}${style.checkboxOffSymbol}${theme.reset}');
+        ctx.gutterLine(
+            'Border: ${theme.selection}${style.borderTop}${style.borderConnector}${style.borderBottom}${theme.reset}');
+        ctx.gutterLine('Highlight: ${theme.highlight}Highlight text${theme.reset}');
+        ctx.gutterLine('Inverse: ${theme.inverse} Inverted line ${theme.reset}');
+      });
+
       out.writeln(
           '${theme.gray}${style.borderBottom}${'─' * 25}${theme.reset}');
       out.writeln(Hints.bullets([
@@ -59,29 +63,27 @@ class ThemeDemo {
       ], theme, dim: true));
     }
 
-    final runner = PromptRunner(hideCursor: true);
-    runner.run(
-      render: (out) => renderThemePreview(out, selected, themes[selected]!),
-      onKey: (ev) {
-        // ESC
-        if (ev.type == KeyEventType.esc || ev.type == KeyEventType.ctrlC) {
-          return PromptResult.cancelled;
-        } else if (ev.type == KeyEventType.arrowUp) {
-          focus.moveUp();
-          selected = themeNames[focus.focusedIndex];
-        } else if (ev.type == KeyEventType.arrowDown) {
-          focus.moveDown();
-          selected = themeNames[focus.focusedIndex];
-        }
-
-        // Enter
-        else if (ev.type == KeyEventType.enter) {
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.verticalNavigation(
+          onUp: () {
+            focus.moveUp();
+            selected = themeNames[focus.focusedIndex];
+          },
+          onDown: () {
+            focus.moveDown();
+            selected = themeNames[focus.focusedIndex];
+          },
+        ) +
+        KeyBindings.confirm(onConfirm: () {
           showPromptPreview = true;
-          return PromptResult.confirmed;
-        }
+          return KeyActionResult.confirmed;
+        }) +
+        KeyBindings.cancel();
 
-        return null;
-      },
+    final runner = PromptRunner(hideCursor: true);
+    runner.runWithBindings(
+      render: (out) => renderThemePreview(out, selected, themes[selected]!),
+      bindings: bindings,
     );
 
     if (showPromptPreview) {

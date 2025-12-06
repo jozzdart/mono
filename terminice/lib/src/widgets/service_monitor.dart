@@ -2,10 +2,9 @@ import 'dart:io';
 import 'dart:async';
 
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_utils.dart' as text;
+import '../system/widget_frame.dart';
 
 class ServiceEndpoint {
   final String name;
@@ -37,80 +36,72 @@ class ServiceMonitor {
   });
 
   Future<void> run() async {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
     final out = RenderOutput();
-    final style = theme.style;
     final label = title ?? 'Service Monitor';
-
-    final frame = FramedLayout(label, theme: theme);
-    out.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
     final results = await _runPings();
 
-    // Column widths
-    final nameW = text.clampInt(text.maxOf(endpoints.map((e) => e.name.length)), 8, 24);
-    final urlW = text.clampInt(
-        text.maxOf(endpoints.map((e) => e.url.toString().length)), 20, 48);
+    final frame = WidgetFrame(title: label, theme: theme);
+    frame.showTo(out, (ctx) {
+      // Column widths
+      final nameW =
+          text.clampInt(text.maxOf(endpoints.map((e) => e.name.length)), 8, 24);
+      final urlW = text.clampInt(
+          text.maxOf(endpoints.map((e) => e.url.toString().length)), 20, 48);
 
-    // Header line
-    final header = StringBuffer()
-      ..write('${text.padRight('Name', nameW)}  ')
-      ..write('${text.padRight('URL', urlW)}  ')
-      ..write('${text.padRight('Code', 4)}  ')
-      ..write(text.padRight('Latency', 8));
-    out.writeln(
-        '${lb.gutter()}'
-        '${theme.bold}${theme.gray}$header${theme.reset}');
+      // Header line
+      final header = StringBuffer()
+        ..write('${text.padRight('Name', nameW)}  ')
+        ..write('${text.padRight('URL', urlW)}  ')
+        ..write('${text.padRight('Code', 4)}  ')
+        ..write(text.padRight('Latency', 8));
+      ctx.gutterLine('${theme.bold}${theme.gray}$header${theme.reset}');
 
-    int okCount = 0, warnCount = 0, errCount = 0, timeoutCount = 0;
-    for (final r in results) {
-      final status = _statusOf(r);
-      switch (status) {
-        case _LineStatus.ok:
-          okCount++;
-          break;
-        case _LineStatus.warn:
-          warnCount++;
-          break;
-        case _LineStatus.error:
-          errCount++;
-          break;
-        case _LineStatus.timeout:
-          timeoutCount++;
-          break;
+      int okCount = 0, warnCount = 0, errCount = 0, timeoutCount = 0;
+      for (final r in results) {
+        final status = _statusOf(r);
+        switch (status) {
+          case _LineStatus.ok:
+            okCount++;
+            break;
+          case _LineStatus.warn:
+            warnCount++;
+            break;
+          case _LineStatus.error:
+            errCount++;
+            break;
+          case _LineStatus.timeout:
+            timeoutCount++;
+            break;
+        }
+
+        final icon = _statusIcon(status);
+        final name = text.padRight(r.endpoint.name, nameW);
+        final urlStr = text.truncatePad(r.endpoint.url.toString(), urlW);
+        final code = r.code != null
+            ? '${r.ok ? theme.info : (r.code! < 500 ? theme.warn : theme.error)}${text.padRight(r.code.toString(), 4)}${theme.reset}'
+            : '${theme.warn}${text.padRight('—', 4)}${theme.reset}';
+        final latency = r.elapsed != null
+            ? '${theme.selection}${text.padRight('${r.elapsed!.inMilliseconds} ms', 8)}${theme.reset}'
+            : '${theme.warn}${text.padRight('timeout', 8)}${theme.reset}';
+        final note = r.errorMessage != null
+            ? ' ${theme.gray}(${r.errorMessage})${theme.reset}'
+            : '';
+
+        ctx.gutterLine(
+          '$icon ${theme.bold}${theme.accent}$name${theme.reset}  '
+          '${theme.gray}$urlStr${theme.reset}  '
+          '$code  $latency$note',
+        );
       }
 
-      final icon = _statusIcon(status);
-      final name = text.padRight(r.endpoint.name, nameW);
-      final urlStr = text.truncatePad(r.endpoint.url.toString(), urlW);
-      final code = r.code != null
-          ? '${r.ok ? theme.info : (r.code! < 500 ? theme.warn : theme.error)}${text.padRight(r.code.toString(), 4)}${theme.reset}'
-          : '${theme.warn}${text.padRight('—', 4)}${theme.reset}';
-      final latency = r.elapsed != null
-          ? '${theme.selection}${text.padRight('${r.elapsed!.inMilliseconds} ms', 8)}${theme.reset}'
-          : '${theme.warn}${text.padRight('timeout', 8)}${theme.reset}';
-      final note = r.errorMessage != null
-          ? ' ${theme.gray}(${r.errorMessage})${theme.reset}'
-          : '';
-
-      out.writeln(
-        '${lb.gutter()}'
-        '$icon ${theme.bold}${theme.accent}$name${theme.reset}  '
-        '${theme.gray}$urlStr${theme.reset}  '
-        '$code  $latency$note',
-      );
-    }
-
-    if (style.showBorder) {
+      // Summary line
       final summary = '${theme.bold}${theme.gray}Summary:${theme.reset} '
           '${theme.info}ok $okCount${theme.reset}  •  '
           '${theme.warn}warn $warnCount${theme.reset}  •  '
           '${theme.error}error $errCount${theme.reset}  •  '
           '${theme.warn}timeout $timeoutCount${theme.reset}';
-      out.writeln('${lb.gutter()}$summary');
-      out.writeln(frame.bottom());
-    }
+      ctx.gutterLine(summary);
+    });
   }
 
   Future<List<_PingResult>> _runPings() async {
@@ -131,7 +122,8 @@ class ServiceMonitor {
     return results.cast<_PingResult>();
   }
 
-  Future<_PingResult> _pingWithRetries(ServiceEndpoint endpoint, int retries) async {
+  Future<_PingResult> _pingWithRetries(
+      ServiceEndpoint endpoint, int retries) async {
     _PingResult result = await _pingOnce(endpoint);
     int attempts = 0;
     while (result.code == null && attempts < retries) {
@@ -198,7 +190,8 @@ class ServiceMonitor {
       final res = await req.close().timeout(endpoint.timeout);
       await res.drain<void>();
       watch.stop();
-      return _PingResult(endpoint, elapsed: watch.elapsed, code: res.statusCode);
+      return _PingResult(endpoint,
+          elapsed: watch.elapsed, code: res.statusCode);
     } catch (e) {
       watch.stop();
       return _PingResult(endpoint,

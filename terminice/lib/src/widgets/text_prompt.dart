@@ -1,10 +1,9 @@
 import '../style/theme.dart';
-import '../system/key_events.dart';
-import '../system/framed_layout.dart';
 import '../system/hints.dart';
-import '../system/line_builder.dart';
+import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
+import '../system/widget_frame.dart';
 
 /// A text input prompt with blinking cursor, placeholder, and validation.
 ///
@@ -36,7 +35,6 @@ class TextPrompt {
   });
 
   Future<String?> run() async {
-    final style = theme.style;
     // Use centralized text input for buffer handling
     final buffer = TextInputBuffer();
     bool confirmed = false;
@@ -44,89 +42,72 @@ class TextPrompt {
     String? error;
     final cursorBlink = CursorBlink();
 
-    void render(RenderOutput out) {
-      // Use centralized line builder for consistent styling
-      final lb = LineBuilder(theme);
-
-      // Title
-      final frame = FramedLayout(prompt, theme: theme);
-      final baseTitle = frame.top();
-      final title = style.boldPrompt
-          ? '${theme.bold}$baseTitle${theme.reset}'
-          : baseTitle;
-      out.writeln(title);
-
-      // Input line
-      final text = buffer.isEmpty
-          ? '${theme.dim}${placeholder ?? ''}${theme.reset}'
-          : buffer.text;
-      final cursor =
-          cursorBlink.isVisible ? '${theme.accent}▌${theme.reset}' : ' ';
-      final validatedColor = valid ? theme.accent : theme.checkboxOn;
-
-      out.writeln('${lb.gutter()}$validatedColor$text$cursor${theme.reset}');
-
-      // Error line (if invalid)
-      if (error != null) {
-        out.writeln('${lb.gutter()}${theme.highlight}$error${theme.reset}');
-      } else {
-        out.writeln('${lb.gutter()}${Hints.comma([
-              'Enter to confirm',
-              'Esc to cancel'
-            ], theme)}');
-      }
-
-      // Bottom border
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
-      }
-    }
-
-    final runner = PromptRunner(hideCursor: true);
-    await runner.runAsync(
-      render: render,
-      cursorBlink: cursorBlink,
-      onKey: (event) {
-        // ENTER → Validate & exit if valid
-        if (event.type == KeyEventType.enter) {
+    // Use KeyBindings for declarative key handling
+    final bindings = KeyBindings.textInput(buffer: buffer) +
+        KeyBindings.confirm(onConfirm: () {
+          // Validate on confirm
           final text = buffer.text.trim();
           if (required && text.isEmpty) {
             valid = false;
             error = 'Input cannot be empty.';
+            return KeyActionResult.handled;
           } else if (validator != null) {
             final result = validator!(text);
             if (result.isNotEmpty) {
               valid = false;
               error = result;
-            } else {
-              valid = true;
-              error = null;
+              return KeyActionResult.handled;
             }
-          } else {
-            valid = true;
-            error = null;
           }
+          valid = true;
+          error = null;
+          confirmed = true;
+          return KeyActionResult.confirmed;
+        }) +
+        KeyBindings.cancel();
 
-          if (valid) {
-            confirmed = true;
-            return PromptResult.confirmed;
-          }
+    // Use WidgetFrame for consistent frame rendering
+    final frame = WidgetFrame(
+      title: prompt,
+      theme: theme,
+      bindings: null, // We handle hints manually for this widget
+    );
+
+    void render(RenderOutput out) {
+      frame.renderContent(out, (ctx) {
+        // Input line
+        final text = buffer.isEmpty
+            ? '${theme.dim}${placeholder ?? ''}${theme.reset}'
+            : buffer.text;
+        final cursor =
+            cursorBlink.isVisible ? '${theme.accent}▌${theme.reset}' : ' ';
+        final validatedColor = valid ? theme.accent : theme.checkboxOn;
+
+        ctx.gutterLine('$validatedColor$text$cursor${theme.reset}');
+
+        // Error line (if invalid) or hints
+        if (error != null) {
+          ctx.gutterLine('${theme.highlight}$error${theme.reset}');
+        } else {
+          ctx.gutterLine(
+              Hints.comma(['Enter to confirm', 'Esc to cancel'], theme));
         }
+      });
+    }
 
-        // ESC → Cancel
-        else if (event.type == KeyEventType.esc) {
-          return PromptResult.cancelled;
-        }
-
-        // Text input (typing, backspace) - handled by centralized TextInputBuffer
-        else if (buffer.handleKey(event)) {
-          // Input was modified
-        }
-
-        valid = true;
-        error = null;
-        return null; // continue loop
-      },
+    final runner = PromptRunner(hideCursor: true);
+    await runner.runAsyncWithBindings(
+      render: render,
+      cursorBlink: cursorBlink,
+      bindings: bindings.add(KeyBinding(
+        // Reset validation state on any text input
+        keys: {KeyEventType.char, KeyEventType.backspace},
+        action: (_) {
+          valid = true;
+          error = null;
+          return KeyActionResult.ignored; // Let the textInput binding handle it
+        },
+      )),
     );
 
     return confirmed ? buffer.text.trim() : null;

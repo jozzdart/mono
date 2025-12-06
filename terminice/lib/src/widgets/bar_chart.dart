@@ -1,8 +1,6 @@
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
-import '../system/line_builder.dart';
-import '../system/prompt_runner.dart';
 import '../system/text_utils.dart' as text;
+import '../system/widget_frame.dart';
 
 /// BarChartWidget – colored horizontal bar chart in the terminal.
 ///
@@ -17,7 +15,7 @@ class BarChartWidget {
   final int barWidth;
   final bool showValues;
   final String Function(double value)? valueFormatter;
-  final BarStyle style;
+  final BarStyle barStyle;
 
   BarChartWidget(
     this.items, {
@@ -26,60 +24,44 @@ class BarChartWidget {
     this.barWidth = 30,
     this.showValues = true,
     this.valueFormatter,
-    this.style = BarStyle.solid,
+    this.barStyle = BarStyle.solid,
   }) : assert(barWidth >= 6);
 
   void show() {
-    final out = RenderOutput();
-    _render(out);
-  }
-
-  void _render(RenderOutput out) {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final style = theme.style;
     final label = (title == null || title!.isEmpty) ? 'Bar Chart' : title!;
-
-    final frame = FramedLayout(label, theme: theme);
-    final top = frame.top();
-    out.writeln('${theme.bold}$top${theme.reset}');
-
-    if (items.isEmpty) {
-      out.writeln(lb.emptyLine('no data'));
-      if (style.showBorder) {
-        out.writeln(frame.bottom());
+    final frame = WidgetFrame(title: label, theme: theme);
+    frame.show((ctx) {
+      if (items.isEmpty) {
+        ctx.emptyMessage('no data');
+        return;
       }
-      return;
-    }
 
-    final nameW = text.clampInt(text.maxOf(items.map((e) => e.label.length)), 6, 24);
-    final maxVal =
-        items.map((e) => e.value).fold<double>(0, (a, b) => a > b ? a : b);
+      final nameW =
+          text.clampInt(text.maxOf(items.map((e) => e.label.length)), 6, 24);
+      final maxVal =
+          items.map((e) => e.value).fold<double>(0, (a, b) => a > b ? a : b);
 
-    for (var i = 0; i < items.length; i++) {
-      final it = items[i];
-      final baseColor = it.color ?? _palette(i);
-      final ratio = maxVal > 0 ? (it.value / maxVal).clamp(0, 1.0) : 0.0;
-      final filled = (ratio * barWidth).round();
+      for (var i = 0; i < items.length; i++) {
+        final it = items[i];
+        final baseColor = it.color ?? _palette(i);
+        final ratio = maxVal > 0 ? (it.value / maxVal).clamp(0, 1.0) : 0.0;
+        final filled = (ratio * barWidth).round();
 
-      final bar = _renderBar(baseColor, barWidth, filled, i);
+        final bar = _renderBar(baseColor, barWidth, filled, i);
 
-      final labelStr = text.truncatePad(it.label, nameW);
-      final valueStr = showValues
-          ? '  ${theme.selection}${_formatValue(it.value)}${theme.reset}'
-          : '';
+        final labelStr = text.truncatePad(it.label, nameW);
+        final valueStr = showValues
+            ? '  ${theme.selection}${_formatValue(it.value)}${theme.reset}'
+            : '';
 
-      out.writeln(
-          '${lb.gutter()}${theme.bold}${theme.accent}$labelStr${theme.reset}  $bar$valueStr');
-    }
-
-    if (style.showBorder) {
-      out.writeln(frame.bottom());
-    }
+        ctx.gutterLine(
+            '${theme.bold}${theme.accent}$labelStr${theme.reset}  $bar$valueStr');
+      }
+    });
   }
 
   String _renderBar(String baseColor, int width, int filled, int barIndex) {
-    switch (style) {
+    switch (barStyle) {
       case BarStyle.solid:
         return _barSolid(baseColor, width, filled);
       case BarStyle.thin:
