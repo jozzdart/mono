@@ -5,6 +5,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/highlighter.dart';
+import '../system/line_builder.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
@@ -212,6 +213,8 @@ class CLIManual {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
       final cols = cols0();
       final linesCount = lines0();
 
@@ -219,8 +222,7 @@ class CLIManual {
       final top = frame.top();
       out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
-      final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      out.writeln('$framePrefix${theme.accent}Search:${theme.reset} ${queryInput.text}');
+      out.writeln('${lb.gutter()}${theme.accent}Search:${theme.reset} ${queryInput.text}');
 
       if (style.showBorder) {
         out.writeln(frame.connector());
@@ -239,7 +241,7 @@ class CLIManual {
 
       // Results header
       final headerText = '${theme.dim}Results (${filtered.length})${theme.reset}';
-      out.writeln('$framePrefix$headerText');
+      out.writeln('${lb.gutter()}$headerText');
 
       // Result window using ListNavigation
       nav.maxVisible = listRows;
@@ -248,18 +250,16 @@ class CLIManual {
       for (var i = 0; i < window.items.length; i++) {
         final absoluteIdx = window.start + i;
         final isSel = nav.isSelected(absoluteIdx);
-        final prefix = isSel ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        // Use LineBuilder for arrow
+        final prefix = lb.arrow(isSel);
         final label = _labelFor(window.items[i]);
         final line = '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
-        if (isSel && style.useInverseHighlight) {
-          out.writeln('$framePrefix${theme.inverse}$line${theme.reset}');
-        } else {
-          out.writeln('$framePrefix$line');
-        }
+        // Use LineBuilder's writeLine for consistent highlight handling
+        lb.writeLine(out, line, highlighted: isSel);
       }
 
       for (var pad = (window.items.length); pad < listRows; pad++) {
-        out.writeln('$framePrefix${theme.dim}·${theme.reset}');
+        out.writeln('${lb.gutter()}${theme.dim}·${theme.reset}');
       }
 
       if (style.showBorder) {
@@ -269,14 +269,14 @@ class CLIManual {
       // Preview header
       final selected = filtered.isEmpty ? null : filtered[nav.selectedIndex];
       final previewTitle = selected == null
-          ? '${theme.dim}(no selection)${theme.reset}'
+          ? lb.emptyMessage('no selection')
           : '${theme.accent}Manual:${theme.reset} ${_labelFor(selected)}';
-      out.writeln('$framePrefix$previewTitle');
+      out.writeln('${lb.gutter()}$previewTitle');
 
       // Preview content
       if (selected == null) {
         for (var i = 0; i < previewRows; i++) {
-          out.writeln(framePrefix);
+          out.writeln(lb.gutterOnly());
         }
       } else {
         final contentWidth = max(10, cols - 4);
@@ -285,10 +285,10 @@ class CLIManual {
         final endLine = min(startLine + previewRows, all.length);
         for (var i = startLine; i < endLine; i++) {
           final ln = text_utils.truncate(all[i], contentWidth);
-          out.writeln('$framePrefix$ln');
+          out.writeln('${lb.gutter()}$ln');
         }
         for (var i = endLine; i < startLine + previewRows; i++) {
-          out.writeln(framePrefix);
+          out.writeln(lb.gutterOnly());
         }
       }
 

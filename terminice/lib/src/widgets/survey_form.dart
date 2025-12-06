@@ -3,6 +3,7 @@ import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
 
@@ -140,6 +141,8 @@ class SurveyForm {
   /// Runs the interactive survey. Returns null if cancelled.
   SurveyResult? run() {
     final style = theme.style;
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
 
     // State per question - use centralized focus navigation
     final focus = FocusNavigation(itemCount: questions.length);
@@ -214,9 +217,8 @@ class SurveyForm {
             if (i > 0) buf.write('  ');
             final isOn = selected.contains(i);
             final isCursor = i == cur;
-            final sym = isOn ? style.checkboxOnSymbol : style.checkboxOffSymbol;
-            final col = isOn ? theme.checkboxOn : theme.checkboxOff;
-            final label = '$col$sym${theme.reset} ${q.options[i]}';
+            final check = lb.checkbox(isOn);
+            final label = '$check ${q.options[i]}';
             buf.write(
                 isCursor ? '${theme.inverse}$label${theme.reset}' : label);
           }
@@ -246,6 +248,9 @@ class SurveyForm {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       final frame = FramedLayout(title, theme: theme);
       final baseTitle = frame.top();
       final header = style.boldPrompt
@@ -259,23 +264,19 @@ class SurveyForm {
 
       for (var i = 0; i < questions.length; i++) {
         final isFocused = focus.isFocused(i);
-        final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-        final arrow =
-            isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        // Use LineBuilder for arrow
+        final arrow = lb.arrow(isFocused);
         final label = '${theme.selection}${questions[i].prompt}${theme.reset}';
         final value = renderValue(i);
         var line = '$arrow $label: $value';
 
-        if (isFocused && style.useInverseHighlight) {
-          out.writeln('$prefix${theme.inverse}$line${theme.reset}');
-        } else {
-          out.writeln('$prefix$line');
-        }
+        // Use LineBuilder's writeLine for consistent highlight handling
+        lb.writeLine(out, line, highlighted: isFocused);
 
         // Error line if invalid - use FocusNavigation's error tracking
         final err = focus.getError(i);
         if (err != null && err.isNotEmpty) {
-          out.writeln('$prefix${theme.highlight}$err${theme.reset}');
+          out.writeln('${lb.gutter()}${theme.highlight}$err${theme.reset}');
         }
       }
 

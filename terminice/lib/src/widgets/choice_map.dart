@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 
@@ -125,6 +126,9 @@ List<String> _choiceMap(
   }
 
   void render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
+
     final frame = FramedLayout(prompt, theme: theme);
     final header = frame.top();
     out.writeln(
@@ -132,11 +136,10 @@ List<String> _choiceMap(
 
     final colSep = '${theme.gray}│${theme.reset}';
     for (int r = 0; r < rows; r++) {
-      // First line of cards in this row (titles)
-      final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      final line1 = StringBuffer(prefix);
+      // First line of cards in this row (titles) - using LineBuilder's gutter
+      final line1 = StringBuffer(lb.gutter());
       // Second line (subtitles)
-      final line2 = StringBuffer(prefix);
+      final line2 = StringBuffer(lb.gutter());
 
       for (int c = 0; c < cols; c++) {
         final idx = r * cols + c;
@@ -162,12 +165,11 @@ List<String> _choiceMap(
       out.writeln(line2.toString());
 
       if (r != rows - 1) {
-        final sepPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
         final rowLine = List.generate(
           cols,
           (i) => '${theme.gray}${'─' * computedCardWidth}${theme.reset}',
         ).join('${theme.gray}┼${theme.reset}');
-        out.writeln('$sepPrefix$rowLine');
+        out.writeln('${lb.gutter()}$rowLine');
       }
     }
 

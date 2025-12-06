@@ -1,5 +1,6 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/rendering.dart';
 import '../system/prompt_runner.dart';
 
@@ -70,6 +71,8 @@ class ProjectDashboard {
   }
 
   void _render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final style = theme.style;
 
     final title = _title();
@@ -77,82 +80,82 @@ class ProjectDashboard {
     out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     // Overview
-    out.writeln(gutterLine(theme, sectionHeader(theme, 'Overview')));
-    out.writeln(gutterLine(theme, metric(theme, 'Project', projectName, color: theme.accent)));
+    out.writeln('${lb.gutter()}${sectionHeader(theme, 'Overview')}');
+    out.writeln('${lb.gutter()}${metric(theme, 'Project', projectName, color: theme.accent)}');
     if (branch != null && branch!.isNotEmpty) {
-      out.writeln(gutterLine(theme, metric(theme, 'Branch', branch!, color: theme.highlight)));
+      out.writeln('${lb.gutter()}${metric(theme, 'Branch', branch!, color: theme.highlight)}');
     }
     if (sdk != null && sdk!.isNotEmpty) {
-      out.writeln(gutterLine(theme, metric(theme, 'SDK', sdk!, color: theme.highlight)));
+      out.writeln('${lb.gutter()}${metric(theme, 'SDK', sdk!, color: theme.highlight)}');
     }
     if (os != null && os!.isNotEmpty) {
-      out.writeln(gutterLine(theme, metric(theme, 'OS', os!, color: theme.highlight)));
+      out.writeln('${lb.gutter()}${metric(theme, 'OS', os!, color: theme.highlight)}');
     }
 
     // CI Builds
-    out.writeln(gutterLine(theme, sectionHeader(theme, 'Builds')));
+    out.writeln('${lb.gutter()}${sectionHeader(theme, 'Builds')}');
     final totalTests = testsPassed + testsFailed + testsSkipped;
-    out.writeln(gutterLine(theme, metric(theme, 'Success', '$buildsSuccess', color: theme.info)));
-    out.writeln(gutterLine(theme, metric(theme, 'Failed', '$buildsFailed', color: theme.error)));
+    out.writeln('${lb.gutter()}${metric(theme, 'Success', '$buildsSuccess', color: theme.info)}');
+    out.writeln('${lb.gutter()}${metric(theme, 'Failed', '$buildsFailed', color: theme.error)}');
     if (latestBuildLabel != null && latestBuildLabel!.isNotEmpty) {
-      out.writeln(gutterLine(theme, metric(theme, 'Latest', latestBuildLabel!, color: _latestColor())));
+      out.writeln('${lb.gutter()}${metric(theme, 'Latest', latestBuildLabel!, color: _latestColor())}');
     }
     if (buildDuration != null && buildDuration!.isNotEmpty) {
-      out.writeln(gutterLine(theme, metric(theme, 'Duration', buildDuration!, color: theme.accent)));
+      out.writeln('${lb.gutter()}${metric(theme, 'Duration', buildDuration!, color: theme.accent)}');
     }
     if (buildHistory != null && buildHistory!.isNotEmpty) {
-      out.writeln(gutterLine(theme, metric(theme, 'Recent', _buildHistoryLine(buildHistory!))));
+      out.writeln('${lb.gutter()}${metric(theme, 'Recent', _buildHistoryLine(buildHistory!))}');
     }
 
     // Tests
-    out.writeln(gutterLine(theme, sectionHeader(theme, 'Tests')));
-    out.writeln(gutterLine(theme, metric(theme, 'Passed', '$testsPassed', color: theme.info)));
-    out.writeln(gutterLine(theme, metric(theme, 'Failed', '$testsFailed', color: theme.error)));
-    out.writeln(gutterLine(theme, metric(theme, 'Skipped', '$testsSkipped', color: theme.warn)));
+    out.writeln('${lb.gutter()}${sectionHeader(theme, 'Tests')}');
+    out.writeln('${lb.gutter()}${metric(theme, 'Passed', '$testsPassed', color: theme.info)}');
+    out.writeln('${lb.gutter()}${metric(theme, 'Failed', '$testsFailed', color: theme.error)}');
+    out.writeln('${lb.gutter()}${metric(theme, 'Skipped', '$testsSkipped', color: theme.warn)}');
     if (totalTests > 0) {
-      out.writeln(gutterLine(theme, metric(
+      out.writeln('${lb.gutter()}${metric(
           theme,
           'Pass Rate',
           '${((testsPassed / totalTests) * 100).clamp(0, 100).round()}%',
-          color: theme.accent)));
+          color: theme.accent)}');
     }
     if (testDuration != null && testDuration!.isNotEmpty) {
-      out.writeln(gutterLine(theme, metric(theme, 'Duration', testDuration!, color: theme.accent)));
+      out.writeln('${lb.gutter()}${metric(theme, 'Duration', testDuration!, color: theme.accent)}');
     }
 
     // Coverage
-    out.writeln(gutterLine(theme, sectionHeader(theme, 'Coverage')));
-    out.writeln(gutterLine(theme, _coverageBar(width: 30)));
-    out.writeln(gutterLine(theme, metric(theme, 'Percent', '${coveragePercent.toStringAsFixed(1)}%',
-        color: _coverageColor())));
+    out.writeln('${lb.gutter()}${sectionHeader(theme, 'Coverage')}');
+    out.writeln('${lb.gutter()}${_coverageBar(width: 30)}');
+    out.writeln('${lb.gutter()}${metric(theme, 'Percent', '${coveragePercent.toStringAsFixed(1)}%',
+        color: _coverageColor())}');
     if (coverageTarget != null) {
-      out.writeln(gutterLine(theme, metric(
+      out.writeln('${lb.gutter()}${metric(
           theme,
           'Quality', (coveragePercent >= coverageTarget!) ? '[PASS]' : '[FAIL]',
           color:
-              (coveragePercent >= coverageTarget!) ? theme.info : theme.error)));
+              (coveragePercent >= coverageTarget!) ? theme.info : theme.error)}');
     }
     if (coverageHistory != null && coverageHistory!.isNotEmpty) {
-      out.writeln(gutterLine(theme, metric(
+      out.writeln('${lb.gutter()}${metric(
           theme,
           'History',
           _sparkline(coverageHistory!,
-              colorA: theme.accent, colorB: theme.highlight))));
+              colorA: theme.accent, colorB: theme.highlight))}');
     }
 
     // Repository
     if ((lastCommit != null && lastCommit!.isNotEmpty) ||
         (author != null && author!.isNotEmpty) ||
         (committedAgo != null && committedAgo!.isNotEmpty)) {
-      out.writeln(gutterLine(theme, sectionHeader(theme, 'Repository')));
+      out.writeln('${lb.gutter()}${sectionHeader(theme, 'Repository')}');
       if (lastCommit != null && lastCommit!.isNotEmpty) {
-        out.writeln(gutterLine(theme, metric(theme, 'Commit', lastCommit!, color: theme.selection)));
+        out.writeln('${lb.gutter()}${metric(theme, 'Commit', lastCommit!, color: theme.selection)}');
       }
       if (author != null && author!.isNotEmpty) {
-        out.writeln(gutterLine(theme, metric(theme, 'Author', author!, color: theme.highlight)));
+        out.writeln('${lb.gutter()}${metric(theme, 'Author', author!, color: theme.highlight)}');
       }
       if (committedAgo != null && committedAgo!.isNotEmpty) {
-        out.writeln(gutterLine(theme, metric(theme, 'When', committedAgo!, color: theme.gray)));
+        out.writeln('${lb.gutter()}${metric(theme, 'When', committedAgo!, color: theme.gray)}');
       }
     }
 

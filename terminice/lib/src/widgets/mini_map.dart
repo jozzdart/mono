@@ -1,5 +1,6 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// MiniMap – ASCII representation of document position.
@@ -52,6 +53,8 @@ class MiniMap {
   void showTo(RenderOutput out) => _render(out);
 
   void _render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final style = theme.style;
     final title = (label == null || label!.isEmpty) ? 'Mini Map' : label!;
 
@@ -62,7 +65,7 @@ class MiniMap {
     for (int row = 0; row < height; row++) {
       final line = StringBuffer();
       // Left gutter aligned with ThemeDemo
-      line.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+      line.write(lb.gutter());
       line.write(_rowChunk(row));
       out.writeln(line.toString());
     }
@@ -71,7 +74,7 @@ class MiniMap {
     final percentTop = _percent(viewportStart, totalLines);
     final percentBottom = _percent(viewportStart + viewportSize, totalLines);
     final metrics = StringBuffer();
-    metrics.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+    metrics.write(lb.gutter());
     metrics.write(
         '${theme.dim}Lines:${theme.reset} ${theme.accent}${_padInt(totalLines)}${theme.reset}   ');
     metrics.write(

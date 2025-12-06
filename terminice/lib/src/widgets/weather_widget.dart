@@ -5,6 +5,7 @@ import 'dart:io';
 import '../style/theme.dart';
 import '../system/frame_renderer.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// Temperature units supported by the widget.
@@ -39,6 +40,8 @@ class WeatherWidget {
 
   /// Fetches and renders the weather box.
   Future<void> show() async {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final out = RenderOutput();
     final style = theme.style;
 
@@ -53,11 +56,11 @@ class WeatherWidget {
       out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.info}Now${theme.reset}: ${iconDesc.icon} ${iconDesc.description}');
+          '${lb.gutter()}${theme.info}Now${theme.reset}: ${iconDesc.icon} ${iconDesc.description}');
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}${weather.temperature.toStringAsFixed(1)}$unitSymbol${theme.reset}  •  Wind ${weather.windSpeed.toStringAsFixed(0)} km/h ${_arrowForWind(weather.windDirection)}');
+          '${lb.gutter()}${theme.accent}${weather.temperature.toStringAsFixed(1)}$unitSymbol${theme.reset}  •  Wind ${weather.windSpeed.toStringAsFixed(0)} km/h ${_arrowForWind(weather.windDirection)}');
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}lat ${loc.latitude.toStringAsFixed(2)}, lon ${loc.longitude.toStringAsFixed(2)}${theme.reset}');
+          '${lb.gutter()}${theme.dim}lat ${loc.latitude.toStringAsFixed(2)}, lon ${loc.longitude.toStringAsFixed(2)}${theme.reset}');
 
       if (style.showBorder) {
         out.writeln(frame.bottom());

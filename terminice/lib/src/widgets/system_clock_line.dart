@@ -1,5 +1,6 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_utils.dart' as text;
 
@@ -46,6 +47,8 @@ class SystemClockLine {
   }
 
   void _render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final label = title ?? 'System Clock Line';
     final style = theme.style;
     final now = _clock();
@@ -63,17 +66,14 @@ class SystemClockLine {
 
     // Legend + connector
     final nowStr = _fmtTime(now);
-    out.writeln('${theme.gray}${style.borderVertical}${theme.reset} '
+    out.writeln('${lb.gutter()}'
         '${theme.gray}Window:${theme.reset} ${theme.selection}${_fmtWindow(window)}${theme.reset}  '
         '${theme.gray}Events:${theme.reset} ${theme.accent}${upcoming.length}${theme.reset}  '
         '${theme.gray}Now:${theme.reset} ${theme.accent}$nowStr${theme.reset}');
     out.writeln(frame.connector());
 
     if (upcoming.isEmpty) {
-      out.writeln(
-        '${theme.gray}${style.borderVertical}${theme.reset} '
-        '${theme.dim}No upcoming tasks in next ${_fmtWindow(window)}${theme.reset}',
-      );
+      out.writeln(lb.emptyLine('No upcoming tasks in next ${_fmtWindow(window)}'));
       if (style.showBorder) {
         out.writeln(frame.bottom());
       }
@@ -100,7 +100,7 @@ class SystemClockLine {
 
       // Primary info line
       out.writeln(
-        '${theme.gray}${style.borderVertical}${theme.reset} '
+        '${lb.gutter()}'
         '$icon ${theme.accent}$at${theme.reset}  '
         '${theme.bold}${theme.selection}$name${theme.reset}  '
         '${theme.gray}$til${theme.reset}$src',
@@ -118,7 +118,7 @@ class SystemClockLine {
         }
       }
       out.writeln(
-        '${theme.gray}${style.borderVertical}${theme.reset} '
+        '${lb.gutter()}'
         '${theme.dim}${text.padRight('', at.length)}${theme.reset}  ' // align under time
         '$track',
       );

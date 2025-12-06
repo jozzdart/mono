@@ -3,6 +3,7 @@ import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 
@@ -38,6 +39,8 @@ class TutorialRunner {
     if (steps.isEmpty) return steps;
 
     final style = theme.style;
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     // Use centralized focus navigation
     final focus = FocusNavigation(itemCount: steps.length);
     bool cancelled = false;
@@ -54,13 +57,9 @@ class TutorialRunner {
       return (content: content, titleWidth: titleWidth, descWidth: descWidth);
     }
 
-    String checkbox(bool done, {bool highlight = false}) {
-      final sym = done ? style.checkboxOnSymbol : style.checkboxOffSymbol;
-      final color = done ? theme.checkboxOn : theme.checkboxOff;
-      final out = '$color$sym${theme.reset}';
-      if (highlight && style.useInverseHighlight) return '${theme.inverse}$out${theme.reset}';
-      return out;
-    }
+    // Use centralized checkbox from LineBuilder
+    String checkbox(bool done, {bool highlight = false}) =>
+        lb.checkboxHighlighted(done, highlight: highlight);
 
     int doneCount() => current.where((s) => s.done).length;
 
@@ -114,6 +113,9 @@ class TutorialRunner {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Title
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
@@ -126,13 +128,13 @@ class TutorialRunner {
         out.writeln(frame.connector());
       }
 
-      // Progress section
+      // Progress section - using LineBuilder's gutter
       final done = doneCount();
       final total = current.length;
       final pct = total == 0 ? 0 : ((done / total) * 100).round();
-      final leftPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      out.writeln('$leftPrefix${theme.dim}Progress${theme.reset} ${theme.accent}$done${theme.reset}/${theme.accent}$total${theme.reset} (${theme.highlight}$pct%${theme.reset})');
-      out.writeln('$leftPrefix${progressBar(done, total, width: 28)}');
+      out.writeln(
+          '${lb.gutter()}${theme.dim}Progress${theme.reset} ${theme.accent}$done${theme.reset}/${theme.accent}$total${theme.reset} (${theme.highlight}$pct%${theme.reset})');
+      out.writeln('${lb.gutter()}${progressBar(done, total, width: 28)}');
 
       // Underline-like connector sized to content
       out.writeln(
@@ -142,12 +144,13 @@ class TutorialRunner {
       for (var i = 0; i < current.length; i++) {
         final isFocused = focus.isFocused(i);
         final s = current[i];
-        final arrow = isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        // Use LineBuilder for arrow and checkbox
+        final arrow = lb.arrow(isFocused);
         final cb = checkbox(s.done, highlight: isFocused);
         final titleTxt = truncate(s.title, l.titleWidth).padRight(l.titleWidth);
 
         final line = StringBuffer();
-        line.write(leftPrefix);
+        line.write(lb.gutter());
         line.write('$arrow $cb ');
         line.write(titleTxt);
         out.writeln(line.toString());
@@ -155,7 +158,7 @@ class TutorialRunner {
         if (isFocused && s.description.trim().isNotEmpty) {
           final wrapped = wrap(s.description, l.descWidth);
           for (final w in wrapped) {
-            out.writeln('$leftPrefix  ${theme.dim}$w${theme.reset}');
+            out.writeln('${lb.gutter()}  ${theme.dim}$w${theme.reset}');
           }
         }
       }
@@ -223,5 +226,3 @@ class TutorialStep {
     );
   }
 }
-
-

@@ -4,6 +4,7 @@ import '../system/focus_navigation.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// A simple interactive demo to iterate through themes
@@ -35,22 +36,20 @@ class ThemeDemo {
     bool showPromptPreview = false;
 
     void renderThemePreview(RenderOutput out, String name, PromptTheme theme) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
       final style = theme.style;
 
       final frame = FramedLayout('Theme Preview', theme: theme);
       out.writeln('${theme.bold}${frame.top()}${theme.reset}');
+      out.writeln('${lb.gutter()}Theme: ${theme.accent}$name${theme.reset}');
+      out.writeln('${lb.gutter()}Arrow: ${theme.accent}${style.arrow}${theme.reset}');
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} Theme: ${theme.accent}$name${theme.reset}');
+          '${lb.gutter()}Checkbox: ${theme.checkboxOn}${style.checkboxOnSymbol}${theme.reset} / ${theme.checkboxOff}${style.checkboxOffSymbol}${theme.reset}');
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} Arrow: ${theme.accent}${style.arrow}${theme.reset}');
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} Checkbox: ${theme.checkboxOn}${style.checkboxOnSymbol}${theme.reset} / ${theme.checkboxOff}${style.checkboxOffSymbol}${theme.reset}');
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} Border: ${theme.selection}${style.borderTop}${style.borderConnector}${style.borderBottom}${theme.reset}');
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} Highlight: ${theme.highlight}Highlight text${theme.reset}');
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} Inverse: ${theme.inverse} Inverted line ${theme.reset}');
+          '${lb.gutter()}Border: ${theme.selection}${style.borderTop}${style.borderConnector}${style.borderBottom}${theme.reset}');
+      out.writeln('${lb.gutter()}Highlight: ${theme.highlight}Highlight text${theme.reset}');
+      out.writeln('${lb.gutter()}Inverse: ${theme.inverse} Inverted line ${theme.reset}');
       out.writeln(
           '${theme.gray}${style.borderBottom}${'─' * 25}${theme.reset}');
       out.writeln(Hints.bullets([

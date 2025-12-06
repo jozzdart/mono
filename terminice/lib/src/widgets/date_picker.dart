@@ -3,6 +3,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// ─────────────────────────────────────────────────────────────
@@ -44,6 +45,9 @@ class DatePickerPrompt {
     bool cancelled = false;
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Frame header only contains the label
       final title = label;
       final paddedTitle = '  $title  ';
@@ -59,8 +63,7 @@ class DatePickerPrompt {
       final year = viewMonth.year.toString();
       final monthLine =
           '${theme.accent}‹${theme.reset}  ${theme.bold}$monthName $year${theme.reset}  ${theme.accent}›${theme.reset}';
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} $monthLine');
+      out.writeln('${lb.gutter()}$monthLine');
 
       // Weekdays
       final weekdays = startWeekOnMonday
@@ -69,8 +72,7 @@ class DatePickerPrompt {
 
       final weekdayLine =
           weekdays.map((d) => '${theme.dim}$d${theme.reset}').join(' ');
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} $weekdayLine');
+      out.writeln('${lb.gutter()}$weekdayLine');
 
       // Calendar math
       final firstDay = DateTime(viewMonth.year, viewMonth.month, 1);
@@ -85,8 +87,7 @@ class DatePickerPrompt {
 
       // Calendar body
       for (var week = 0; week < 6; week++) {
-        final buffer =
-            StringBuffer('${theme.gray}${style.borderVertical}${theme.reset} ');
+        final buffer = StringBuffer(lb.gutter());
         for (var wd = 0; wd < 7; wd++) {
           final cellIndex = week * 7 + wd;
 

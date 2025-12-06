@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/rendering.dart';
 
 /// PackageInspector – explore package dependencies and info.
@@ -27,41 +28,37 @@ class PackageInspector {
         devDependencies = devDependencies ?? const {};
 
   void show() {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final style = theme.style;
 
     final title = _title();
     final frame = FramedLayout(title, theme: theme);
     stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
-    stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Overview')));
-    stdout.writeln(gutterLine(
-        theme, metric(theme, 'Package', packageName, color: theme.accent)));
+    stdout.writeln('${lb.gutter()}${sectionHeader(theme, 'Overview')}');
+    stdout.writeln(
+        '${lb.gutter()}${metric(theme, 'Package', packageName, color: theme.accent)}');
     if ((sdkConstraint ?? '').trim().isNotEmpty) {
-      stdout.writeln(gutterLine(theme,
-          metric(theme, 'SDK', sdkConstraint!.trim(), color: theme.highlight)));
+      stdout.writeln(
+          '${lb.gutter()}${metric(theme, 'SDK', sdkConstraint!.trim(), color: theme.highlight)}');
     }
-    stdout.writeln(gutterLine(
-        theme,
-        metric(theme, 'Dependencies', '${dependencies.length}',
-            color: theme.info)));
-    stdout.writeln(gutterLine(
-        theme,
-        metric(theme, 'Dev Dependencies', '${devDependencies.length}',
-            color: theme.gray)));
+    stdout.writeln(
+        '${lb.gutter()}${metric(theme, 'Dependencies', '${dependencies.length}', color: theme.info)}');
+    stdout.writeln(
+        '${lb.gutter()}${metric(theme, 'Dev Dependencies', '${devDependencies.length}', color: theme.gray)}');
 
     if (dependencies.isNotEmpty) {
-      stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Dependencies')));
+      stdout.writeln('${lb.gutter()}${sectionHeader(theme, 'Dependencies')}');
       for (final entry in _sorted(dependencies)) {
-        stdout.writeln(gutterLine(theme, _dep(entry.key, entry.value)));
+        stdout.writeln('${lb.gutter()}${_dep(entry.key, entry.value)}');
       }
     }
 
     if (devDependencies.isNotEmpty) {
-      stdout
-          .writeln(gutterLine(theme, sectionHeader(theme, 'Dev Dependencies')));
+      stdout.writeln('${lb.gutter()}${sectionHeader(theme, 'Dev Dependencies')}');
       for (final entry in _sorted(devDependencies)) {
-        stdout.writeln(
-            gutterLine(theme, _dep(entry.key, entry.value, dev: true)));
+        stdout.writeln('${lb.gutter()}${_dep(entry.key, entry.value, dev: true)}');
       }
     }
 

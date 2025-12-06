@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// StepperPrompt – interactive step-by-step wizard with progress display.
@@ -44,15 +45,18 @@ class StepperPrompt {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Title
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
       out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
-      // Step header line
+      // Step header line - using LineBuilder's gutter
       final stepNum = '${index + 1}/${steps.length}';
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}Step${theme.reset} ${theme.accent}$stepNum${theme.reset}');
+          '${lb.gutter()}${theme.dim}Step${theme.reset} ${theme.accent}$stepNum${theme.reset}');
 
       // Connector line
       if (style.showBorder) {
@@ -61,7 +65,7 @@ class StepperPrompt {
 
       // Progress bar
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${progressBar(index, steps.length, width: 28)}');
+          '${lb.gutter()}${progressBar(index, steps.length, width: 28)}');
 
       // Steps list
       for (int i = 0; i < steps.length; i++) {
@@ -71,16 +75,19 @@ class StepperPrompt {
         final label = '$number${steps[i]}';
 
         if (isCurrent) {
-          final line = ' ${theme.accent}${style.arrow}${theme.reset} ${theme.inverse}${theme.accent} $label ${theme.reset}';
-          out.writeln('${theme.gray}${style.borderVertical}${theme.reset}$line');
+          // Use LineBuilder for arrow
+          final line = ' ${lb.arrowAccent()} ${theme.inverse}${theme.accent} $label ${theme.reset}';
+          out.writeln('${lb.gutterOnly()}$line');
         } else if (isDone) {
-          final check = '${theme.checkboxOn}${style.checkboxOnSymbol}${theme.reset}';
+          // Use LineBuilder for checkbox
+          final check = lb.checkbox(true);
           out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset}  $check ${theme.accent}$label${theme.reset}');
+              '${lb.gutterOnly()}  $check ${theme.accent}$label${theme.reset}');
         } else {
-          final box = '${theme.checkboxOff}${style.checkboxOffSymbol}${theme.reset}';
+          // Use LineBuilder for checkbox
+          final box = lb.checkbox(false);
           out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset}  $box ${theme.dim}$label${theme.reset}');
+              '${lb.gutterOnly()}  $box ${theme.dim}$label${theme.reset}');
         }
       }
 

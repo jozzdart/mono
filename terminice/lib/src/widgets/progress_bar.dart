@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// Animated, colorful progress bar aligned with ThemeDemo styling.
@@ -41,6 +42,9 @@ class ProgressBar {
       // Timing model
       final stopwatch = Stopwatch()..start();
 
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Render a single frame for a given progress [0..total]
       void render(int current, {int shimmerPhase = 0}) {
         // Top line
@@ -56,7 +60,7 @@ class ProgressBar {
         // Build gradient fill with a moving shimmer head
         final buffer = StringBuffer();
         // Left border of the content area, matching ThemeDemo vibes
-        buffer.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+        buffer.write(lb.gutter());
 
         for (int i = 0; i < width; i++) {
           final isFilled = i < filled;
@@ -95,7 +99,7 @@ class ProgressBar {
         final elapsed = stopwatch.elapsed;
         final estEta = _eta(elapsed, ratio, target);
         final metrics = StringBuffer();
-        metrics.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+        metrics.write(lb.gutter());
         metrics.write(
             '${theme.dim}Progress:${theme.reset} ${theme.accent}$percent%${theme.reset}   ');
         metrics.write(

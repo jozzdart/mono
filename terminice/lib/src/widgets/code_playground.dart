@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// CodePlayground – mini REPL with input/output area.
@@ -104,6 +105,9 @@ class CodePlayground {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Header
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
@@ -119,8 +123,7 @@ class CodePlayground {
       for (var i = start; i < end; i++) {
         final raw = lines[i];
         final isCursorLine = i == cursorLine;
-        final prefix =
-            isCursorLine ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        final prefix = lb.arrow(isCursorLine);
 
         if (isCursorLine) {
           final safeCol = min(cursorColumn, raw.length);
@@ -129,17 +132,15 @@ class CodePlayground {
           final cursorChar = after.isEmpty ? ' ' : after[0];
           final afterTail = after.length > 1 ? after.substring(1) : '';
           out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $prefix $before${theme.inverse}$cursorChar${theme.reset}$afterTail');
+              '${lb.gutter()}$prefix $before${theme.inverse}$cursorChar${theme.reset}$afterTail');
         } else {
-          out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $prefix $raw');
+          out.writeln('${lb.gutter()}$prefix $raw');
         }
       }
 
       // Fill remaining input lines
       for (var i = end; i < start + inputVisibleLines; i++) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset}   ${theme.dim}~${theme.reset}');
+        out.writeln('${lb.gutterOnly()}   ${theme.dim}~${theme.reset}');
       }
 
       // Output section title connector
@@ -150,12 +151,11 @@ class CodePlayground {
       final outStart = max(0, output.length - outputVisibleLines);
       final outSlice = output.sublist(outStart);
       for (final line in outSlice) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset}   $line');
+        out.writeln('${lb.gutterOnly()}   $line');
       }
       // Pad remaining rows
       for (int i = outSlice.length; i < outputVisibleLines; i++) {
-        out.writeln('${theme.gray}${style.borderVertical}${theme.reset}   ');
+        out.writeln('${lb.gutterOnly()}   ');
       }
 
       // Bottom border

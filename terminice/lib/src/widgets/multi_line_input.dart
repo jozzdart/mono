@@ -3,6 +3,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// MultiLineInputPrompt – editable pseudo text area for multi-line input.
@@ -41,6 +42,9 @@ class MultiLineInputPrompt {
     bool confirmed = false;
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Header
       final frame = FramedLayout(label, theme: theme);
       final topLine = frame.top();
@@ -52,26 +56,23 @@ class MultiLineInputPrompt {
       final end = min(scrollOffset + visibleLines, lines.length);
       for (var i = start; i < end; i++) {
         final text = lines[i];
-        final prefix = i == cursorLine
-            ? '${theme.accent}${style.arrow}${theme.reset}'
-            : ' ';
+        final isCurrent = i == cursorLine;
+        final prefix = lb.arrow(isCurrent);
 
-        if (i == cursorLine) {
+        if (isCurrent) {
           final before = text.substring(0, cursorColumn);
           final after = text.substring(cursorColumn);
           final cursorChar = after.isEmpty ? ' ' : after[0];
           out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $prefix $before${theme.inverse}$cursorChar${theme.reset}${after.length > 1 ? after.substring(1) : ''}');
+              '${lb.gutter()}$prefix $before${theme.inverse}$cursorChar${theme.reset}${after.length > 1 ? after.substring(1) : ''}');
         } else {
-          out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $prefix $text');
+          out.writeln('${lb.gutter()}$prefix $text');
         }
       }
 
       // Fill remaining lines
       for (var i = end; i < start + visibleLines; i++) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset}   ${theme.dim}~${theme.reset}');
+        out.writeln('${lb.gutterOnly()}   ${theme.dim}~${theme.reset}');
       }
 
       if (style.showBorder) {

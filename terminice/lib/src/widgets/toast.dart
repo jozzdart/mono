@@ -3,6 +3,7 @@ import 'dart:io' show sleep;
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// Toast — a transient, theme-aware popup message that gently fades away.
@@ -59,6 +60,9 @@ class Toast {
     }
 
     void render(RenderOutput out, double opacity) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       final frame = FramedLayout(label, theme: theme);
       final top = frame.top();
 
@@ -77,7 +81,7 @@ class Toast {
       out.writeln('${theme.bold}$top${theme.reset}');
 
       final line = StringBuffer();
-      line.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+      line.write(lb.gutter());
       line.write(applyFade('${theme.bold}$color$icon${theme.reset} '));
       line.write(applyFade(message));
       out.writeln(line.toString());

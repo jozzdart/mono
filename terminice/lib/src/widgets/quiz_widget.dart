@@ -5,6 +5,7 @@ import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// QuizWidget – question/answer interaction with scoring.
@@ -41,6 +42,8 @@ class QuizWidget {
 
       void render(RenderOutput out) {
         final style = theme.style;
+        // Use centralized line builder for consistent styling
+        final lb = LineBuilder(theme);
 
         final label = _title(qi);
         final frame = FramedLayout(label, theme: theme);
@@ -48,25 +51,23 @@ class QuizWidget {
 
         // Question
         out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${theme.bold}${q.text}${theme.reset}');
+            '${lb.gutter()}${theme.bold}${q.text}${theme.reset}');
         if (q.description != null && q.description!.trim().isNotEmpty) {
           out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}${q.description}${theme.reset}');
+              '${lb.gutter()}${theme.dim}${q.description}${theme.reset}');
         }
 
         // Options
         for (int i = 0; i < q.options.length; i++) {
           final isSel = focus.isFocused(i);
-          final bullet = isSel
-              ? '${theme.accent}${style.arrow}${theme.reset}'
-              : '${theme.dim}${style.arrow}${theme.reset}';
+          // Use LineBuilder for arrow (focused vs dim)
+          final bullet = isSel ? lb.arrowAccent() : lb.arrowDim();
           final label = allowNumberShortcuts ? '${i + 1}. ' : '';
           final optionText = '$label${q.options[i]}';
           final line = isSel
               ? '${theme.inverse}${theme.accent} $optionText ${theme.reset}'
               : optionText;
-          out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $bullet $line');
+          out.writeln('${lb.gutter()}$bullet $line');
         }
 
         // Bottom border
@@ -158,6 +159,8 @@ class QuizWidget {
   void _renderFeedback(int qi, bool isCorrect, QuizQuestion q, int selected) {
     final style = theme.style;
     final title = _title(qi);
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
 
     final verdict = isCorrect
         ? '${theme.info}${theme.bold}Correct!${theme.reset}'
@@ -166,13 +169,12 @@ class QuizWidget {
     final correctAns = q.options[q.correctIndex];
     final chosen = q.options[selected];
 
-    stdout
-        .writeln('${theme.gray}${style.borderVertical}${theme.reset} $verdict');
+    stdout.writeln('${lb.gutter()}$verdict');
     if (!isCorrect) {
       stdout.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}Your answer:${theme.reset} $chosen');
+          '${lb.gutter()}${theme.dim}Your answer:${theme.reset} $chosen');
       stdout.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}Correct answer:${theme.reset} ${theme.info}$correctAns${theme.reset}');
+          '${lb.gutter()}${theme.dim}Correct answer:${theme.reset} ${theme.info}$correctAns${theme.reset}');
     }
 
     if (style.showBorder) {
@@ -196,13 +198,15 @@ class QuizWidget {
   void _renderSummary(int correct) {
     final style = theme.style;
     final t = 'Quiz Summary';
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final frame = FramedLayout(t, theme: theme);
     stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final total = questions.length;
     final percent = ((correct / total) * 100).clamp(0, 100).toStringAsFixed(0);
     stdout.writeln(
-        '${theme.gray}${style.borderVertical}${theme.reset} Score: ${theme.accent}$correct${theme.reset}/${theme.bold}$total${theme.reset} (${theme.highlight}$percent%${theme.reset})');
+        '${lb.gutter()}Score: ${theme.accent}$correct${theme.reset}/${theme.bold}$total${theme.reset} (${theme.highlight}$percent%${theme.reset})');
 
     if (style.showBorder) {
       stdout.writeln(frame.bottom());

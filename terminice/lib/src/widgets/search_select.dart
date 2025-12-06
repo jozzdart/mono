@@ -3,6 +3,7 @@ import '../system/key_events.dart';
 import '../system/highlighter.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
@@ -46,6 +47,8 @@ List<String> _searchSelect(
   PromptTheme theme = PromptTheme.dark,
 }) {
   final style = theme.style;
+  // Use centralized line builder for consistent styling
+  final lb = LineBuilder(theme);
 
   // Use centralized text input for search query handling
   final queryInput = TextInputBuffer();
@@ -65,9 +68,8 @@ List<String> _searchSelect(
       filtered = List.from(allOptions);
     } else {
       final query = queryInput.text.toLowerCase();
-      filtered = allOptions
-          .where((o) => o.toLowerCase().contains(query))
-          .toList();
+      filtered =
+          allOptions.where((o) => o.toLowerCase().contains(query)).toList();
     }
     nav.itemCount = filtered.length;
     nav.reset();
@@ -82,12 +84,13 @@ List<String> _searchSelect(
       out.writeln(topBorder);
     }
 
+    // Search line - using LineBuilder's gutter
     if (searchEnabled) {
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Search:${theme.reset} ${queryInput.text}');
+          '${lb.gutter()}${theme.accent}Search:${theme.reset} ${queryInput.text}');
     } else {
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(Search disabled — press / to enable)${theme.reset}');
+          '${lb.gutter()}${theme.dim}(Search disabled — press / to enable)${theme.reset}');
     }
 
     if (style.showBorder) {
@@ -101,26 +104,17 @@ List<String> _searchSelect(
       final absoluteIdx = window.start + i;
       final isHighlighted = nav.isSelected(absoluteIdx);
       final isChecked = selectedSet.contains(window.items[i]);
-      final checkbox = multiSelect
-          ? (isChecked
-              ? '${theme.checkboxOn}${style.checkboxOnSymbol}${theme.reset}'
-              : '${theme.checkboxOff}${style.checkboxOffSymbol}${theme.reset}')
-          : ' ';
-      final prefix =
-          isHighlighted ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+      // Use LineBuilder for arrow and checkbox
+      final checkbox = multiSelect ? lb.checkbox(isChecked) : ' ';
+      final prefix = lb.arrow(isHighlighted);
       final lineText =
           '$prefix $checkbox ${highlightSubstring(window.items[i], queryInput.text, theme, enabled: searchEnabled)}';
-      final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      if (isHighlighted && style.useInverseHighlight) {
-        out.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
-      } else {
-        out.writeln('$framePrefix$lineText');
-      }
+      // Use LineBuilder's writeLine for consistent highlight handling
+      lb.writeLine(out, lineText, highlighted: isHighlighted);
     }
 
     if (filtered.isEmpty) {
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.gray}(no matches)${theme.reset}');
+      out.writeln(lb.emptyLine('no matches'));
     }
 
     if (style.showBorder) {

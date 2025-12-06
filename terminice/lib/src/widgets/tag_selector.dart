@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 
@@ -95,6 +96,9 @@ class TagSelector {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       final frame = FramedLayout(prompt, theme: theme);
       final title = frame.top();
       out.writeln(
@@ -103,10 +107,10 @@ class TagSelector {
       // Selected summary
       final count = selected.length;
       final summary = count == 0
-          ? '${theme.dim}(none selected)${theme.reset}'
+          ? lb.emptyMessage('none selected')
           : '${theme.accent}$count selected${theme.reset}';
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${Hints.comma([
+          '${lb.gutter()}${Hints.comma([
             'Space to toggle',
             'Enter to confirm',
             'Esc to cancel'
@@ -127,8 +131,7 @@ class TagSelector {
                 idx, idx == focusedIndex, selected.contains(idx), l.colWidth),
           );
         }
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${pieces.join(' ')}');
+        out.writeln('${lb.gutter()}${pieces.join(' ')}');
       }
 
       if (style.showBorder) {

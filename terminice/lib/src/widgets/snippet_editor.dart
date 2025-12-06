@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// SnippetEditor – small code editor with syntax highlighting.
@@ -46,6 +47,9 @@ class SnippetEditor {
     bool cancelled = false;
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Header
       final frame = FramedLayout(_titleWithLang(title), theme: theme);
       final top = frame.top();
@@ -57,9 +61,7 @@ class SnippetEditor {
       for (var i = start; i < end; i++) {
         final raw = lines[i];
         final isCursorLine = i == cursorLine;
-        final prefix = isCursorLine
-            ? '${theme.accent}${style.arrow}${theme.reset}'
-            : ' ';
+        final prefix = lb.arrow(isCursorLine);
 
         if (isCursorLine) {
           final before = raw.substring(0, min(cursorColumn, raw.length));
@@ -72,19 +74,16 @@ class SnippetEditor {
           final afterH = _highlightLine(afterTail, lang);
           final cursorCell = '${theme.inverse}$cursorChar${theme.reset}';
 
-          out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $prefix $beforeH$cursorCell$afterH');
+          out.writeln('${lb.gutter()}$prefix $beforeH$cursorCell$afterH');
         } else {
           final lang = _resolveLanguage(raw);
-          out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $prefix ${_highlightLine(raw, lang)}');
+          out.writeln('${lb.gutter()}$prefix ${_highlightLine(raw, lang)}');
         }
       }
 
       // Fill remaining lines
       for (var i = end; i < start + visibleLines; i++) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset}   ${theme.dim}~${theme.reset}');
+        out.writeln('${lb.gutterOnly()}   ${theme.dim}~${theme.reset}');
       }
 
       if (style.showBorder) {

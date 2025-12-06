@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 import '../system/text_utils.dart' as text;
@@ -42,6 +43,8 @@ class ResourceGrid {
   }
 
   void _render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final style = theme.style;
 
     // Title
@@ -49,8 +52,7 @@ class ResourceGrid {
     out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     if (resources.isEmpty) {
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(no resources)${theme.reset}');
+      out.writeln(lb.emptyLine('no resources'));
       if (style.showBorder) {
         out.writeln(frame.bottom());
       }
@@ -85,7 +87,7 @@ class ResourceGrid {
       // Print each visual line across the row
       for (int line = 0; line < linesPerCell; line++) {
         final buf = StringBuffer();
-        buf.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+        buf.write(lb.gutter());
         for (int i = 0; i < renderedCells.length; i++) {
           if (i > 0) buf.write(colSep);
           buf.write(renderedCells[i][line]);

@@ -3,6 +3,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// ─────────────────────────────────────────────────────────────
@@ -57,6 +58,9 @@ class DateFieldsPrompt {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       final title = '$label — Choose Date';
       final paddedTitle = '  $title  ';
       if (style.showBorder) {
@@ -86,14 +90,13 @@ class DateFieldsPrompt {
       ];
 
       // Layout
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} $leftPad${fields.join('   ')}');
+      out.writeln('${lb.gutter()}$leftPad${fields.join('   ')}');
 
       // Preview
       final formatted =
           DateFormat('EEE, d MMM yyyy').format(selected).padLeft(10);
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} $leftPad${theme.gray}Preview:${theme.reset} ${theme.accent}$formatted${theme.reset}');
+          '${lb.gutter()}$leftPad${theme.gray}Preview:${theme.reset} ${theme.accent}$formatted${theme.reset}');
 
       // Footer
       if (style.showBorder) {

@@ -3,6 +3,7 @@ import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// ToggleGroup – manage multiple on/off toggles with elegant keyboard flipping.
@@ -39,6 +40,9 @@ class ToggleGroup {
   /// If cancelled, returns the original initial states.
   Map<String, bool> run() {
     final style = theme.style;
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
+
     if (items.isEmpty) return const {};
 
     // Use centralized focus navigation
@@ -58,18 +62,9 @@ class ToggleGroup {
       return w;
     }
 
-    String switchControl(bool on, {bool highlighted = false}) {
-      // Render a themed switch-like control using ASCII-only glyphs
-      final left = on ? theme.checkboxOn : theme.checkboxOff;
-      final sym = on ? style.checkboxOnSymbol : style.checkboxOffSymbol;
-      final text = on ? ' ON ' : ' OFF';
-      final body = '$sym$text';
-      final colored = '$left$body${theme.reset}';
-      if (highlighted && style.useInverseHighlight) {
-        return '${theme.inverse}$colored${theme.reset}';
-      }
-      return colored;
-    }
+    // Use centralized switch control from LineBuilder
+    String switchCtrl(bool on, {bool highlighted = false}) =>
+        lb.switchControlHighlighted(on, highlight: highlighted);
 
     void render(RenderOutput out) {
       final frame = FramedLayout(title, theme: theme);
@@ -80,7 +75,6 @@ class ToggleGroup {
         out.writeln(frame.connector());
       }
 
-      final leftPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
       final gap = 2;
       final labelWidth = maxLabelWidth();
 
@@ -94,12 +88,12 @@ class ToggleGroup {
         }
         final paddedLabel = label.padRight(labelWidth);
 
-        final arrow =
-            isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
-        final switchTxt = switchControl(states[i], highlighted: isFocused);
+        // Use LineBuilder for arrow
+        final arrow = lb.arrow(isFocused);
+        final switchTxt = switchCtrl(states[i], highlighted: isFocused);
 
-        final lineCore = '$arrow $paddedLabel';
-        out.writeln('$leftPrefix$lineCore${' ' * gap}$switchTxt');
+        final lineCore = '$arrow $paddedLabel${' ' * gap}$switchTxt';
+        out.writeln('${lb.gutter()}$lineCore');
       }
 
       if (style.showBorder) {
@@ -154,8 +148,9 @@ class ToggleGroup {
     );
 
     final resultMap = <String, bool>{};
-    final finalStates =
-        (cancelled || result == PromptResult.cancelled) ? initialStates : states;
+    final finalStates = (cancelled || result == PromptResult.cancelled)
+        ? initialStates
+        : states;
     for (var i = 0; i < items.length; i++) {
       resultMap[items[i].label] = finalStates[i];
     }

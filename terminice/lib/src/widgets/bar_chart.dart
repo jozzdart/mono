@@ -1,6 +1,6 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
-import '../system/rendering.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_utils.dart' as text;
 
@@ -35,6 +35,8 @@ class BarChartWidget {
   }
 
   void _render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final style = theme.style;
     final label = (title == null || title!.isEmpty) ? 'Bar Chart' : title!;
 
@@ -43,7 +45,7 @@ class BarChartWidget {
     out.writeln('${theme.bold}$top${theme.reset}');
 
     if (items.isEmpty) {
-      out.writeln(gutterLine(theme, '${theme.dim}(no data)${theme.reset}'));
+      out.writeln(lb.emptyLine('no data'));
       if (style.showBorder) {
         out.writeln(frame.bottom());
       }
@@ -67,8 +69,8 @@ class BarChartWidget {
           ? '  ${theme.selection}${_formatValue(it.value)}${theme.reset}'
           : '';
 
-      out.writeln(gutterLine(theme,
-          '${theme.bold}${theme.accent}$labelStr${theme.reset}  $bar$valueStr'));
+      out.writeln(
+          '${lb.gutter()}${theme.bold}${theme.accent}$labelStr${theme.reset}  $bar$valueStr');
     }
 
     if (style.showBorder) {

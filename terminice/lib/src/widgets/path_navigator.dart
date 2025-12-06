@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 
@@ -83,13 +84,15 @@ class PathNavigator {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       final frame = FramedLayout(label, theme: theme);
       final title = frame.top();
       out.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
-      // Current path line
-      final pathLine = '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Path:${theme.reset} ${shortPath(current.path)}';
-      out.writeln(pathLine);
+      // Current path line - using LineBuilder's gutter
+      out.writeln('${lb.gutter()}${theme.accent}Path:${theme.reset} ${shortPath(current.path)}');
 
       if (style.showBorder) {
         out.writeln(frame.connector());
@@ -99,33 +102,31 @@ class PathNavigator {
       nav.itemCount = entries.length;
 
       if (entries.isEmpty) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(empty)${theme.reset}');
+        out.writeln(lb.emptyLine('empty'));
       }
 
       // Use ListNavigation's viewport
       final window = nav.visibleWindow(entries);
 
+      // Use LineBuilder for overflow indicator
       if (window.hasOverflowAbove) {
-        out.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
+        out.writeln(lb.overflowLine());
       }
 
       for (var i = 0; i < window.items.length; i++) {
         final absoluteIdx = window.start + i;
         final e = window.items[i];
         final isHighlighted = nav.isSelected(absoluteIdx);
-        final prefix = isHighlighted ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        // Use LineBuilder for arrow
+        final prefix = lb.arrow(isHighlighted);
         final lineText = '$prefix ${e.label}';
-        final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-        if (isHighlighted && style.useInverseHighlight) {
-          out.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
-        } else {
-          out.writeln('$framePrefix$lineText');
-        }
+        // Use LineBuilder's writeLine for consistent highlight handling
+        lb.writeLine(out, lineText, highlighted: isHighlighted);
       }
 
+      // Use LineBuilder for overflow indicator
       if (window.hasOverflowBelow) {
-        out.writeln('${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
+        out.writeln(lb.overflowLine());
       }
 
       if (style.showBorder) {

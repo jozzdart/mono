@@ -5,6 +5,7 @@ import 'dart:async';
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// ClockWidget – analog/digital terminal clock.
@@ -217,8 +218,9 @@ class ClockWidget {
         out.writeln(frame.connector());
       }
 
-      final left =
-          '${currentTheme.gray}${style.borderVertical}${currentTheme.reset} ';
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(currentTheme);
+      final left = lb.gutter();
       final now = DateTime.now();
 
       if (showAnalog && showDigital && mode == ClockLayout.sideBySide) {

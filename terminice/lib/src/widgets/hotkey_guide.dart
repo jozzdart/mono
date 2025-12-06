@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// HotkeyGuide – displays available shortcuts in a themed frame.
@@ -30,20 +31,19 @@ class HotkeyGuide {
 
   /// Renders the guide to a RenderOutput.
   void _render(RenderOutput out) {
-    final style = theme.style;
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
 
     final frame = FramedLayout(title, theme: theme);
     out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final body = Hints.grid(shortcuts, theme).split('\n');
     for (final line in body) {
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} $line');
+      out.writeln('${lb.gutter()}$line');
     }
 
     if (footerHints.isNotEmpty) {
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${Hints.comma(footerHints, theme)}');
+      out.writeln('${lb.gutter()}${Hints.comma(footerHints, theme)}');
     }
 
     final bottom = frame.bottom();

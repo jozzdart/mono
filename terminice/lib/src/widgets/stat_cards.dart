@@ -1,5 +1,6 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// StatCards – big numeric highlights (e.g., "✔ Tests: 98%")
@@ -25,6 +26,8 @@ class StatCards {
   }
 
   void _render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final style = theme.style;
 
     final label = title == null || title!.isEmpty ? 'Stats' : title!;
@@ -36,7 +39,7 @@ class StatCards {
       final icon = (item.icon == null || item.icon!.isEmpty) ? '✔' : item.icon!;
 
       final line = StringBuffer();
-      line.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+      line.write(lb.gutter());
       line.write('$toneColor$icon${theme.reset} ');
       line.write('${theme.dim}${item.label}:${theme.reset} ');
       line.write('${theme.selection}${theme.bold}${item.value}${theme.reset}');

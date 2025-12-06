@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 
@@ -140,9 +141,10 @@ class RangePrompt {
     }
     out.writeln(barLine.toString());
 
-    // Active handle label
+    // Active handle label - using LineBuilder's gutter
+    final lb = LineBuilder(theme);
     out.writeln(
-        '${theme.gray}${style.borderVertical}${theme.reset} Active: ${theme.accent}${editingStart ? 'start' : 'end'}${theme.reset}');
+        '${lb.gutter()}Active: ${theme.accent}${editingStart ? 'start' : 'end'}${theme.reset}');
 
     // Bottom border
     if (style.showBorder) {

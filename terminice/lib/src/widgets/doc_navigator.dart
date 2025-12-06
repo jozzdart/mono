@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import 'markdown_viewer.dart';
@@ -133,6 +134,9 @@ class DocNavigator {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       final frame = FramedLayout(title, theme: theme);
       final titleLine = frame.top();
       out.writeln(style.boldPrompt
@@ -143,11 +147,11 @@ class DocNavigator {
       final currentSel = selectedPath(currentList);
       final relSel = relPath(currentSel);
 
-      // Root line and selection line
+      // Root line and selection line - using LineBuilder's gutter
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Root:${theme.reset} ${_shortPath(root.path)}');
+          '${lb.gutter()}${theme.accent}Root:${theme.reset} ${_shortPath(root.path)}');
       out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}Selected:${theme.reset} ${relSel.isEmpty ? '.' : relSel}');
+          '${lb.gutter()}${theme.accent}Selected:${theme.reset} ${relSel.isEmpty ? '.' : relSel}');
 
       if (style.showBorder) {
         out.writeln(frame.connector());
@@ -159,17 +163,17 @@ class DocNavigator {
       // Use ListNavigation's viewport
       final window = nav.visibleWindow(currentList);
 
+      // Use LineBuilder for overflow indicator
       if (window.hasOverflowAbove) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
+        out.writeln(lb.overflowLine());
       }
 
       for (var i = 0; i < window.items.length; i++) {
         final e = window.items[i];
         final absoluteIdx = window.start + i;
         final isHighlighted = nav.isSelected(absoluteIdx);
-        final prefix =
-            isHighlighted ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        // Use LineBuilder for arrow
+        final prefix = lb.arrow(isHighlighted);
         final branch = _treeBranchGlyph(e, theme);
         final toggleGlyph = e.isDir
             ? ((expanded[e.path] ?? false)
@@ -184,23 +188,17 @@ class DocNavigator {
                 : theme.gray);
         final lineText =
             '$prefix $indent$branch $toggleGlyph $labelColor${e.name}${theme.reset}';
-        final framePrefix =
-            '${theme.gray}${style.borderVertical}${theme.reset} ';
-        if (isHighlighted && style.useInverseHighlight) {
-          out.writeln('$framePrefix${theme.inverse}$lineText${theme.reset}');
-        } else {
-          out.writeln('$framePrefix$lineText');
-        }
+        // Use LineBuilder's writeLine for consistent highlight handling
+        lb.writeLine(out, lineText, highlighted: isHighlighted);
       }
 
+      // Use LineBuilder for overflow indicator
       if (window.hasOverflowBelow) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
+        out.writeln(lb.overflowLine());
       }
 
       if (currentList.isEmpty) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}(no markdown files)${theme.reset}');
+        out.writeln(lb.emptyLine('no markdown files'));
       }
 
       if (style.showBorder) {

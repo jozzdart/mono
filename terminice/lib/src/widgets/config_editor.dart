@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// ConfigEditor – lightweight YAML/JSON editor with color syntax.
@@ -77,6 +78,9 @@ class ConfigEditor {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       final lang = resolveLang();
       final header = '$title · ${lang.toUpperCase()}';
       final frame = FramedLayout(header, theme: theme);
@@ -87,11 +91,10 @@ class ConfigEditor {
       final end = min(scrollOffset + visibleLines, lines.length);
       for (var i = start; i < end; i++) {
         final raw = lines[i];
-        final prefix = i == cursorLine
-            ? '${theme.accent}${style.arrow}${theme.reset}'
-            : ' ';
+        final isCurrent = i == cursorLine;
+        final prefix = lb.arrow(isCurrent);
 
-        if (i == cursorLine) {
+        if (isCurrent) {
           final safeColumn = min(cursorColumn, raw.length);
           final before = raw.substring(0, safeColumn);
           final after = raw.substring(safeColumn);
@@ -99,17 +102,16 @@ class ConfigEditor {
           final beforeH = _highlight(before, lang);
           final afterH = after.isEmpty ? '' : _highlight(after.substring(1), lang);
           out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $prefix $beforeH${theme.inverse}$cursorChar${theme.reset}$afterH');
+              '${lb.gutter()}$prefix $beforeH${theme.inverse}$cursorChar${theme.reset}$afterH');
         } else {
           out.writeln(
-              '${theme.gray}${style.borderVertical}${theme.reset} $prefix ${_highlight(raw, lang)}');
+              '${lb.gutter()}$prefix ${_highlight(raw, lang)}');
         }
       }
 
       // Fill remaining viewport lines
       for (var i = end; i < start + visibleLines; i++) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset}   ${theme.dim}~${theme.reset}');
+        out.writeln('${lb.gutterOnly()}   ${theme.dim}~${theme.reset}');
       }
 
       if (style.showBorder) {

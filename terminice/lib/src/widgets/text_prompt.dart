@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
 
@@ -44,6 +45,9 @@ class TextPrompt {
     final cursorBlink = CursorBlink();
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Title
       final frame = FramedLayout(prompt, theme: theme);
       final baseTitle = frame.top();
@@ -60,16 +64,13 @@ class TextPrompt {
           cursorBlink.isVisible ? '${theme.accent}▌${theme.reset}' : ' ';
       final validatedColor = valid ? theme.accent : theme.checkboxOn;
 
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} $validatedColor$text$cursor${theme.reset}');
+      out.writeln('${lb.gutter()}$validatedColor$text$cursor${theme.reset}');
 
       // Error line (if invalid)
       if (error != null) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${theme.highlight}$error${theme.reset}');
+        out.writeln('${lb.gutter()}${theme.highlight}$error${theme.reset}');
       } else {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${Hints.comma([
+        out.writeln('${lb.gutter()}${Hints.comma([
               'Enter to confirm',
               'Esc to cancel'
             ], theme)}');

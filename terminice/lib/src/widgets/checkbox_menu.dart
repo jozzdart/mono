@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
@@ -33,6 +34,8 @@ class CheckboxMenu {
     if (options.isEmpty) return <String>[];
 
     final style = theme.style;
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
 
     // Use centralized list navigation for selection & scrolling
     final nav = ListNavigation(
@@ -64,17 +67,11 @@ class CheckboxMenu {
       }
     }
 
-    String checkbox(bool isOn) {
-      final sym = isOn ? style.checkboxOnSymbol : style.checkboxOffSymbol;
-      final col = isOn ? theme.checkboxOn : theme.checkboxOff;
-      return '$col$sym${theme.reset}';
-    }
-
     String summaryLine() {
       final total = options.length;
       final count = selected.length;
       if (count == 0) {
-        return '${theme.dim}(none selected)${theme.reset}';
+        return lb.emptyMessage('none selected');
       }
       // render up to 3 selections by label, then "+N"
       final indices = selected.toList()..sort();
@@ -98,9 +95,8 @@ class CheckboxMenu {
       out.writeln(
           style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
 
-      // Summary line
-      final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      out.writeln(prefix + summaryLine());
+      // Summary line - using LineBuilder's gutter
+      out.writeln('${lb.gutter()}${summaryLine()}');
 
       if (style.showBorder) {
         out.writeln(frame.connector());
@@ -109,10 +105,9 @@ class CheckboxMenu {
       // Use ListNavigation's viewport for visible window
       final window = nav.visibleWindow(options);
 
-      // Optional overflow indicator (top)
+      // Optional overflow indicator (top) - using LineBuilder
       if (window.hasOverflowAbove) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
+        out.writeln(lb.overflowLine());
       }
 
       final cols = TerminalInfo.columns;
@@ -121,32 +116,26 @@ class CheckboxMenu {
         final isFocused = nav.isSelected(absoluteIdx);
         final isChecked = selected.contains(absoluteIdx);
 
-        final check = checkbox(isChecked);
-        final arrow =
-            isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
-        final framePrefix =
-            '${theme.gray}${style.borderVertical}${theme.reset} ';
+        // Use LineBuilder for arrow and checkbox
+        final arrow = lb.arrow(isFocused);
+        final check = lb.checkbox(isChecked);
 
         // Construct core line and fit within terminal width with graceful truncation
         var core = '$arrow $check ${window.items[i]}';
         final reserve = 0; // no trailing widget for now
-        final maxLabel =
-            (cols - framePrefix.length - 1 - reserve).clamp(8, cols);
+        final gutterLen = lb.gutter().length;
+        final maxLabel = (cols - gutterLen - 1 - reserve).clamp(8, cols);
         if (core.length > maxLabel) {
           core = '${core.substring(0, maxLabel - 3)}...';
         }
 
-        if (isFocused && style.useInverseHighlight) {
-          out.writeln('$framePrefix${theme.inverse}$core${theme.reset}');
-        } else {
-          out.writeln('$framePrefix$core');
-        }
+        // Use LineBuilder's writeLine for consistent highlight handling
+        lb.writeLine(out, core, highlighted: isFocused);
       }
 
-      // Optional overflow indicator (bottom)
+      // Optional overflow indicator (bottom) - using LineBuilder
       if (window.hasOverflowBelow) {
-        out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}...${theme.reset}');
+        out.writeln(lb.overflowLine());
       }
 
       if (style.showBorder) {

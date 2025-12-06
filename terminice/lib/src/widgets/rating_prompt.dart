@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// Star rating prompt (1–5) with theme-aware, colored stars (no emojis).
@@ -58,6 +59,9 @@ class RatingPrompt {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Title
       final frame = FramedLayout(prompt, theme: theme);
       final top = frame.top();
@@ -69,19 +73,19 @@ class RatingPrompt {
 
       // Stars line
       final stars = starsLine(value);
-      out.writeln('${theme.gray}${style.borderVertical}${theme.reset} $stars');
+      out.writeln('${lb.gutter()}$stars');
 
       // Optional label beneath stars (aligned start)
       final effectiveLabels = labels;
       if (effectiveLabels != null && effectiveLabels.length >= maxStars) {
         final label = effectiveLabels[(value - 1).clamp(0, maxStars - 1)];
         out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} ${theme.dim}Rating:${theme.reset} ${theme.accent}$label${theme.reset}');
+            '${lb.gutter()}${theme.dim}Rating:${theme.reset} ${theme.accent}$label${theme.reset}');
       } else {
         // Numeric scale and current value
         final scale = scaleLine(value);
         out.writeln(
-            '${theme.gray}${style.borderVertical}${theme.reset} $scale   ${theme.dim}(${theme.reset}${theme.accent}$value${theme.reset}${theme.dim}/$maxStars${theme.reset}${theme.dim})${theme.reset}');
+            '${lb.gutter()}$scale   ${theme.dim}(${theme.reset}${theme.accent}$value${theme.reset}${theme.dim}/$maxStars${theme.reset}${theme.dim})${theme.reset}');
       }
 
       // Bottom border

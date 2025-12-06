@@ -5,6 +5,7 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
 import '../system/highlighter.dart';
+import '../system/line_builder.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
@@ -103,14 +104,15 @@ class HelpCenter {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
       final cols = TerminalInfo.columns;
 
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
       out.writeln(style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top);
 
-      final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      out.writeln('$framePrefix${theme.accent}Search:${theme.reset} ${queryInput.text}');
+      out.writeln('${lb.gutter()}${theme.accent}Search:${theme.reset} ${queryInput.text}');
 
       if (style.showBorder) {
         out.writeln(frame.connector());
@@ -118,34 +120,33 @@ class HelpCenter {
 
       // Results header
       final header = '${theme.dim}Results (${filtered.length})${theme.reset}';
-      out.writeln('$framePrefix$header');
+      out.writeln('${lb.gutter()}$header');
 
       // Results window using ListNavigation
       if (filtered.isEmpty) {
-        out.writeln('$framePrefix${theme.dim}(no matches)${theme.reset}');
+        out.writeln(lb.emptyLine('no matches'));
       } else {
         final window = nav.visibleWindow(filtered);
 
+        // Use LineBuilder for overflow indicator
         if (window.hasOverflowAbove) {
-          out.writeln('$framePrefix${theme.dim}...${theme.reset}');
+          out.writeln(lb.overflowLine());
         }
 
         for (var i = 0; i < window.items.length; i++) {
           final absoluteIdx = window.start + i;
           final isSel = nav.isSelected(absoluteIdx);
-          final prefix =
-              isSel ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+          // Use LineBuilder for arrow
+          final prefix = lb.arrow(isSel);
           final label = labelFor(window.items[i]);
           final line = '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
-          if (isSel && style.useInverseHighlight) {
-            out.writeln('$framePrefix${theme.inverse}$line${theme.reset}');
-          } else {
-            out.writeln('$framePrefix$line');
-          }
+          // Use LineBuilder's writeLine for consistent highlight handling
+          lb.writeLine(out, line, highlighted: isSel);
         }
 
+        // Use LineBuilder for overflow indicator
         if (window.hasOverflowBelow) {
-          out.writeln('$framePrefix${theme.dim}...${theme.reset}');
+          out.writeln(lb.overflowLine());
         }
       }
 
@@ -157,9 +158,9 @@ class HelpCenter {
       // Preview header
       final selected = filtered.isEmpty ? null : filtered[nav.selectedIndex];
       final previewTitle = selected == null
-          ? '${theme.dim}(no selection)${theme.reset}'
+          ? lb.emptyMessage('no selection')
           : '${theme.accent}Preview:${theme.reset} ${selected.title}';
-      out.writeln('$framePrefix$previewTitle');
+      out.writeln('${lb.gutter()}$previewTitle');
 
       // Preview content area
       if (selected == null) {
@@ -175,7 +176,7 @@ class HelpCenter {
           final ln = rawLines[i];
           final highlighted =
               highlightSubstring(truncate(ln, contentWidth), queryInput.text, theme);
-          out.writeln('$framePrefix$highlighted');
+          out.writeln('${lb.gutter()}$highlighted');
         }
         // Compact: no filler beyond content
       }

@@ -1,5 +1,6 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// MiniAnalytics – compact trend with growth percent and arrow.
@@ -38,6 +39,8 @@ class MiniAnalytics {
   }
 
   void _render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final style = theme.style;
     final headerLabel =
         (title == null || title!.isEmpty) ? 'Mini Analytics' : title!;
@@ -54,7 +57,7 @@ class MiniAnalytics {
     final spark = _buildSparkline(series, sparklineWidth);
 
     final line = StringBuffer();
-    line.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+    line.write(lb.gutter());
     line.write('${theme.dim}$label:${theme.reset} ');
     line.write('${theme.accent}$spark${theme.reset}  ');
     line.write('$changeTone$arrow${theme.reset} ');

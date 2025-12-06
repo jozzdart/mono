@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 
@@ -109,13 +110,16 @@ List<String> _gridSelect(
   }
 
   void render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
+
     final frame = FramedLayout(prompt, theme: theme);
     final top = frame.top();
     if (style.boldPrompt) out.writeln('${theme.bold}$top${theme.reset}');
 
     for (int r = 0; r < rows; r++) {
-      final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-      final buffer = StringBuffer(prefix);
+      // Use LineBuilder for gutter
+      final buffer = StringBuffer(lb.gutter());
       for (int c = 0; c < cols; c++) {
         final idx = r * cols + c;
         if (idx >= total) {
@@ -133,12 +137,11 @@ List<String> _gridSelect(
 
       // Row separator (snap-to-grid line) except after last row
       if (r != rows - 1) {
-        final sepPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
         final rowLine = List.generate(
           cols,
           (i) => '${theme.gray}${'─' * computedCellWidth}${theme.reset}',
         ).join('${theme.gray}┼${theme.reset}');
-        out.writeln('$sepPrefix$rowLine');
+        out.writeln('${lb.gutter()}$rowLine');
       }
     }
 

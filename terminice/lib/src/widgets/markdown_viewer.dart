@@ -1,5 +1,6 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/rendering.dart';
 import '../system/prompt_runner.dart';
 
@@ -158,8 +159,13 @@ class MarkdownViewer {
   }
 
   void _gutter(String content) {
+    final lb = LineBuilder(theme);
     final text = color ? content : stripAnsi(content);
-    _out.writeln(gutterLine(theme, text));
+    if (text.trim().isEmpty) {
+      _out.writeln(lb.gutterOnly());
+    } else {
+      _out.writeln('${lb.gutter()}$text');
+    }
   }
 
   String _heading(String text, int level) {
@@ -272,12 +278,10 @@ class MarkdownViewer {
   }
 
   String _task(int indentSpaces, bool checked, String text) {
+    final lb = LineBuilder(theme);
     final indent = ' ' * indentSpaces;
-    final sym =
-        checked ? theme.style.checkboxOnSymbol : theme.style.checkboxOffSymbol;
-    final col = checked ? theme.checkboxOn : theme.checkboxOff;
     final t = checked ? '${theme.dim}$text${theme.reset}' : text;
-    return '$indent$col$sym${theme.reset} $t';
+    return '$indent${lb.checkbox(checked)} $t';
   }
 
   bool _looksLikeTableRow(String line) {

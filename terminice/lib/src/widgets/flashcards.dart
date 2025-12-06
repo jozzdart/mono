@@ -5,6 +5,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/rendering.dart';
 import '../system/prompt_runner.dart';
 
@@ -40,10 +41,13 @@ class Flashcards {
     bool userQuit = false;
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       _renderHeader(out);
       if (current == null) {
-        out.writeln(gutterLine(theme, '${theme.info}Session complete. No due cards.${theme.reset}'));
-        out.writeln(gutterLine(theme, _summaryLine()));
+        out.writeln('${lb.gutter()}${theme.info}Session complete. No due cards.${theme.reset}');
+        out.writeln('${lb.gutter()}${_summaryLine()}');
         if (theme.style.showBorder) {
           final frame = FramedLayout(title, theme: theme);
           out.writeln(frame.bottom());
@@ -52,8 +56,8 @@ class Flashcards {
       }
 
       if (userQuit) {
-        out.writeln(gutterLine(theme, '${theme.warn}Session ended by user.${theme.reset}'));
-        out.writeln(gutterLine(theme, _summaryLine()));
+        out.writeln('${lb.gutter()}${theme.warn}Session ended by user.${theme.reset}');
+        out.writeln('${lb.gutter()}${_summaryLine()}');
         if (theme.style.showBorder) {
           final frame = FramedLayout(title, theme: theme);
           out.writeln(frame.bottom());
@@ -123,10 +127,11 @@ class Flashcards {
   }
 
   void _renderHeader(RenderOutput out) {
+    final lb = LineBuilder(theme);
     final frame = FramedLayout(title, theme: theme);
     final top = frame.top();
     out.writeln('${theme.bold}$top${theme.reset}');
-    out.writeln(gutterLine(theme, _summaryLine()));
+    out.writeln('${lb.gutter()}${_summaryLine()}');
   }
 
   String _summaryLine() {
@@ -145,21 +150,23 @@ class Flashcards {
   }
 
   void _renderCard(RenderOutput out, CardItem card, {required bool flipped}) {
+    final lb = LineBuilder(theme);
     final face = flipped ? card.back : card.front;
     final label = flipped ? 'Answer' : 'Question';
     final color = flipped ? theme.accent : theme.highlight;
-    out.writeln(gutterLine(theme, sectionHeader(theme, label)));
+    out.writeln('${lb.gutter()}${sectionHeader(theme, label)}');
     for (final line in face.split('\n')) {
-      out.writeln(gutterLine(theme, '$color$line${theme.reset}'));
+      out.writeln('${lb.gutter()}$color$line${theme.reset}');
     }
 
     if (!flipped && card.hint != null && card.hint!.isNotEmpty) {
-      out.writeln(gutterLine(theme, sectionHeader(theme, 'Hint')));
-      out.writeln(gutterLine(theme, '${theme.gray}${card.hint}${theme.reset}'));
+      out.writeln('${lb.gutter()}${sectionHeader(theme, 'Hint')}');
+      out.writeln('${lb.gutter()}${theme.gray}${card.hint}${theme.reset}');
     }
   }
 
   void _renderHints(RenderOutput out, {required bool flipped}) {
+    final lb = LineBuilder(theme);
     out.writeln('');
     final rows = <List<String>>[
       [Hints.key('Space', theme), flipped ? 'Hide answer' : 'Show answer'],
@@ -172,7 +179,7 @@ class Flashcards {
     ];
     final s = Hints.grid(rows, theme).split('\n');
     for (final line in s) {
-      out.writeln(gutterLine(theme, line));
+      out.writeln('${lb.gutter()}$line');
     }
     if (theme.style.showBorder) {
       final frame = FramedLayout(title, theme: theme);

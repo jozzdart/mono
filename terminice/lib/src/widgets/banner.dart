@@ -1,6 +1,7 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// Renders a big ASCII banner aligned with ThemeDemo styling.
@@ -38,27 +39,26 @@ class Banner {
   }
 
   void _render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final s = theme.style;
 
     final label = 'Banner';
     final frame = FramedLayout(label, theme: theme);
     if (s.boldPrompt) out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
-    // Content left border for alignment with other widgets
-    final borderLeft = '${theme.gray}${s.borderVertical}${theme.reset} ';
-
     // Build mask lines once; use it to produce colored and shadow layers
     final maskLines = _renderMaskLines(text);
 
     // Primary colored banner lines
     for (int i = 0; i < maskLines.length; i++) {
-      out.writeln('$borderLeft${_colorizeMask(maskLines[i], rowIndex: i)}');
+      out.writeln('${lb.gutter()}${_colorizeMask(maskLines[i], rowIndex: i)}');
     }
 
     // Optional drop shadow block printed after the banner
     if (showShadow) {
       for (int i = 0; i < maskLines.length; i++) {
-        out.writeln('$borderLeft  ${_shadowizeMask(maskLines[i])}');
+        out.writeln('${lb.gutter()}  ${_shadowizeMask(maskLines[i])}');
       }
     }
 

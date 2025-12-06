@@ -6,6 +6,7 @@ import '../system/terminal.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// Interactive color picker with ANSI preview and hex output.
@@ -35,6 +36,7 @@ class ColorPickerPrompt {
 
   // ───────── Runtime state ─────────
   late PromptStyle _style;
+  late LineBuilder _lb;
   int _selX = 0;
   int _selY = 0;
   double _saturation = 1.0;
@@ -45,6 +47,8 @@ class ColorPickerPrompt {
   /// Runs the picker and returns a hex string like "#RRGGBB" or null if cancelled.
   String? run() {
     _style = theme.style;
+    // Use centralized line builder for consistent styling
+    _lb = LineBuilder(theme);
     _selX = 0;
     _selY = math.max(0, rows ~/ 2 - 1);
     _saturation = 1.0;
@@ -113,22 +117,21 @@ class ColorPickerPrompt {
 
   void _renderSubtitle(RenderOutput out) {
     final subtitle =
-        '${theme.gray}${_style.borderVertical}${theme.reset} ${theme.accent}Pick visually. ${theme.reset}${theme.dim}(←/→ hue, ↑/↓ brightness, S saturation)${theme.reset}';
+        '${_lb.gutter()}${theme.accent}Pick visually. ${theme.reset}${theme.dim}(←/→ hue, ↑/↓ brightness, S saturation)${theme.reset}';
     out.writeln(subtitle);
   }
 
   void _renderCaretLine(RenderOutput out) {
     final caretColumn = _selX * 2;
-    final prefix = '${theme.gray}${_style.borderVertical}${theme.reset} ';
     final caretPad = ' ' * caretColumn;
-    final caretLine = '$prefix$caretPad${theme.selection}^^${theme.reset}';
+    final caretLine = '${_lb.gutter()}$caretPad${theme.selection}^^${theme.reset}';
     out.writeln(caretLine);
   }
 
   void _renderGrid(RenderOutput out) {
     for (int y = 0; y < rows; y++) {
       final line = StringBuffer();
-      line.write('${theme.gray}${_style.borderVertical}${theme.reset} ');
+      line.write(_lb.gutter());
       for (int x = 0; x < cols; x++) {
         final hsv = _cellToHsv(x, y, cols, rows, _saturation);
         final rgb = _hsvToRgb(hsv[0], hsv[1], hsv[2]);
@@ -144,7 +147,7 @@ class ColorPickerPrompt {
 
   void _renderPresets(RenderOutput out) {
     final presetsLine = StringBuffer();
-    presetsLine.write('${theme.gray}${_style.borderVertical}${theme.reset} ');
+    presetsLine.write(_lb.gutter());
     for (int i = 0; i < _presets.length; i++) {
       final hex = _presets[i]['h']!;
       final rgb = _hexToRgb(hex);
@@ -164,8 +167,7 @@ class ColorPickerPrompt {
     final hex = _selectedHex();
     final rgb = _hexToRgb(hex);
     final swatch = '${_bg(rgb[0], rgb[1], rgb[2])}      ${theme.reset}';
-    out.writeln(
-        '${theme.gray}${_style.borderVertical}${theme.reset} $swatch ${theme.accent}$hex${theme.reset}');
+    out.writeln('${_lb.gutter()}$swatch ${theme.accent}$hex${theme.reset}');
   }
 
   void _renderHints(RenderOutput out) {

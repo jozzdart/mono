@@ -3,6 +3,7 @@ import 'dart:io' show sleep;
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// ProgressDots – animated ellipsis while waiting.
@@ -32,13 +33,16 @@ class ProgressDots {
     final style = theme.style;
 
     void render(RenderOutput out, int phase) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       final frame = FramedLayout(label, theme: theme);
       final top = frame.top();
       out.writeln('${theme.bold}$top${theme.reset}');
 
       final dots = '.' * ((phase % (maxDots + 1)));
       final line = StringBuffer();
-      line.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+      line.write(lb.gutter());
       line.write('${theme.dim}$message${theme.reset} ');
       line.write('${theme.accent}$dots${theme.reset}');
       out.writeln(line.toString());

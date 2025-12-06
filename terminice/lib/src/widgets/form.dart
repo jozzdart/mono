@@ -3,6 +3,7 @@ import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
 
@@ -86,6 +87,9 @@ class Form {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       final frame = FramedLayout(title, theme: theme);
       final baseTitle = frame.top();
       final header = style.boldPrompt
@@ -102,24 +106,20 @@ class Form {
       for (var i = 0; i < fields.length; i++) {
         final spec = fields[i];
         final isFocused = focus.isFocused(i);
-        final prefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
-        final arrow =
-            isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        // Use LineBuilder for arrow
+        final arrow = lb.arrow(isFocused);
 
         final labelPart = '${theme.selection}${spec.label}${theme.reset}';
         final valuePart = renderValue(values[i], spec);
         var line = '$arrow $labelPart: $valuePart';
 
-        if (isFocused && style.useInverseHighlight) {
-          out.writeln('$prefix${theme.inverse}$line${theme.reset}');
-        } else {
-          out.writeln('$prefix$line');
-        }
+        // Use LineBuilder's writeLine for consistent highlight handling
+        lb.writeLine(out, line, highlighted: isFocused);
 
         // Error line if invalid - use FocusNavigation's error tracking
         final err = focus.getError(i);
         if (err != null && err.isNotEmpty) {
-          out.writeln('$prefix${theme.highlight}$err${theme.reset}');
+          out.writeln('${lb.gutter()}${theme.highlight}$err${theme.reset}');
         }
       }
 

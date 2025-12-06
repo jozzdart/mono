@@ -3,6 +3,7 @@ import 'dart:async';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_utils.dart' as text;
 
@@ -36,6 +37,8 @@ class ServiceMonitor {
   });
 
   Future<void> run() async {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final out = RenderOutput();
     final style = theme.style;
     final label = title ?? 'Service Monitor';
@@ -57,7 +60,7 @@ class ServiceMonitor {
       ..write('${text.padRight('Code', 4)}  ')
       ..write(text.padRight('Latency', 8));
     out.writeln(
-        '${theme.gray}${style.borderVertical}${theme.reset} '
+        '${lb.gutter()}'
         '${theme.bold}${theme.gray}$header${theme.reset}');
 
     int okCount = 0, warnCount = 0, errCount = 0, timeoutCount = 0;
@@ -92,7 +95,7 @@ class ServiceMonitor {
           : '';
 
       out.writeln(
-        '${theme.gray}${style.borderVertical}${theme.reset} '
+        '${lb.gutter()}'
         '$icon ${theme.bold}${theme.accent}$name${theme.reset}  '
         '${theme.gray}$urlStr${theme.reset}  '
         '$code  $latency$note',
@@ -105,8 +108,7 @@ class ServiceMonitor {
           '${theme.warn}warn $warnCount${theme.reset}  •  '
           '${theme.error}error $errCount${theme.reset}  •  '
           '${theme.warn}timeout $timeoutCount${theme.reset}';
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} $summary');
+      out.writeln('${lb.gutter()}$summary');
       out.writeln(frame.bottom());
     }
   }

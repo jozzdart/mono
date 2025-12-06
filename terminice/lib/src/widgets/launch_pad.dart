@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 import '../system/text_utils.dart' as text;
@@ -62,6 +63,9 @@ class LaunchPad {
     LaunchAction? result;
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Title
       final frame = FramedLayout(title, theme: theme);
       final top = frame.top();
@@ -90,10 +94,10 @@ class LaunchPad {
           }
         }
 
-        // Print each visual line across the row
+        // Print each visual line across the row - using LineBuilder's gutter
         for (int line = 0; line < linesPerTile; line++) {
           final buf = StringBuffer();
-          buf.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+          buf.write(lb.gutter());
           for (int i = 0; i < tiles.length; i++) {
             if (i > 0) buf.write(colSep);
             buf.write(tiles[i][line]);

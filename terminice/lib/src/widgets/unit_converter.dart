@@ -2,10 +2,11 @@ import 'dart:io';
 
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
-import '../system/rendering.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
+import '../system/rendering.dart';
 import '../system/text_input_buffer.dart';
 
 /// UnitConverter – quick conversion panel (cm↔in, USD↔EUR)
@@ -37,6 +38,8 @@ class UnitConverter {
 
   /// Render the converter panel.
   void show() {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final style = theme.style;
 
     final frame = FramedLayout(title, theme: theme);
@@ -44,41 +47,41 @@ class UnitConverter {
     stdout.writeln('${theme.bold}$top${theme.reset}');
 
     // Length section
-    stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Length · cm ↔ in')));
+    stdout.writeln('${lb.gutter()}${sectionHeader(theme, 'Length · cm ↔ in')}');
     final pairLen = _resolveLengthPair();
-    stdout.writeln(gutterLine(theme, _equation(
+    stdout.writeln('${lb.gutter()}${_equation(
       leftLabel: 'cm',
       leftValue: pairLen.cm,
       rightLabel: 'in',
       rightValue: pairLen.in_,
       direction: '→',
-    )));
-    stdout.writeln(gutterLine(theme, _equation(
+    )}');
+    stdout.writeln('${lb.gutter()}${_equation(
       leftLabel: 'in',
       leftValue: pairLen.in_,
       rightLabel: 'cm',
       rightValue: pairLen.cm,
       direction: '→',
-    )));
+    )}');
 
     // Currency section
-    stdout.writeln(gutterLine(theme, sectionHeader(theme, 'Currency · USD ↔ EUR')));
+    stdout.writeln('${lb.gutter()}${sectionHeader(theme, 'Currency · USD ↔ EUR')}');
     final pairCur = _resolveCurrencyPair();
-    stdout.writeln(gutterLine(theme, _rateLine()));
-    stdout.writeln(gutterLine(theme, _equation(
+    stdout.writeln('${lb.gutter()}${_rateLine()}');
+    stdout.writeln('${lb.gutter()}${_equation(
       leftLabel: 'USD',
       leftValue: pairCur.usd,
       rightLabel: 'EUR',
       rightValue: pairCur.eur,
       direction: '→',
-    )));
-    stdout.writeln(gutterLine(theme, _equation(
+    )}');
+    stdout.writeln('${lb.gutter()}${_equation(
       leftLabel: 'EUR',
       leftValue: pairCur.eur,
       rightLabel: 'USD',
       rightValue: pairCur.usd,
       direction: '→',
-    )));
+    )}');
 
     if (style.showBorder) {
       stdout.writeln(frame.bottom());
@@ -120,6 +123,8 @@ class UnitConverter {
     final buffer = TextInputBuffer(initialText: _initialBuffer(mode, inputLeft));
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
       final style = theme.style;
       final conv = converters[mode];
 
@@ -128,9 +133,9 @@ class UnitConverter {
       out.writeln('${theme.bold}$top${theme.reset}');
 
       // Section
-      out.writeln(gutterLine(theme, sectionHeader(theme, conv.name)));
+      out.writeln('${lb.gutter()}${sectionHeader(theme, conv.name)}');
       if (conv.details.isNotEmpty) {
-        out.writeln(gutterLine(theme, '${theme.gray}${conv.details}${theme.reset}'));
+        out.writeln('${lb.gutter()}${theme.gray}${conv.details}${theme.reset}');
       }
 
       // Compute values based on buffer and active side
@@ -146,22 +151,22 @@ class UnitConverter {
           ? '${theme.inverse}${theme.highlight}${conv.rightLabel}${theme.reset}'
           : '${theme.highlight}${conv.rightLabel}${theme.reset}';
 
-      out.writeln(gutterLine(theme, _equation(
+      out.writeln('${lb.gutter()}${_equation(
         leftLabel: lLabel,
         leftValue: leftVal,
         rightLabel: rLabel,
         rightValue: rightVal,
         direction: '→',
-      )));
+      )}');
 
       // Also show reverse for clarity
-      out.writeln(gutterLine(theme, _equation(
+      out.writeln('${lb.gutter()}${_equation(
         leftLabel: rLabel,
         leftValue: rightVal,
         rightLabel: lLabel,
         rightValue: leftVal,
         direction: '→',
-      )));
+      )}');
 
       if (style.showBorder) {
         out.writeln(frame.bottom());

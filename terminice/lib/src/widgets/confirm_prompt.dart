@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// ConfirmPrompt – elegant instant confirmation dialog (no timers or delays).
@@ -39,10 +40,13 @@ class ConfirmPrompt {
         style.boldPrompt ? '${theme.bold}$top${theme.reset}' : top,
       );
 
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Message
       out.writeln('');
       out.writeln(
-        ' ${theme.accent}${style.arrow}${theme.reset} ${theme.bold}$message${theme.reset}',
+        ' ${lb.arrowAccent()} ${theme.bold}$message${theme.reset}',
       );
       out.writeln('');
 

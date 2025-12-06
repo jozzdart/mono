@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 
 /// SystemDashboard – themed, real-time CPU / Memory / Disk bars.
@@ -95,12 +96,13 @@ class SystemDashboard {
     required String extra,
     required int shimmerPhase,
   }) {
-    final style = theme.style;
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final pct = percent.clamp(0, 100);
     final filled = ((pct / 100) * barWidth).round();
 
     final line = StringBuffer();
-    line.write('${theme.gray}${style.borderVertical}${theme.reset} ');
+    line.write(lb.gutter());
     line.write('${theme.dim}$label:${theme.reset} ');
 
     // Bar

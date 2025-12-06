@@ -1,5 +1,6 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/rendering.dart';
 import '../system/prompt_runner.dart';
 
@@ -30,6 +31,8 @@ class Breadcrumbs {
   }
 
   void _render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final style = theme.style;
     final titleText = label ?? 'Breadcrumbs';
 
@@ -37,7 +40,7 @@ class Breadcrumbs {
     out.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final rendered = _renderBreadcrumbLine();
-    out.writeln(gutterLine(theme, rendered));
+    out.writeln('${lb.gutter()}$rendered');
 
     if (style.showBorder) {
       out.writeln(frame.bottom());

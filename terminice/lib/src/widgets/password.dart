@@ -2,6 +2,7 @@ import '../style/theme.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
 
@@ -28,6 +29,9 @@ class PasswordPrompt {
     final cursorBlink = CursorBlink();
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Top border
       final frame = FramedLayout(label, theme: theme);
       final topLine = frame.top();
@@ -42,11 +46,10 @@ class PasswordPrompt {
       final cursor =
           cursorBlink.isVisible ? '${theme.accent}▋${theme.reset}' : ' ';
       final content = buffer.isEmpty
-          ? '${theme.dim}(empty)${theme.reset}'
+          ? lb.emptyMessage('empty')
           : '$display$cursor';
 
-      out.writeln(
-          '${theme.gray}${style.borderVertical}${theme.reset} ${theme.accent}${style.arrow}${theme.reset} $content');
+      out.writeln('${lb.gutter()}${lb.arrowAccent()} $content');
 
       // Bottom line
       if (style.showBorder) {

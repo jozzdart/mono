@@ -5,6 +5,7 @@ import 'dart:math';
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 
@@ -136,8 +137,8 @@ class LineChartWidget {
     session.start();
     final out = RenderOutput();
 
-    String leftGutter() =>
-        '${currentTheme.gray}${currentTheme.style.borderVertical}${currentTheme.reset} ';
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(currentTheme);
 
     void render() {
       final style = currentTheme.style;
@@ -219,7 +220,7 @@ class LineChartWidget {
       }
 
       // Compose lines
-      final left = leftGutter();
+      final left = lb.gutter();
       for (int r = 0; r < chartHeight; r++) {
         final row = StringBuffer();
         row.write(left);
@@ -252,8 +253,7 @@ class LineChartWidget {
           '${currentTheme.gray}max ${currentTheme.reset}${currentTheme.info}$hiStr${currentTheme.reset}  '
           '${currentTheme.gray}last ${currentTheme.reset}${currentTheme.highlight}$lastStr${currentTheme.reset}  $rangeStr';
 
-      out.writeln(
-          '${currentTheme.gray}${style.borderVertical}${currentTheme.reset} $info');
+      out.writeln('${lb.gutter()}$info');
       if (style.showBorder) {
         out.writeln(frame.bottom());
       }

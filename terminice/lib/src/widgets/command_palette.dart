@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/list_navigation.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
@@ -66,6 +67,9 @@ class CommandPalette {
     }
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       // Responsive rows based on current terminal size
       final cols = TerminalInfo.columns;
       final lines = TerminalInfo.rows;
@@ -74,12 +78,12 @@ class CommandPalette {
 
       final frame = FramedLayout(label, theme: theme);
       final title = frame.top();
-      out.writeln(style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
-
-      // Query line
-      final framePrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
       out.writeln(
-          '$framePrefix${theme.accent}Command:${theme.reset} ${queryInput.text}');
+          style.boldPrompt ? '${theme.bold}$title${theme.reset}' : title);
+
+      // Query line - using LineBuilder's gutter
+      out.writeln(
+          '${lb.gutter()}${theme.accent}Command:${theme.reset} ${queryInput.text}');
 
       if (style.showBorder) {
         out.writeln(frame.connector());
@@ -89,20 +93,21 @@ class CommandPalette {
       final mode = useFuzzy ? 'Fuzzy' : 'Substring';
       final countText = 'Matches: ${ranked.length}';
       final infoLine = '$mode   $countText';
-      out.writeln('$framePrefix${theme.dim}$infoLine${theme.reset}');
+      out.writeln('${lb.gutter()}${theme.dim}$infoLine${theme.reset}');
 
       // Use ListNavigation's viewport for visible window
       final window = nav.visibleWindow(ranked);
 
+      // Use LineBuilder for overflow indicator
       if (window.hasOverflowAbove) {
-        out.writeln('$framePrefix${theme.dim}...${theme.reset}');
+        out.writeln(lb.overflowLine());
       }
 
       for (var i = 0; i < window.items.length; i++) {
         final absoluteIdx = window.start + i;
         final isHighlighted = nav.isSelected(absoluteIdx);
-        final prefixSel =
-            isHighlighted ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        // Use LineBuilder for arrow
+        final prefixSel = lb.arrow(isHighlighted);
 
         // Compose display text with highlighted match spans
         final rankedItem = window.items[i];
@@ -118,20 +123,17 @@ class CommandPalette {
 
         final lineCore = '$prefixSel $highlightedTitle$subtitlePart';
 
-        if (isHighlighted && style.useInverseHighlight) {
-          out.writeln('$framePrefix${theme.inverse}$lineCore${theme.reset}');
-        } else {
-          out.writeln('$framePrefix$lineCore');
-        }
+        // Use LineBuilder's writeLine for consistent highlight handling
+        lb.writeLine(out, lineCore, highlighted: isHighlighted);
       }
 
+      // Use LineBuilder for overflow indicator
       if (window.hasOverflowBelow) {
-        out.writeln('$framePrefix${theme.dim}...${theme.reset}');
+        out.writeln(lb.overflowLine());
       }
 
       if (ranked.isEmpty) {
-        out.writeln(
-            '$framePrefix${theme.dim}(no matches)${theme.reset}');
+        out.writeln(lb.emptyLine('no matches'));
       }
 
       if (style.showBorder) {
@@ -198,7 +200,8 @@ class _RankedCommand {
   _RankedCommand(this.entry, this.score, this.titleSpans);
 }
 
-List<_RankedCommand> _rank(List<CommandEntry> entries, String query, bool fuzzy) {
+List<_RankedCommand> _rank(
+    List<CommandEntry> entries, String query, bool fuzzy) {
   if (query.isEmpty) {
     return entries
         .map((e) => _RankedCommand(e, 0, const []))
@@ -279,7 +282,11 @@ _FuzzyMatchResult? _fuzzyMatch(String text, String pattern) {
   score += max(0, 8000 - matched.first * 200);
   // Word boundary bonus (space or - or _ before)
   final before = matched.first > 0 ? text[matched.first - 1] : ' ';
-  if (before == ' ' || before == '-' || before == '_' || before == '/' || before == '.') {
+  if (before == ' ' ||
+      before == '-' ||
+      before == '_' ||
+      before == '/' ||
+      before == '.') {
     score += 2500;
   }
   // Exact case bonus

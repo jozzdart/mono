@@ -4,6 +4,7 @@ import '../style/theme.dart';
 import '../system/framed_layout.dart';
 import '../system/key_events.dart';
 import '../system/hints.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import 'text_prompt.dart';
 import 'confirm_prompt.dart';
@@ -75,6 +76,9 @@ class EnvManager {
     String? nestedPromptType;
 
     void render(RenderOutput out) {
+      // Use centralized line builder for consistent styling
+      final lb = LineBuilder(theme);
+
       final heading = 'Env · $currentName';
       final frame = FramedLayout(heading, theme: theme);
       out.writeln('${theme.bold}${frame.top()}${theme.reset}');
@@ -84,13 +88,12 @@ class EnvManager {
         orElse: () => _EnvEntry(currentName, ''),
       );
 
-      out.writeln('${theme.gray}${style.borderVertical}${theme.reset} '
-          '${theme.dim}Name:${theme.reset} ${theme.accent}${entry.name}${theme.reset}');
+      out.writeln(
+          '${lb.gutter()}${theme.dim}Name:${theme.reset} ${theme.accent}${entry.name}${theme.reset}');
       final value = entry.value.isEmpty
-          ? '${theme.dim}<empty>${theme.reset}'
+          ? lb.emptyMessage('<empty>')
           : entry.value;
-      out.writeln('${theme.gray}${style.borderVertical}${theme.reset} '
-          '${theme.dim}Value:${theme.reset} $value');
+      out.writeln('${lb.gutter()}${theme.dim}Value:${theme.reset} $value');
 
       if (style.showBorder) {
         out.writeln(frame.bottom());

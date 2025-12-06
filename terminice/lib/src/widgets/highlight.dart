@@ -1,5 +1,6 @@
 import '../style/theme.dart';
 import '../system/framed_layout.dart';
+import '../system/line_builder.dart';
 import '../system/rendering.dart';
 import '../system/prompt_runner.dart';
 
@@ -31,6 +32,8 @@ class Highlight {
   }
 
   void _render(RenderOutput out) {
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
     final style = theme.style;
     final label = title ?? _defaultTitle(language);
 
@@ -46,7 +49,7 @@ class Highlight {
       final lang = _resolveLanguage(line);
       final colored = color ? _highlightLine(line, lang) : line;
       if (color) {
-        out.writeln('${theme.gray}${style.borderVertical}${theme.reset} $colored');
+        out.writeln('${lb.gutter()}$colored');
       } else {
         out.writeln('${style.borderVertical} $colored');
         if (guides) {

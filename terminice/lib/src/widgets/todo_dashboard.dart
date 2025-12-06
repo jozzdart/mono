@@ -3,6 +3,7 @@ import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_events.dart';
+import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/terminal.dart';
 import 'tag_selector.dart';
@@ -65,6 +66,8 @@ class TodoDashboard {
     if (tasks.isEmpty) return tasks;
 
     final style = theme.style;
+    // Use centralized line builder for consistent styling
+    final lb = LineBuilder(theme);
 
     // Use centralized focus navigation
     final focus = FocusNavigation(itemCount: tasks.length);
@@ -90,15 +93,9 @@ class TodoDashboard {
       );
     }
 
-    String checkbox(bool done, {bool highlight = false}) {
-      final sym = done ? style.checkboxOnSymbol : style.checkboxOffSymbol;
-      final color = done ? theme.checkboxOn : theme.checkboxOff;
-      final out = '$color$sym${theme.reset}';
-      if (highlight && style.useInverseHighlight) {
-        return '${theme.inverse}$out${theme.reset}';
-      }
-      return out;
-    }
+    // Use centralized checkbox from LineBuilder
+    String checkbox(bool done, {bool highlight = false}) =>
+        lb.checkboxHighlighted(done, highlight: highlight);
 
     String priorityBadge(TodoPriority p) {
       switch (p) {
@@ -161,12 +158,11 @@ class TodoDashboard {
         out.writeln(frame.connector());
       }
 
-      final leftPrefix = '${theme.gray}${style.borderVertical}${theme.reset} ';
       final l = layout();
 
       // Header
       final header = StringBuffer();
-      header.write(leftPrefix);
+      header.write(lb.gutter());
       header.write('${theme.dim}Task${theme.reset}'.padRight(l.titleWidth));
       header.write('  ');
       header.write('${theme.dim}Priority${theme.reset}'.padRight(l.prioWidth));
@@ -182,15 +178,15 @@ class TodoDashboard {
         final isFocused = focus.isFocused(i);
         final t = current[i];
 
-        final arrow =
-            isFocused ? '${theme.accent}${style.arrow}${theme.reset}' : ' ';
+        // Use LineBuilder for arrow and checkbox
+        final arrow = lb.arrow(isFocused);
         final cb = checkbox(t.done, highlight: isFocused);
         final titleTxt = truncate(t.title, l.titleWidth).padRight(l.titleWidth);
         final prio = priorityBadge(t.priority).padRight(l.prioWidth);
         final tags = renderTags(t.tags, l.tagWidth);
 
         final line = StringBuffer();
-        line.write(leftPrefix);
+        line.write(lb.gutter());
         line.write('$arrow $cb ');
         line.write(titleTxt);
         line.write('  ');

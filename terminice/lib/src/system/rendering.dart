@@ -3,6 +3,9 @@ import 'text_utils.dart' as text_utils;
 
 /// Returns a line prefixed with the themed gutter.
 /// If [content] is empty/whitespace, only the gutter is returned.
+///
+/// Note: Prefer using [LineBuilder.gutter()] for new code. This function
+/// is retained for backwards compatibility with existing code.
 String gutterLine(PromptTheme theme, String content) {
   final s = theme.style;
   final gutter = '${theme.gray}${s.borderVertical}${theme.reset}';
