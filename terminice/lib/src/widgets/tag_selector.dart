@@ -13,9 +13,17 @@ import '../system/terminal.dart';
 ///
 /// **Implementation:** Uses [SelectableGridPrompt] for core functionality,
 /// demonstrating composition over inheritance.
-class TagSelector {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final selected = TagSelector(tags)
+///   .withPastelTheme()
+///   .run();
+/// ```
+class TagSelector with Themeable {
   final List<String> tags;
   final String prompt;
+  @override
   final PromptTheme theme;
   final int? maxContentWidth;
   final int minContentWidth;
@@ -33,6 +41,20 @@ class TagSelector {
     this.maxColumnWidth = 24,
     this.useTerminalWidth = true,
   });
+
+  @override
+  TagSelector copyWithTheme(PromptTheme theme) {
+    return TagSelector(
+      tags,
+      prompt: prompt,
+      theme: theme,
+      maxContentWidth: maxContentWidth,
+      minContentWidth: minContentWidth,
+      minColumnWidth: minColumnWidth,
+      maxColumnWidth: maxColumnWidth,
+      useTerminalWidth: useTerminalWidth,
+    );
+  }
 
   List<String> run() {
     if (tags.isEmpty) return [];

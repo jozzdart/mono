@@ -14,8 +14,16 @@ import '../system/widget_frame.dart';
 /// - Esc cancels
 ///
 /// Visuals align with ThemeDemo via FrameRenderer and PromptTheme.
-class ColorPickerPrompt {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final color = ColorPickerPrompt()
+///   .withDarkTheme()
+///   .run();
+/// ```
+class ColorPickerPrompt with Themeable {
   final String label;
+  @override
   final PromptTheme theme;
   final String? initialHex; // e.g., "#FF00AA"
 
@@ -31,6 +39,17 @@ class ColorPickerPrompt {
     this.rows = 8,
   })  : assert(cols >= 6 && cols <= 48),
         assert(rows >= 3 && rows <= 24);
+
+  @override
+  ColorPickerPrompt copyWithTheme(PromptTheme theme) {
+    return ColorPickerPrompt(
+      label: label,
+      theme: theme,
+      initialHex: initialHex,
+      cols: cols,
+      rows: rows,
+    );
+  }
 
   // ───────── Runtime state ─────────
   int _selX = 0;

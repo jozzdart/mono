@@ -8,8 +8,14 @@ import '../system/widget_frame.dart';
 /// - Themed title bar and optional bottom border
 /// - Left gutter uses the theme's vertical border glyph
 /// - Tasteful use of accent/highlight/selection/info/warn colors
-class BarChartWidget {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// BarChartWidget(items).withFireTheme().show();
+/// ```
+class BarChartWidget with Themeable {
   final List<BarChartItem> items;
+  @override
   final PromptTheme theme;
   final String? title;
   final int barWidth;
@@ -19,13 +25,26 @@ class BarChartWidget {
 
   BarChartWidget(
     this.items, {
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title,
     this.barWidth = 30,
     this.showValues = true,
     this.valueFormatter,
     this.barStyle = BarStyle.solid,
   }) : assert(barWidth >= 6);
+
+  @override
+  BarChartWidget copyWithTheme(PromptTheme theme) {
+    return BarChartWidget(
+      items,
+      theme: theme,
+      title: title,
+      barWidth: barWidth,
+      showValues: showValues,
+      valueFormatter: valueFormatter,
+      barStyle: barStyle,
+    );
+  }
 
   void show() {
     final label = (title == null || title!.isEmpty) ? 'Bar Chart' : title!;

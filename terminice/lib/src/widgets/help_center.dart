@@ -31,9 +31,15 @@ class HelpDoc {
 /// - ← / → scroll preview
 /// - Backspace erase, Esc cancel
 /// - Enter confirm selection (returns selected doc)
-class HelpCenter {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// HelpCenter(docs: docs).withPastelTheme().run();
+/// ```
+class HelpCenter with Themeable {
   final List<HelpDoc> docs;
   final String title;
+  @override
   final PromptTheme theme;
   final int maxVisibleResults;
   final int maxPreviewLines;
@@ -45,6 +51,17 @@ class HelpCenter {
     this.maxVisibleResults = 10,
     this.maxPreviewLines = 8,
   });
+
+  @override
+  HelpCenter copyWithTheme(PromptTheme theme) {
+    return HelpCenter(
+      docs: docs,
+      title: title,
+      theme: theme,
+      maxVisibleResults: maxVisibleResults,
+      maxPreviewLines: maxPreviewLines,
+    );
+  }
 
   HelpDoc? run() {
     if (docs.isEmpty) return null;

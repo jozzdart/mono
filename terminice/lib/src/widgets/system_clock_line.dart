@@ -13,15 +13,21 @@ class CronEvent {
 
 /// SystemClockLine – timeline of upcoming cron tasks.
 ///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// SystemClockLine(events).withPastelTheme().run();
+/// ```
+///
 /// Example:
 ///   final now = DateTime.now();
 ///   final widget = SystemClockLine([
 ///     CronEvent('Rotate logs', now.add(Duration(minutes: 5))),
 ///     CronEvent('Backup DB', now.add(Duration(minutes: 18))),
-///   ], theme: PromptTheme.pastel);
+///   ]).withPastelTheme();
 ///   widget.run();
-class SystemClockLine {
+class SystemClockLine with Themeable {
   final List<CronEvent> events;
+  @override
   final PromptTheme theme;
   final String? title;
   final Duration window;
@@ -31,13 +37,26 @@ class SystemClockLine {
 
   SystemClockLine(
     this.events, {
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title,
     this.window = const Duration(hours: 2),
     this.maxItems = 12,
     this.trackWidth = 28,
     DateTime Function()? now,
   }) : _clock = now ?? DateTime.now;
+
+  @override
+  SystemClockLine copyWithTheme(PromptTheme theme) {
+    return SystemClockLine(
+      events,
+      theme: theme,
+      title: title,
+      window: window,
+      maxItems: maxItems,
+      trackWidth: trackWidth,
+      now: _clock,
+    );
+  }
 
   void run() {
     final label = title ?? 'System Clock Line';

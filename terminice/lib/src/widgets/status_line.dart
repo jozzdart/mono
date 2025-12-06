@@ -9,14 +9,20 @@ import '../system/widget_frame.dart';
 ///
 /// Uses the centralized [InlineStyle] system for consistent theming.
 ///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// StatusLine(label: 'Build').withPastelTheme()..start();
+/// ```
+///
 /// Usage:
-///   final s = StatusLine(label: 'Build', theme: PromptTheme.pastel)..start();
+///   final s = StatusLine(label: 'Build').withPastelTheme()..start();
 ///   s.update('Compiling sources');
 ///   // ... work ...
 ///   s.success('Done');
 ///   s.stop();
-class StatusLine {
+class StatusLine with Themeable {
   final String label;
+  @override
   final PromptTheme theme;
   final bool showSpinner;
   final Duration spinnerInterval;
@@ -34,6 +40,16 @@ class StatusLine {
     this.spinnerInterval = const Duration(milliseconds: 120),
   }) {
     _inline = InlineStyle(theme);
+  }
+
+  @override
+  StatusLine copyWithTheme(PromptTheme theme) {
+    return StatusLine(
+      label: label,
+      theme: theme,
+      showSpinner: showSpinner,
+      spinnerInterval: spinnerInterval,
+    );
   }
 
   /// Begin rendering the persistent status line.

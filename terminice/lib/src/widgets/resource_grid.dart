@@ -12,9 +12,15 @@ import '../system/widget_frame.dart';
 /// - Left gutter uses the theme's vertical border glyph
 /// - Column separators use the theme's vertical border glyph
 /// - Accent/info/warn colors for different metrics
-class ResourceGrid {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// ResourceGrid(title: 'Resources', resources: cells).withMatrixTheme().show();
+/// ```
+class ResourceGrid with Themeable {
   final String title;
   final List<ResourceCell> resources;
+  @override
   final PromptTheme theme;
 
   /// Fixed number of columns; if <= 0, columns are computed from terminal width.
@@ -29,11 +35,23 @@ class ResourceGrid {
   ResourceGrid({
     required this.title,
     required this.resources,
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.columns = 0,
     this.cellWidth = 30,
     this.sparklineWidth = 18,
   }) : assert(cellWidth >= 20, 'cellWidth must be at least 20');
+
+  @override
+  ResourceGrid copyWithTheme(PromptTheme theme) {
+    return ResourceGrid(
+      title: title,
+      resources: resources,
+      theme: theme,
+      columns: columns,
+      cellWidth: cellWidth,
+      sparklineWidth: sparklineWidth,
+    );
+  }
 
   void show() {
     final frame = WidgetFrame(title: title, theme: theme);

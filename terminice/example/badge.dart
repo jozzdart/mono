@@ -8,27 +8,27 @@ void main() {
 
   stdout.writeln('\n${theme.bold}Inline Badges${theme.reset}');
   stdout.writeln(
-    'Build:   ' + const Badge.success('SUCCESS', theme: PromptTheme.pastel).render(),
+    'Build:   ${Badge.success('SUCCESS').withPastelTheme().render()}',
   );
   stdout.writeln(
-    'Tests:   ' + const Badge.danger('FAILED', theme: PromptTheme.pastel).render(),
+    'Tests:   ${Badge.danger('FAILED').withPastelTheme().render()}',
   );
   stdout.writeln(
-    'Docs:    ' + const Badge.info('GENERATING', theme: PromptTheme.pastel, inverted: false).render(),
+    'Docs:    ${Badge.info('GENERATING', inverted: false).withPastelTheme().render()}',
   );
   stdout.writeln(
-    'Linter:  ' + const Badge.warning('DEPRECATED', theme: PromptTheme.pastel).render(),
+    'Linter:  ${Badge.warning('DEPRECATED').withPastelTheme().render()}',
   );
   stdout.writeln(
-    'Cache:   ' + const Badge.neutral('PENDING', theme: PromptTheme.pastel, inverted: false).render(),
+    'Cache:   ${Badge.neutral('PENDING', inverted: false).withPastelTheme().render()}',
   );
 
-  // Demonstrate inline concatenation
+  // Demonstrate inline concatenation with fluent API
   stdout.writeln('\n${theme.gray}Pipeline:${theme.reset} '
-      '${const Badge.info('SETUP', theme: PromptTheme.pastel).render()} '
-      '${const Badge.success('COMPILE', theme: PromptTheme.pastel).render()} '
-      '${const Badge.warning('WARNINGS', theme: PromptTheme.pastel, inverted: false).render()} '
-      '${const Badge.danger('FAILED', theme: PromptTheme.pastel).render()}');
+      '${Badge.info('SETUP').withPastelTheme().render()} '
+      '${Badge.success('COMPILE').withPastelTheme().render()} '
+      '${Badge.warning('WARNINGS', inverted: false).withPastelTheme().render()} '
+      '${Badge.danger('FAILED').withPastelTheme().render()}');
 }
 
 

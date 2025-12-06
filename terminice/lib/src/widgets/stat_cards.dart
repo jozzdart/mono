@@ -7,16 +7,31 @@ import '../system/widget_frame.dart';
 /// - Themed title bar and bottom border
 /// - Left gutter uses the theme's vertical border glyph
 /// - Emphasizes values using selection color and bold
-class StatCards {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// StatCards(items: stats).withFireTheme().show();
+/// ```
+class StatCards with Themeable {
   final List<StatCardItem> items;
+  @override
   final PromptTheme theme;
   final String? title;
 
   StatCards({
     required this.items,
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title,
   });
+
+  @override
+  StatCards copyWithTheme(PromptTheme theme) {
+    return StatCards(
+      items: items,
+      theme: theme,
+      title: title,
+    );
+  }
 
   void show() {
     final label = title == null || title!.isEmpty ? 'Stats' : title!;

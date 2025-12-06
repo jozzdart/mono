@@ -15,9 +15,17 @@ import '../system/widget_frame.dart';
 ///
 /// **Implementation:** Uses [SelectableListPrompt] for core functionality,
 /// demonstrating composition over inheritance.
-class CheckboxMenu {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final selected = CheckboxMenu(label: 'Options', options: items)
+///   .withMatrixTheme()
+///   .run();
+/// ```
+class CheckboxMenu with Themeable {
   final String label;
   final List<String> options;
+  @override
   final PromptTheme theme;
   final int maxVisible; // soft cap; may reduce based on terminal size
   final Set<int> initialSelected;
@@ -29,6 +37,17 @@ class CheckboxMenu {
     this.maxVisible = 12,
     Set<int>? initialSelected,
   }) : initialSelected = {...(initialSelected ?? const <int>{})};
+
+  @override
+  CheckboxMenu copyWithTheme(PromptTheme theme) {
+    return CheckboxMenu(
+      label: label,
+      options: options,
+      theme: theme,
+      maxVisible: maxVisible,
+      initialSelected: initialSelected,
+    );
+  }
 
   List<String> run() {
     if (options.isEmpty) return <String>[];

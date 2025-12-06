@@ -5,10 +5,16 @@ import '../system/widget_frame.dart';
 
 /// Renders a big ASCII banner aligned with ThemeDemo styling.
 ///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// Banner('MONO').withMatrixTheme().run();
+/// ```
+///
 /// Example:
-///   Banner('MONO', theme: PromptTheme.matrix).run();
-class Banner {
+///   Banner('MONO').withMatrixTheme().run();
+class Banner with Themeable {
   final String text;
+  @override
   final PromptTheme theme;
   final bool showFrame;
   final bool showShadow;
@@ -28,6 +34,18 @@ class Banner {
     this.letterSpacing = 1,
   })  : assert(hScale >= 1),
         assert(letterSpacing >= 0);
+
+  @override
+  Banner copyWithTheme(PromptTheme theme) {
+    return Banner(
+      text,
+      theme: theme,
+      showFrame: showFrame,
+      showShadow: showShadow,
+      hScale: hScale,
+      letterSpacing: letterSpacing,
+    );
+  }
 
   void run() {
     // Use TerminalSession for cursor hiding, RenderOutput for line tracking

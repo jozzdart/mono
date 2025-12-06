@@ -19,10 +19,16 @@ import '../system/widget_frame.dart';
 ///
 /// Styling aligns with ThemeDemo via FrameRenderer, themed borders, zebra rows,
 /// and accent/bold header.
-class TableEditor {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// TableEditor('Data', columns: cols, rows: data).withMatrixTheme().run();
+/// ```
+class TableEditor with Themeable {
   final String title;
   final List<String> columns;
   final List<List<String>> rows;
+  @override
   final PromptTheme theme;
   final bool zebraStripes;
 
@@ -33,6 +39,17 @@ class TableEditor {
     this.theme = PromptTheme.dark,
     this.zebraStripes = true,
   }) : assert(columns.isNotEmpty, 'columns must not be empty');
+
+  @override
+  TableEditor copyWithTheme(PromptTheme theme) {
+    return TableEditor(
+      title,
+      columns: columns,
+      rows: rows,
+      theme: theme,
+      zebraStripes: zebraStripes,
+    );
+  }
 
   /// Runs the editor and returns the possibly edited data.
   /// If cancelled, returns the original [rows] data.

@@ -8,20 +8,37 @@ import '../system/widget_frame.dart';
 /// - Themed title bar and bottom border
 /// - Left gutter uses the theme's vertical border glyph
 /// - Alternating accent/highlight for segments, with bold selected segment
-class Breadcrumbs {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// Breadcrumbs('/path/to/file').withPastelTheme().show();
+/// ```
+class Breadcrumbs with Themeable {
   final String path;
+  @override
   final PromptTheme theme;
   final String? label;
   final int maxWidth; // Maximum printable width (approx chars)
   final String separator; // visual separator between segments
 
-  const Breadcrumbs(
+  Breadcrumbs(
     this.path, {
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.label,
     this.maxWidth = 80,
     this.separator = '/',
   });
+
+  @override
+  Breadcrumbs copyWithTheme(PromptTheme theme) {
+    return Breadcrumbs(
+      path,
+      theme: theme,
+      label: label,
+      maxWidth: maxWidth,
+      separator: separator,
+    );
+  }
 
   void show() {
     final titleText = label ?? 'Breadcrumbs';

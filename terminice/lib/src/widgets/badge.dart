@@ -8,17 +8,24 @@ import '../system/widget_frame.dart' as wf;
 ///
 /// Uses the centralized [InlineStyle] system for consistent theming.
 ///
+/// **Fluent API:** Use [withTheme], [withDarkTheme], [withMatrixTheme],
+/// [withFireTheme], [withPastelTheme] for easy theme switching:
+/// ```dart
+/// Badge.success('OK').withMatrixTheme().render();
+/// ```
+///
 /// Example:
 ///   stdout.writeln('Build: ' + Badge.success('SUCCESS').render());
-class Badge {
+class Badge with Themeable {
   final String text;
   final BadgeTone tone;
+  @override
   final PromptTheme theme;
   final bool inverted; // uses inverse video for a filled look
   final bool bracketed; // wrap with [ ] for chip-like look
   final bool bold;
 
-  const Badge(
+  Badge(
     this.text, {
     this.tone = BadgeTone.info,
     this.theme = PromptTheme.dark,
@@ -27,8 +34,20 @@ class Badge {
     this.bold = true,
   });
 
+  @override
+  Badge copyWithTheme(PromptTheme theme) {
+    return Badge(
+      text,
+      tone: tone,
+      theme: theme,
+      inverted: inverted,
+      bracketed: bracketed,
+      bold: bold,
+    );
+  }
+
   /// Convenience constructors
-  const Badge.success(
+  Badge.success(
     String text, {
     PromptTheme theme = PromptTheme.dark,
     bool inverted = true,
@@ -42,7 +61,7 @@ class Badge {
           bold: bold,
         );
 
-  const Badge.info(
+  Badge.info(
     String text, {
     PromptTheme theme = PromptTheme.dark,
     bool inverted = true,
@@ -56,7 +75,7 @@ class Badge {
           bold: bold,
         );
 
-  const Badge.warning(
+  Badge.warning(
     String text, {
     PromptTheme theme = PromptTheme.dark,
     bool inverted = true,
@@ -70,7 +89,7 @@ class Badge {
           bold: bold,
         );
 
-  const Badge.danger(
+  Badge.danger(
     String text, {
     PromptTheme theme = PromptTheme.dark,
     bool inverted = true,
@@ -84,7 +103,7 @@ class Badge {
           bold: bold,
         );
 
-  const Badge.neutral(
+  Badge.neutral(
     String text, {
     PromptTheme theme = PromptTheme.dark,
     bool inverted = true,

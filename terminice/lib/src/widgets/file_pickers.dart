@@ -4,8 +4,16 @@ import 'search_select.dart';
 
 /// FilePickerPrompt – reuses SearchSelectPrompt for navigation & search.
 /// Fully responsive, instant, zero-delay.
-class FilePickerPrompt {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final path = FilePickerPrompt(label: 'Select file')
+///   .withMatrixTheme()
+///   .run();
+/// ```
+class FilePickerPrompt with Themeable {
   final String label;
+  @override
   final PromptTheme theme;
   final Directory startDir;
   final bool showHidden;
@@ -18,6 +26,17 @@ class FilePickerPrompt {
     this.showHidden = false,
     this.foldersOnly = false,
   }) : startDir = startDir ?? Directory.current;
+
+  @override
+  FilePickerPrompt copyWithTheme(PromptTheme theme) {
+    return FilePickerPrompt(
+      label: label,
+      theme: theme,
+      startDir: startDir,
+      showHidden: showHidden,
+      foldersOnly: foldersOnly,
+    );
+  }
 
   String run() {
     Directory current = startDir;

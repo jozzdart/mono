@@ -14,8 +14,14 @@ import 'markdown_viewer.dart';
 /// - Themed title bar and bottom border
 /// - Left gutter uses the theme's vertical border glyph
 /// - Uses accent/highlight for selection and glyphs
-class DocNavigator {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// DocNavigator().withPastelTheme().run();
+/// ```
+class DocNavigator with Themeable {
   final String title;
+  @override
   final PromptTheme theme;
   final Directory root;
   final bool showHidden;
@@ -28,6 +34,17 @@ class DocNavigator {
     this.showHidden = false,
     this.maxVisible = 18,
   }) : root = root ?? Directory.current;
+
+  @override
+  DocNavigator copyWithTheme(PromptTheme theme) {
+    return DocNavigator(
+      title: title,
+      theme: theme,
+      root: root,
+      showHidden: showHidden,
+      maxVisible: maxVisible,
+    );
+  }
 
   /// Returns the selected Markdown file path, or null if cancelled.
   String? run() {

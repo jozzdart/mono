@@ -12,8 +12,16 @@ import '../system/simple_prompt.dart';
 ///
 /// **Implementation:** Uses [AsyncSimplePrompts.password] for core functionality,
 /// demonstrating composition over inheritance.
-class PasswordPrompt {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final password = await PasswordPrompt(label: 'Password')
+///   .withMatrixTheme()
+///   .run();
+/// ```
+class PasswordPrompt with Themeable {
   final String label;
+  @override
   final PromptTheme theme;
   final bool allowEmpty;
   final String maskChar;
@@ -24,6 +32,16 @@ class PasswordPrompt {
     this.allowEmpty = false,
     this.maskChar = '•',
   });
+
+  @override
+  PasswordPrompt copyWithTheme(PromptTheme theme) {
+    return PasswordPrompt(
+      label: label,
+      theme: theme,
+      allowEmpty: allowEmpty,
+      maskChar: maskChar,
+    );
+  }
 
   /// Runs the prompt and returns the entered password.
   ///

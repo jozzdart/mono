@@ -10,21 +10,24 @@ import '../system/widget_frame.dart';
 /// Styles: dots (braille), bars (rising/falling), arcs (quarter/half circles).
 /// Aligned with ThemeDemo borders, accents, and layout.
 ///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// LoadingSpinner('Loading').withPastelTheme().run();
+/// ```
+///
 /// Example:
 ///   LoadingSpinner(
 ///     'Loading',
 ///     message: 'Fetching data',
 ///     style: SpinnerStyle.dots,
-///     duration: const Duration(seconds: 2),
-///     fps: 14,
-///     theme: PromptTheme.pastel,
-///   ).run();
-class LoadingSpinner {
+///   ).withPastelTheme().run();
+class LoadingSpinner with Themeable {
   final String label;
   final String message;
   final SpinnerStyle style;
   final Duration duration;
   final int fps;
+  @override
   final PromptTheme theme;
 
   LoadingSpinner(
@@ -35,6 +38,18 @@ class LoadingSpinner {
     this.fps = 12,
     this.theme = PromptTheme.dark,
   }) : assert(fps > 0);
+
+  @override
+  LoadingSpinner copyWithTheme(PromptTheme theme) {
+    return LoadingSpinner(
+      label,
+      message: message,
+      style: style,
+      duration: duration,
+      fps: fps,
+      theme: theme,
+    );
+  }
 
   void run() {
     final frames = _framesForStyle(style);

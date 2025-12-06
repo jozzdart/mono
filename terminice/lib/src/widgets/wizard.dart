@@ -14,6 +14,13 @@ import '../system/widget_frame.dart';
 /// - Auto state passing between steps (mutable state map)
 /// - Flexible step result handling
 ///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final result = await Wizard(title: 'Setup', steps: steps)
+///   .withPastelTheme()
+///   .run();
+/// ```
+///
 /// Typical usage:
 ///   final result = await Wizard(
 ///     title: 'Project Setup',
@@ -26,13 +33,13 @@ import '../system/widget_frame.dart';
 ///       ),
 ///       // ... more steps ...
 ///     ],
-///     theme: PromptTheme.pastel,
-///   ).run();
+///   ).withPastelTheme().run();
 ///
 /// The returned map contains values keyed by step `id`.
-class Wizard {
+class Wizard with Themeable {
   final String title;
   final List<WizardStep> steps;
+  @override
   final PromptTheme theme;
   final bool showProgress;
 
@@ -42,6 +49,16 @@ class Wizard {
     this.theme = PromptTheme.dark,
     this.showProgress = true,
   }) : assert(steps.isNotEmpty, 'Wizard requires at least one step');
+
+  @override
+  Wizard copyWithTheme(PromptTheme theme) {
+    return Wizard(
+      title: title,
+      steps: steps,
+      theme: theme,
+      showProgress: showProgress,
+    );
+  }
 
   /// Runs all steps in order. Returns a state map or null if cancelled.
   Future<Map<String, dynamic>?> run() async {

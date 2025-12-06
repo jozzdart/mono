@@ -13,12 +13,20 @@ import '../system/searchable_list_prompt.dart';
 ///
 /// **Implementation:** Uses [SearchableListPrompt] for core functionality,
 /// demonstrating composition over inheritance.
-class SearchSelectPrompt {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final selected = SearchSelectPrompt(options)
+///   .withMatrixTheme()
+///   .run();
+/// ```
+class SearchSelectPrompt with Themeable {
   final List<String> allOptions;
   final String prompt;
   final bool multiSelect;
   final bool showSearch;
   final int maxVisible;
+  @override
   final PromptTheme theme;
 
   SearchSelectPrompt(
@@ -29,6 +37,18 @@ class SearchSelectPrompt {
     this.maxVisible = 10,
     this.theme = PromptTheme.dark,
   });
+
+  @override
+  SearchSelectPrompt copyWithTheme(PromptTheme theme) {
+    return SearchSelectPrompt(
+      allOptions,
+      prompt: prompt,
+      multiSelect: multiSelect,
+      showSearch: showSearch,
+      maxVisible: maxVisible,
+      theme: theme,
+    );
+  }
 
   List<String> run() {
     if (allOptions.isEmpty) return [];

@@ -7,8 +7,14 @@ import '../system/widget_frame.dart';
 /// theme's vertical border glyph, and tasteful use of accent/highlight colors.
 ///
 /// Uses the centralized [SyntaxHighlighter] for consistent syntax coloring.
-class Highlight {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// Highlight(code).withMatrixTheme().show();
+/// ```
+class Highlight with Themeable {
   final String text;
+  @override
   final PromptTheme theme;
   final String language; // 'auto', 'dart', 'json', 'shell', 'plain'
   final String? title;
@@ -17,12 +23,24 @@ class Highlight {
 
   Highlight(
     this.text, {
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.language = 'auto',
     this.title,
     this.color = true,
     this.guides = false,
   });
+
+  @override
+  Highlight copyWithTheme(PromptTheme theme) {
+    return Highlight(
+      text,
+      theme: theme,
+      language: language,
+      title: title,
+      color: color,
+      guides: guides,
+    );
+  }
 
   /// Render highlighted output within a themed frame.
   void show() {

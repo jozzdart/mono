@@ -9,12 +9,18 @@ import '../system/widget_frame.dart';
 ///
 /// Aligns with ThemeDemo styling using themed borders, accents,
 /// and layout spacing. Designed to be simple and beautiful.
-class ProgressDots {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// ProgressDots('Loading').withPastelTheme().run();
+/// ```
+class ProgressDots with Themeable {
   final String label;
   final String message;
   final int maxDots;
   final Duration duration;
   final Duration interval;
+  @override
   final PromptTheme theme;
 
   ProgressDots(
@@ -26,6 +32,18 @@ class ProgressDots {
     this.theme = PromptTheme.dark,
   })  : assert(maxDots > 0),
         assert(!interval.isNegative && interval > Duration.zero);
+
+  @override
+  ProgressDots copyWithTheme(PromptTheme theme) {
+    return ProgressDots(
+      label,
+      message: message,
+      maxDots: maxDots,
+      duration: duration,
+      interval: interval,
+      theme: theme,
+    );
+  }
 
   /// Run the animated dots for the configured duration.
   void run() {

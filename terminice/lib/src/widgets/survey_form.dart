@@ -125,9 +125,18 @@ class SurveyResult {
   dynamic operator [](String key) => values[key];
 }
 
-class SurveyForm {
+/// SurveyForm – interactive questionnaire builder.
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final result = SurveyForm(title: 'Feedback', questions: qs)
+///   .withPastelTheme()
+///   .run();
+/// ```
+class SurveyForm with Themeable {
   final String title;
   final List<SurveyQuestionSpec> questions;
+  @override
   final PromptTheme theme;
 
   SurveyForm({
@@ -136,6 +145,15 @@ class SurveyForm {
     this.theme = PromptTheme.dark,
   }) : assert(
             questions.isNotEmpty, 'SurveyForm requires at least one question');
+
+  @override
+  SurveyForm copyWithTheme(PromptTheme theme) {
+    return SurveyForm(
+      title: title,
+      questions: questions,
+      theme: theme,
+    );
+  }
 
   /// Runs the interactive survey. Returns null if cancelled.
   SurveyResult? run() {

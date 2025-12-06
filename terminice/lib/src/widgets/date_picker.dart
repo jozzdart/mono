@@ -19,8 +19,16 @@ import '../system/widget_frame.dart';
 ///
 /// Config:
 /// - [startWeekOnMonday] if false → week starts Sunday
-class DatePickerPrompt {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final date = DatePickerPrompt(label: 'Date')
+///   .withPastelTheme()
+///   .run();
+/// ```
+class DatePickerPrompt with Themeable {
   final String label;
+  @override
   final PromptTheme theme;
   final DateTime initial;
   final bool allowPast;
@@ -35,6 +43,18 @@ class DatePickerPrompt {
     this.allowFuture = true,
     this.startWeekOnMonday = true,
   }) : initial = initial ?? DateTime.now();
+
+  @override
+  DatePickerPrompt copyWithTheme(PromptTheme theme) {
+    return DatePickerPrompt(
+      label: label,
+      theme: theme,
+      initial: initial,
+      allowPast: allowPast,
+      allowFuture: allowFuture,
+      startWeekOnMonday: startWeekOnMonday,
+    );
+  }
 
   DateTime? run() {
     DateTime selected = DateTime(initial.year, initial.month, initial.day);

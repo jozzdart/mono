@@ -14,8 +14,16 @@ import '../system/widget_frame.dart';
 /// - [←]/[→] move within a line
 /// - [Ctrl+D] confirm (EOF)
 /// - [Esc] or [Ctrl+C] cancel
-class MultiLineInputPrompt {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final text = MultiLineInputPrompt(label: 'Notes')
+///   .withMatrixTheme()
+///   .run();
+/// ```
+class MultiLineInputPrompt with Themeable {
   final String label;
+  @override
   final PromptTheme theme;
   final int maxLines;
   final int visibleLines;
@@ -28,6 +36,17 @@ class MultiLineInputPrompt {
     this.visibleLines = 10,
     this.allowEmpty = true,
   });
+
+  @override
+  MultiLineInputPrompt copyWithTheme(PromptTheme theme) {
+    return MultiLineInputPrompt(
+      label: label,
+      theme: theme,
+      maxLines: maxLines,
+      visibleLines: visibleLines,
+      allowEmpty: allowEmpty,
+    );
+  }
 
   String run() {
     final lines = <String>[''];

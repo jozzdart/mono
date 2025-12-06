@@ -11,12 +11,18 @@ import '../system/widget_frame.dart';
 /// - Column alignment: left, center, right
 /// - Subtle zebra-striping for readability
 /// - Uses Theme borderVertical as column separators
-class TableView {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// TableView('Data', columns: cols, rows: data).withMatrixTheme().run();
+/// ```
+class TableView with Themeable {
   final String title;
   final List<String> columns;
   final List<List<String>> rows;
   final List<TableAlign>? columnAlignments;
   final bool zebraStripes;
+  @override
   final PromptTheme theme;
 
   TableView(
@@ -27,6 +33,18 @@ class TableView {
     this.zebraStripes = true,
     this.theme = PromptTheme.dark,
   }) : assert(columns.isNotEmpty, 'columns must not be empty');
+
+  @override
+  TableView copyWithTheme(PromptTheme theme) {
+    return TableView(
+      title,
+      columns: columns,
+      rows: rows,
+      columnAlignments: columnAlignments,
+      zebraStripes: zebraStripes,
+      theme: theme,
+    );
+  }
 
   void run() {
     final out = RenderOutput();

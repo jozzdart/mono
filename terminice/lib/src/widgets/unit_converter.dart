@@ -13,7 +13,13 @@ import '../system/widget_frame.dart';
 ///
 /// Aligns with ThemeDemo styling: titled frame, left gutter using the
 /// theme's vertical border glyph, and tasteful use of accent/highlight colors.
-class UnitConverter {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// UnitConverter(centimeters: 100).withPastelTheme().show();
+/// ```
+class UnitConverter with Themeable {
+  @override
   final PromptTheme theme;
   final String title;
 
@@ -27,7 +33,7 @@ class UnitConverter {
   final double usdToEurRate;
 
   UnitConverter({
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title = 'Unit Converter',
     this.centimeters,
     this.inches,
@@ -35,6 +41,19 @@ class UnitConverter {
     this.eur,
     this.usdToEurRate = 0.92,
   }) : assert(usdToEurRate > 0, 'Exchange rate must be > 0');
+
+  @override
+  UnitConverter copyWithTheme(PromptTheme theme) {
+    return UnitConverter(
+      theme: theme,
+      title: title,
+      centimeters: centimeters,
+      inches: inches,
+      usd: usd,
+      eur: eur,
+      usdToEurRate: usdToEurRate,
+    );
+  }
 
   /// Render the converter panel.
   void show() {

@@ -19,9 +19,15 @@ import '../system/widget_frame.dart';
 /// - R resets all progress
 /// - Enter confirms (returns updated steps)
 /// - Esc / Ctrl+C cancels (returns original steps)
-class TutorialRunner {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// TutorialRunner(steps: steps).withPastelTheme().run();
+/// ```
+class TutorialRunner with Themeable {
   final String title;
   final List<TutorialStep> steps;
+  @override
   final PromptTheme theme;
   final bool useTerminalWidth;
 
@@ -31,6 +37,16 @@ class TutorialRunner {
     this.theme = PromptTheme.dark,
     this.useTerminalWidth = true,
   }) : assert(steps.isNotEmpty);
+
+  @override
+  TutorialRunner copyWithTheme(PromptTheme theme) {
+    return TutorialRunner(
+      title: title,
+      steps: steps,
+      theme: theme,
+      useTerminalWidth: useTerminalWidth,
+    );
+  }
 
   /// Runs the tutorial. Returns the final list of steps (possibly updated).
   /// If cancelled, returns the original list unchanged.

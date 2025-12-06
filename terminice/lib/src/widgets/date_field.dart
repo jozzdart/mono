@@ -14,8 +14,14 @@ import '../system/widget_frame.dart';
 /// - [Ctrl+E] jump to today
 /// - [Enter] confirm
 /// - [Esc] cancel
-class DateFieldsPrompt {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// DateFieldsPrompt(label: 'Date').withPastelTheme().run();
+/// ```
+class DateFieldsPrompt with Themeable {
   final String label;
+  @override
   final PromptTheme theme;
   final DateTime initial;
 
@@ -24,6 +30,15 @@ class DateFieldsPrompt {
     this.theme = PromptTheme.dark,
     DateTime? initial,
   }) : initial = initial ?? DateTime.now();
+
+  @override
+  DateFieldsPrompt copyWithTheme(PromptTheme theme) {
+    return DateFieldsPrompt(
+      label: label,
+      theme: theme,
+      initial: initial,
+    );
+  }
 
   DateTime? run() {
     const innerPadding = 4;

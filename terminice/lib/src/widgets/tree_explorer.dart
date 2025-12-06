@@ -24,9 +24,17 @@ class TreeNode {
 ///
 /// **Implementation:** Uses [DynamicListPrompt] for core functionality,
 /// demonstrating composition over inheritance.
-class TreeExplorer {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final path = TreeExplorer(title: 'Files', roots: nodes)
+///   .withFireTheme()
+///   .run();
+/// ```
+class TreeExplorer with Themeable {
   final String title;
   final List<TreeNode> roots;
+  @override
   final PromptTheme theme;
   final bool allowCollapseAll;
   final int maxVisible;
@@ -38,6 +46,17 @@ class TreeExplorer {
     this.allowCollapseAll = true,
     this.maxVisible = 18,
   });
+
+  @override
+  TreeExplorer copyWithTheme(PromptTheme theme) {
+    return TreeExplorer(
+      title: title,
+      roots: roots,
+      theme: theme,
+      allowCollapseAll: allowCollapseAll,
+      maxVisible: maxVisible,
+    );
+  }
 
   /// Returns the selected node's label path (e.g., "root/child/grandchild"),
   /// or null if cancelled.

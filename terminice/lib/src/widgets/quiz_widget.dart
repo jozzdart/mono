@@ -15,9 +15,15 @@ import '../system/widget_frame.dart';
 /// - Themed title bar and bottom border
 /// - Left gutter uses the theme's vertical border glyph
 /// - Tasteful use of accent/info/warn/error colors
-class QuizWidget {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// QuizWidget(title: 'Quiz', questions: qs).withPastelTheme().run();
+/// ```
+class QuizWidget with Themeable {
   final String title;
   final List<QuizQuestion> questions;
+  @override
   final PromptTheme theme;
   final bool showFeedback; // show per-question correctness feedback
   final bool allowNumberShortcuts; // 1-9 to choose options quickly
@@ -25,10 +31,21 @@ class QuizWidget {
   QuizWidget({
     required this.title,
     required this.questions,
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.showFeedback = true,
     this.allowNumberShortcuts = true,
   }) : assert(questions.isNotEmpty, 'Provide at least one question');
+
+  @override
+  QuizWidget copyWithTheme(PromptTheme theme) {
+    return QuizWidget(
+      title: title,
+      questions: questions,
+      theme: theme,
+      showFeedback: showFeedback,
+      allowNumberShortcuts: allowNumberShortcuts,
+    );
+  }
 
   QuizResult run() {
     int correct = 0;

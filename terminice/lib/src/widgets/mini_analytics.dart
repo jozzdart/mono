@@ -7,7 +7,12 @@ import '../system/widget_frame.dart';
 /// - Themed title bar and bottom border when enabled by theme.style.showBorder
 /// - Left gutter uses the theme's vertical border glyph
 /// - Uses selection/accent colors for emphasis, info/error for change tones
-class MiniAnalytics {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// MiniAnalytics(series: data).withFireTheme().show();
+/// ```
+class MiniAnalytics with Themeable {
   /// Time-ordered numeric series to render as a sparkline.
   final List<num> series;
 
@@ -15,6 +20,7 @@ class MiniAnalytics {
   final String label;
 
   /// Theme controlling colors and border glyphs.
+  @override
   final PromptTheme theme;
 
   /// Optional title for the frame header (defaults to 'Mini Analytics').
@@ -26,10 +32,21 @@ class MiniAnalytics {
   MiniAnalytics({
     required this.series,
     this.label = 'Growth',
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title,
     this.sparklineWidth = 32,
   });
+
+  @override
+  MiniAnalytics copyWithTheme(PromptTheme theme) {
+    return MiniAnalytics(
+      series: series,
+      label: label,
+      theme: theme,
+      title: title,
+      sparklineWidth: sparklineWidth,
+    );
+  }
 
   void show() {
     final headerLabel =

@@ -7,21 +7,26 @@ import '../system/widget_frame.dart';
 /// Beautiful, theme-aware miniature overview map that aligns with ThemeDemo
 /// styling. Shows the current viewport within a total document length.
 ///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// MiniMap(totalLines: 1200, viewportStart: 300, viewportSize: 48)
+///   .withPastelTheme()
+///   .show();
+/// ```
+///
 /// Usage:
 ///   MiniMap(
 ///     totalLines: 1200,
 ///     viewportStart: 300,
 ///     viewportSize: 48,
-///     height: 24,
-///     label: 'Mini Map',
-///     theme: PromptTheme.pastel,
-///   ).show();
-class MiniMap {
+///   ).withPastelTheme().show();
+class MiniMap with Themeable {
   final int totalLines;
   final int viewportStart; // 0-based index of first visible line
   final int viewportSize; // count of visible lines
   final int height; // visual map height in rows
   final int width; // visual width of the map area (characters)
+  @override
   final PromptTheme theme;
   final String? label;
   final List<int> markers; // optional significant line indices
@@ -32,7 +37,7 @@ class MiniMap {
     required this.viewportSize,
     this.height = 24,
     this.width = 14,
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.label,
     List<int>? markers,
   })  : assert(totalLines > 0),
@@ -41,6 +46,20 @@ class MiniMap {
         assert(height >= 6),
         assert(width >= 6),
         markers = markers ?? const [];
+
+  @override
+  MiniMap copyWithTheme(PromptTheme theme) {
+    return MiniMap(
+      totalLines: totalLines,
+      viewportStart: viewportStart,
+      viewportSize: viewportSize,
+      height: height,
+      width: width,
+      theme: theme,
+      label: label,
+      markers: markers,
+    );
+  }
 
   void show() {
     final title = (label == null || label!.isEmpty) ? 'Mini Map' : label!;

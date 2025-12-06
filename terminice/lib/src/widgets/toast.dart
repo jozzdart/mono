@@ -7,15 +7,21 @@ import '../system/widget_frame.dart';
 
 /// Toast — a transient, theme-aware popup message that gently fades away.
 ///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// Toast('Saved!', variant: ToastVariant.success).withMatrixTheme().run();
+/// ```
+///
 /// Usage:
 ///   Toast('Saved successfully', variant: ToastVariant.success).run();
-class Toast {
+class Toast with Themeable {
   final String message;
   final String label;
   final ToastVariant variant;
   final Duration duration;
   final Duration fadeOut;
   final int fps;
+  @override
   final PromptTheme theme;
 
   Toast(
@@ -27,6 +33,19 @@ class Toast {
     this.fps = 18,
     this.theme = PromptTheme.dark,
   }) : assert(fps > 0);
+
+  @override
+  Toast copyWithTheme(PromptTheme theme) {
+    return Toast(
+      message,
+      label: label,
+      variant: variant,
+      duration: duration,
+      fadeOut: fadeOut,
+      fps: fps,
+      theme: theme,
+    );
+  }
 
   void run() {
     int frameMs = (1000 / fps).clamp(12, 200).round();

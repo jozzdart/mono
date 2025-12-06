@@ -10,8 +10,14 @@ import '../system/widget_frame.dart';
 /// - Themed title bar and bottom border
 /// - Left gutter uses the theme's vertical border glyph
 /// - Tasteful use of accent/highlight/info/warn colors
-class MarkdownViewer {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// MarkdownViewer(content).withPastelTheme().show();
+/// ```
+class MarkdownViewer with Themeable {
   final String markdown;
+  @override
   final PromptTheme theme;
   final String? title;
   final bool color;
@@ -20,10 +26,20 @@ class MarkdownViewer {
 
   MarkdownViewer(
     this.markdown, {
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title,
     this.color = true,
   });
+
+  @override
+  MarkdownViewer copyWithTheme(PromptTheme theme) {
+    return MarkdownViewer(
+      markdown,
+      theme: theme,
+      title: title,
+      color: color,
+    );
+  }
 
   void show() {
     final label = title ?? 'Markdown';

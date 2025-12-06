@@ -20,20 +20,36 @@ class ServiceEndpoint {
   }) : url = Uri.parse(url);
 }
 
-class ServiceMonitor {
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// ServiceMonitor(endpoints).withFireTheme().run();
+/// ```
+class ServiceMonitor with Themeable {
   final List<ServiceEndpoint> endpoints;
+  @override
   final PromptTheme theme;
   final String? title;
   final int concurrency;
   final int retries;
 
-  const ServiceMonitor(
+  ServiceMonitor(
     this.endpoints, {
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title,
     this.concurrency = 6,
     this.retries = 1,
   });
+
+  @override
+  ServiceMonitor copyWithTheme(PromptTheme theme) {
+    return ServiceMonitor(
+      endpoints,
+      theme: theme,
+      title: title,
+      concurrency: concurrency,
+      retries: retries,
+    );
+  }
 
   Future<void> run() async {
     final out = RenderOutput();

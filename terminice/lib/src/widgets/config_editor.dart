@@ -10,11 +10,17 @@ import '../system/widget_frame.dart';
 /// Aligns with ThemeDemo styling (framed header, borders, accent colors) and
 /// reuses the same input model as other prompts. Designed for quick config
 /// tweaks directly in the terminal.
-class ConfigEditor {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// ConfigEditor(initialText: yaml).withMatrixTheme().run();
+/// ```
+class ConfigEditor with Themeable {
   /// Title shown in the header.
   final String title;
 
   /// Theme to use for borders, colors and accents.
+  @override
   final PromptTheme theme;
 
   /// Language mode: 'auto' | 'json' | 'yaml'
@@ -40,7 +46,7 @@ class ConfigEditor {
 
   ConfigEditor({
     this.title = 'Config Editor',
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.language = 'auto',
     this.initialText = '',
     this.maxLines = 2000,
@@ -49,6 +55,21 @@ class ConfigEditor {
     this.tabSize = 2,
     this.autoIndent = true,
   });
+
+  @override
+  ConfigEditor copyWithTheme(PromptTheme theme) {
+    return ConfigEditor(
+      title: title,
+      theme: theme,
+      language: language,
+      initialText: initialText,
+      maxLines: maxLines,
+      visibleLines: visibleLines,
+      allowEmpty: allowEmpty,
+      tabSize: tabSize,
+      autoIndent: autoIndent,
+    );
+  }
 
   /// Starts the editor. Returns the edited content as a single String.
   /// Returns empty string if cancelled.

@@ -13,29 +13,56 @@ enum TemperatureUnit { celsius, fahrenheit }
 /// A themed CLI widget that shows live weather using the Open‑Meteo API.
 ///
 /// Aligns with ThemeDemo styling via [PromptTheme] and [WidgetFrame].
-class WeatherWidget {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// WeatherWidget.city('Paris').withPastelTheme().show();
+/// ```
+class WeatherWidget with Themeable {
   final String? city;
   final double? latitude;
   final double? longitude;
   final TemperatureUnit unit;
+  @override
   final PromptTheme theme;
   final String title;
 
-  const WeatherWidget.city(
+  WeatherWidget.city(
     this.city, {
     this.unit = TemperatureUnit.celsius,
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title = 'Weather',
   })  : latitude = null,
         longitude = null;
 
-  const WeatherWidget.coords({
+  WeatherWidget.coords({
     required this.latitude,
     required this.longitude,
     this.unit = TemperatureUnit.celsius,
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title = 'Weather',
   }) : city = null;
+
+  WeatherWidget._internal({
+    this.city,
+    this.latitude,
+    this.longitude,
+    required this.unit,
+    required this.theme,
+    required this.title,
+  });
+
+  @override
+  WeatherWidget copyWithTheme(PromptTheme theme) {
+    return WeatherWidget._internal(
+      city: city,
+      latitude: latitude,
+      longitude: longitude,
+      unit: unit,
+      theme: theme,
+      title: title,
+    );
+  }
 
   /// Fetches and renders the weather box.
   Future<void> show() async {

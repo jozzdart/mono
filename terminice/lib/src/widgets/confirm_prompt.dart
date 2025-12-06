@@ -11,6 +11,13 @@ import '../system/simple_prompt.dart';
 /// **Implementation:** Uses [SimplePrompt] for core functionality,
 /// demonstrating composition over inheritance.
 ///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final confirmed = ConfirmPrompt(label: 'Delete', message: 'Sure?')
+///   .withFireTheme()
+///   .run();
+/// ```
+///
 /// **Example:**
 /// ```dart
 /// final confirmed = ConfirmPrompt(
@@ -22,11 +29,12 @@ import '../system/simple_prompt.dart';
 ///   // User selected Yes
 /// }
 /// ```
-class ConfirmPrompt {
+class ConfirmPrompt with Themeable {
   final String label;
   final String message;
   final String yesLabel;
   final String noLabel;
+  @override
   final PromptTheme theme;
   final bool defaultYes;
 
@@ -38,6 +46,18 @@ class ConfirmPrompt {
     this.theme = PromptTheme.dark,
     this.defaultYes = true,
   });
+
+  @override
+  ConfirmPrompt copyWithTheme(PromptTheme theme) {
+    return ConfirmPrompt(
+      label: label,
+      message: message,
+      yesLabel: yesLabel,
+      noLabel: noLabel,
+      theme: theme,
+      defaultYes: defaultYes,
+    );
+  }
 
   bool run() {
     // Delegate to SimplePrompts.confirm for all core functionality

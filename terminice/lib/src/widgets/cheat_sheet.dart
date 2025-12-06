@@ -6,7 +6,12 @@ import '../system/widget_frame.dart';
 ///
 /// Designed to align with ThemeDemo styling: framed title line,
 /// subtle separators, accent headers, and tasteful dim text.
-class CheatSheet {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// CheatSheet(entries).withMatrixTheme().show();
+/// ```
+class CheatSheet with Themeable {
   /// Title at the top of the sheet.
   final String title;
 
@@ -14,6 +19,7 @@ class CheatSheet {
   final List<List<String>> entries;
 
   /// Visual theme.
+  @override
   final PromptTheme theme;
 
   CheatSheet(
@@ -21,6 +27,15 @@ class CheatSheet {
     this.title = 'Cheat Sheet',
     this.theme = PromptTheme.dark,
   });
+
+  @override
+  CheatSheet copyWithTheme(PromptTheme theme) {
+    return CheatSheet(
+      entries,
+      title: title,
+      theme: theme,
+    );
+  }
 
   /// Renders the cheat sheet once. Non-interactive.
   void show() {

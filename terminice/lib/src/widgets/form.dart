@@ -16,6 +16,13 @@ import '../system/widget_frame.dart';
 /// - Backspace delete
 /// - Enter submit (validates all fields)
 /// - Esc cancel (returns null)
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final result = Form(title: 'Login', fields: fields)
+///   .withMatrixTheme()
+///   .run();
+/// ```
 class FormFieldSpec {
   final String name; // key in the result map
   final String label; // human friendly label rendered left of value
@@ -41,9 +48,10 @@ class FormResult {
   String operator [](String key) => values[key] ?? '';
 }
 
-class Form {
+class Form with Themeable {
   final String title;
   final List<FormFieldSpec> fields;
+  @override
   final PromptTheme theme;
 
   Form({
@@ -51,6 +59,15 @@ class Form {
     required this.fields,
     this.theme = PromptTheme.dark,
   }) : assert(fields.isNotEmpty, 'Form requires at least one field');
+
+  @override
+  Form copyWithTheme(PromptTheme theme) {
+    return Form(
+      title: title,
+      fields: fields,
+      theme: theme,
+    );
+  }
 
   /// Runs the interactive form. Returns null if cancelled.
   FormResult? run() {

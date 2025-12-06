@@ -127,3 +127,95 @@ class PromptStyle {
     this.showBorder = true,
   });
 }
+
+// ============================================================================
+// THEMEABLE MIXIN – DRY builder pattern for theme-aware widgets
+// ============================================================================
+
+/// Mixin for widgets that support theme configuration.
+///
+/// Implementing this mixin provides automatic builder methods via the
+/// [ThemeableBuilder] extension, eliminating repetitive copyWith patterns.
+///
+/// **Why use this pattern?**
+/// - **DRY**: Define theme property once, get all builder methods free
+/// - **Consistency**: All themeable widgets have the same fluent API
+/// - **Discoverability**: IDE autocomplete shows available themes
+/// - **Type-safe**: Builder methods return the correct concrete type
+///
+/// **Implementation:**
+///
+/// 1. Add `with Themeable` to your widget class
+/// 2. Add `theme` field (usually with `PromptTheme.dark` default)
+/// 3. Implement `copyWithTheme` to create a copy with a new theme
+///
+/// ```dart
+/// class MyWidget with Themeable {
+///   final String label;
+///   @override
+///   final PromptTheme theme;
+///
+///   MyWidget(this.label, {this.theme = PromptTheme.dark});
+///
+///   @override
+///   MyWidget copyWithTheme(PromptTheme theme) {
+///     return MyWidget(label, theme: theme);
+///   }
+/// }
+///
+/// // Now you get all these methods automatically:
+/// final widget = MyWidget('Test')
+///   .withTheme(PromptTheme.matrix)  // Custom theme
+///   .withDarkTheme()                // Dark preset
+///   .withMatrixTheme()              // Matrix preset
+///   .withFireTheme()                // Fire preset
+///   .withPastelTheme();             // Pastel preset
+/// ```
+mixin Themeable {
+  /// The current theme for styling.
+  PromptTheme get theme;
+
+  /// Creates a copy with a different theme.
+  ///
+  /// Implementers should copy all fields and apply the new theme.
+  Themeable copyWithTheme(PromptTheme theme);
+}
+
+/// Builder extensions for [Themeable] widgets.
+///
+/// Provides a fluent API for configuring themes on any widget
+/// that implements [Themeable]. All methods return the same concrete
+/// type as the receiver, enabling type-safe chaining.
+///
+/// **Available methods:**
+/// - [withTheme] - Apply any custom theme
+/// - [withDarkTheme] - Apply the dark theme (default)
+/// - [withMatrixTheme] - Apply the matrix/green theme
+/// - [withFireTheme] - Apply the fire/red theme
+/// - [withPastelTheme] - Apply the pastel/soft theme
+///
+/// **Example:**
+/// ```dart
+/// final prompt = SliderPrompt('Volume')
+///   .withMatrixTheme()
+///   .withSmoothAnimations()
+///   .run();
+/// ```
+extension ThemeableBuilder<T extends Themeable> on T {
+  /// Creates a copy with a custom theme.
+  T withTheme(PromptTheme theme) {
+    return copyWithTheme(theme) as T;
+  }
+
+  /// Creates a copy with the dark theme (default).
+  T withDarkTheme() => withTheme(PromptTheme.dark);
+
+  /// Creates a copy with the matrix theme (green, terminal-style).
+  T withMatrixTheme() => withTheme(PromptTheme.matrix);
+
+  /// Creates a copy with the fire theme (red/orange, bold).
+  T withFireTheme() => withTheme(PromptTheme.fire);
+
+  /// Creates a copy with the pastel theme (soft, gentle colors).
+  T withPastelTheme() => withTheme(PromptTheme.pastel);
+}

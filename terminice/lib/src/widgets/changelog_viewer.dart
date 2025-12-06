@@ -9,7 +9,13 @@ import '../system/widget_frame.dart';
 ///
 /// Aligns with ThemeDemo styling: titled frame, themed left gutter,
 /// tasteful use of accent/highlight colors, and clean spacing.
-class ChangeLogViewer {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// ChangeLogViewer(filePath: 'CHANGELOG.md').withPastelTheme().show();
+/// ```
+class ChangeLogViewer with Themeable {
+  @override
   final PromptTheme theme;
   final String? filePath;
   final String? content;
@@ -29,6 +35,18 @@ class ChangeLogViewer {
     this.color = true,
   }) : assert(filePath != null || content != null,
             'Provide either filePath or content');
+
+  @override
+  ChangeLogViewer copyWithTheme(PromptTheme theme) {
+    return ChangeLogViewer(
+      theme: theme,
+      filePath: filePath,
+      content: content,
+      title: title,
+      maxReleases: maxReleases,
+      color: color,
+    );
+  }
 
   /// Parse, format and print.
   void show() {

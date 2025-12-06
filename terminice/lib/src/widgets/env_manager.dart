@@ -14,16 +14,31 @@ import 'search_select.dart';
 /// - Themed title bar and bottom border
 /// - Left gutter uses the theme's vertical border glyph
 /// - Tasteful use of accent/highlight colors
-class EnvManager {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// EnvManager().withMatrixTheme().run();
+/// ```
+class EnvManager with Themeable {
+  @override
   final PromptTheme theme;
   final String? title;
   final Map<String, String>? initialEnv;
 
   EnvManager({
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title,
     this.initialEnv,
   });
+
+  @override
+  EnvManager copyWithTheme(PromptTheme theme) {
+    return EnvManager(
+      theme: theme,
+      title: title,
+      initialEnv: initialEnv,
+    );
+  }
 
   Future<void> run() async {
     final label = title ?? 'Env Manager';

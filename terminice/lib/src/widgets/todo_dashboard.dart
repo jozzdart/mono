@@ -42,10 +42,15 @@ class TodoTask {
 
 enum TodoPriority { low, medium, high }
 
-class TodoDashboard {
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// TodoDashboard('Tasks', tasks: tasks).withPastelTheme().run();
+/// ```
+class TodoDashboard with Themeable {
   final String title;
   final List<TodoTask> tasks;
   final List<String> availableTags;
+  @override
   final PromptTheme theme;
 
   /// If true, content width will attempt to align to terminal width; otherwise uses a relaxed fixed width.
@@ -58,6 +63,17 @@ class TodoDashboard {
     this.theme = PromptTheme.dark,
     this.useTerminalWidth = true,
   });
+
+  @override
+  TodoDashboard copyWithTheme(PromptTheme theme) {
+    return TodoDashboard(
+      title,
+      tasks: tasks,
+      availableTags: availableTags,
+      theme: theme,
+      useTerminalWidth: useTerminalWidth,
+    );
+  }
 
   /// Interactive board. Returns the final list of tasks (possibly updated).
   /// If cancelled, returns the original list unchanged.

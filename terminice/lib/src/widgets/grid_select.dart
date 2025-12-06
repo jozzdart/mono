@@ -11,11 +11,19 @@ import '../system/selectable_grid_prompt.dart';
 ///
 /// **Implementation:** Uses [SelectableGridPrompt] for core functionality,
 /// demonstrating composition over inheritance.
-class GridSelectPrompt {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final selected = GridSelectPrompt(options)
+///   .withFireTheme()
+///   .run();
+/// ```
+class GridSelectPrompt with Themeable {
   final List<String> options;
   final String prompt;
   final int columns; // If <= 0, auto-calc based on terminal width
   final bool multiSelect;
+  @override
   final PromptTheme theme;
   final int? cellWidth; // Optional fixed width; auto-calculated if null
   final int? maxColumns; // Optional cap for auto columns
@@ -29,6 +37,19 @@ class GridSelectPrompt {
     this.cellWidth,
     this.maxColumns,
   });
+
+  @override
+  GridSelectPrompt copyWithTheme(PromptTheme theme) {
+    return GridSelectPrompt(
+      options,
+      prompt: prompt,
+      columns: columns,
+      multiSelect: multiSelect,
+      theme: theme,
+      cellWidth: cellWidth,
+      maxColumns: maxColumns,
+    );
+  }
 
   List<String> run() {
     if (options.isEmpty) return [];

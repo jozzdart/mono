@@ -13,7 +13,13 @@ import '../system/widget_frame.dart';
 ///
 /// Aligns with ThemeDemo styling via themed title bar, left gutter,
 /// accent/highlight colors, and bottom border.
-class Flashcards {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// Flashcards(cards: deck).withPastelTheme().run();
+/// ```
+class Flashcards with Themeable {
+  @override
   final PromptTheme theme;
   final String title;
   final List<CardItem> deck;
@@ -25,9 +31,18 @@ class Flashcards {
 
   Flashcards({
     required List<CardItem> cards,
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title = 'Flashcards',
   }) : deck = List<CardItem>.from(cards);
+
+  @override
+  Flashcards copyWithTheme(PromptTheme theme) {
+    return Flashcards(
+      cards: deck,
+      theme: theme,
+      title: title,
+    );
+  }
 
   /// Starts an interactive study session.
   void run() {

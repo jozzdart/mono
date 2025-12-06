@@ -14,8 +14,16 @@ import '../system/dynamic_list_prompt.dart';
 ///
 /// **Implementation:** Uses [DynamicListPrompt] for core functionality,
 /// demonstrating composition over inheritance.
-class PathNavigator {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final path = PathNavigator()
+///   .withMatrixTheme()
+///   .run();
+/// ```
+class PathNavigator with Themeable {
   final String label;
+  @override
   final PromptTheme theme;
   final Directory startDir;
   final bool showHidden;
@@ -31,6 +39,18 @@ class PathNavigator {
     this.maxVisible = 18,
   }) : startDir = startDir ?? Directory.current;
 
+  @override
+  PathNavigator copyWithTheme(PromptTheme theme) {
+    return PathNavigator(
+      label: label,
+      theme: theme,
+      startDir: startDir,
+      showHidden: showHidden,
+      allowFiles: allowFiles,
+      maxVisible: maxVisible,
+    );
+  }
+
   /// Returns a selected path, or empty string if cancelled.
   String run() {
     Directory current = startDir;
@@ -44,7 +64,6 @@ class PathNavigator {
 
     final result = prompt.run(
       buildItems: () => _readEntries(current, showHidden, allowFiles),
-
       onPrimary: (entry, index) {
         switch (entry.type) {
           case _EntryType.up:
@@ -64,7 +83,6 @@ class PathNavigator {
             return DynamicAction.none;
         }
       },
-
       onSecondary: (entry, index) {
         // Go to parent
         if (current.parent.path != current.path) {
@@ -73,7 +91,6 @@ class PathNavigator {
         }
         return DynamicAction.none;
       },
-
       beforeItems: (ctx) {
         final shortPath = current.path.length > 60
             ? '...${current.path.substring(current.path.length - 57)}'
@@ -81,7 +98,6 @@ class PathNavigator {
         ctx.headerLine('Path', shortPath);
         ctx.writeConnector();
       },
-
       renderItem: (ctx, entry, index, isFocused) {
         final arrow = ctx.lb.arrow(isFocused);
         ctx.highlightedLine('$arrow ${entry.label}', highlighted: isFocused);
@@ -137,7 +153,8 @@ List<_Entry> _readEntries(Directory dir, bool showHidden, bool allowFiles) {
 
     for (final e in filtered) {
       if (e is Directory) {
-        list.add(_Entry('▸ ${_basename(e.path)}', e.path, _EntryType.directory));
+        list.add(
+            _Entry('▸ ${_basename(e.path)}', e.path, _EntryType.directory));
       } else if (allowFiles && e is File) {
         list.add(_Entry('· ${_basename(e.path)}', e.path, _EntryType.file));
       }

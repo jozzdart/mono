@@ -24,9 +24,17 @@ class CommandEntry {
 ///
 /// **Implementation:** Uses [RankedListPrompt] for core functionality,
 /// demonstrating composition over inheritance.
-class CommandPalette {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final cmd = CommandPalette(commands: cmds)
+///   .withMatrixTheme()
+///   .run();
+/// ```
+class CommandPalette with Themeable {
   final List<CommandEntry> commands;
   final String label;
+  @override
   final PromptTheme theme;
   final int maxVisible;
 
@@ -36,6 +44,16 @@ class CommandPalette {
     this.theme = PromptTheme.dark,
     this.maxVisible = 12,
   });
+
+  @override
+  CommandPalette copyWithTheme(PromptTheme theme) {
+    return CommandPalette(
+      commands: commands,
+      label: label,
+      theme: theme,
+      maxVisible: maxVisible,
+    );
+  }
 
   /// Returns the selected command, or null if cancelled.
   CommandEntry? run() {

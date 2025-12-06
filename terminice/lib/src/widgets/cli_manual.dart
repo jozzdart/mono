@@ -44,9 +44,15 @@ class ManualPage {
 /// - ← / → scroll manual content
 /// - Backspace erase, Esc cancel
 /// - Enter confirm selection (returns selected page)
-class CLIManual {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// CLIManual(pages: pages).withMatrixTheme().run();
+/// ```
+class CLIManual with Themeable {
   final List<ManualPage> pages;
   final String title;
+  @override
   final PromptTheme theme;
   final int maxVisibleResults;
   final int width; // fixed width (columns)
@@ -60,6 +66,18 @@ class CLIManual {
     this.width = 100,
     this.height = 24,
   });
+
+  @override
+  CLIManual copyWithTheme(PromptTheme theme) {
+    return CLIManual(
+      pages: pages,
+      title: title,
+      theme: theme,
+      maxVisibleResults: maxVisibleResults,
+      width: width,
+      height: height,
+    );
+  }
 
   ManualPage? run() {
     if (pages.isEmpty) return null;

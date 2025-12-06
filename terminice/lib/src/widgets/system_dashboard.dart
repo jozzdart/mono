@@ -13,18 +13,34 @@ import '../system/widget_frame.dart';
 /// - Left gutter using the theme's vertical border glyph
 /// - Accent/highlight colors and tasteful dim text
 /// - Subtle shimmering head over filled bar segment
-class SystemDashboard {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// SystemDashboard().withMatrixTheme().run();
+/// ```
+class SystemDashboard with Themeable {
+  @override
   final PromptTheme theme;
   final Duration refresh;
   final int barWidth;
   final String diskMount; // e.g. '/'
 
   SystemDashboard({
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.refresh = const Duration(milliseconds: 300),
     this.barWidth = 36,
     this.diskMount = '/',
   }) : assert(barWidth > 6);
+
+  @override
+  SystemDashboard copyWithTheme(PromptTheme theme) {
+    return SystemDashboard(
+      theme: theme,
+      refresh: refresh,
+      barWidth: barWidth,
+      diskMount: diskMount,
+    );
+  }
 
   void run() {
     final session = TerminalSession(hideCursor: true, rawMode: true);

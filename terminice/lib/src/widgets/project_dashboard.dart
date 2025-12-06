@@ -7,8 +7,14 @@ import '../system/widget_frame.dart';
 /// - Themed title bar and bottom border
 /// - Left gutter uses the theme's vertical border glyph
 /// - Tasteful use of accent/info/warn/error colors
-class ProjectDashboard {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// ProjectDashboard(projectName: 'MyApp').withPastelTheme().show();
+/// ```
+class ProjectDashboard with Themeable {
   final String projectName;
+  @override
   final PromptTheme theme;
 
   // Builds
@@ -41,7 +47,7 @@ class ProjectDashboard {
 
   ProjectDashboard({
     required this.projectName,
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.buildsSuccess = 0,
     this.buildsFailed = 0,
     this.latestBuildLabel,
@@ -61,6 +67,32 @@ class ProjectDashboard {
     this.sdk,
     this.os,
   }) : assert(coveragePercent >= 0 && coveragePercent <= 100);
+
+  @override
+  ProjectDashboard copyWithTheme(PromptTheme theme) {
+    return ProjectDashboard(
+      projectName: projectName,
+      theme: theme,
+      buildsSuccess: buildsSuccess,
+      buildsFailed: buildsFailed,
+      latestBuildLabel: latestBuildLabel,
+      buildDuration: buildDuration,
+      buildHistory: buildHistory,
+      testsPassed: testsPassed,
+      testsFailed: testsFailed,
+      testsSkipped: testsSkipped,
+      testDuration: testDuration,
+      coveragePercent: coveragePercent,
+      coverageHistory: coverageHistory,
+      coverageTarget: coverageTarget,
+      branch: branch,
+      lastCommit: lastCommit,
+      author: author,
+      committedAgo: committedAgo,
+      sdk: sdk,
+      os: os,
+    );
+  }
 
   void show() {
     final frame = WidgetFrame(title: _title(), theme: theme);

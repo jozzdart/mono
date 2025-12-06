@@ -14,9 +14,15 @@ import '../system/widget_frame.dart';
 /// - Backspace deletes or merges lines
 /// - ↑/↓ navigate lines, ←/→ move within line
 /// - Ctrl+D confirm, Esc/ Ctrl+C cancel
-class SnippetEditor {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// SnippetEditor(title: 'Code').withMatrixTheme().run();
+/// ```
+class SnippetEditor with Themeable {
   final String title;
   final String language; // 'auto', 'dart', 'json', 'shell', 'plain'
+  @override
   final PromptTheme theme;
   final int maxLines;
   final int visibleLines;
@@ -32,6 +38,19 @@ class SnippetEditor {
     this.initialText = '',
     this.allowEmpty = true,
   });
+
+  @override
+  SnippetEditor copyWithTheme(PromptTheme theme) {
+    return SnippetEditor(
+      title: title,
+      language: language,
+      theme: theme,
+      maxLines: maxLines,
+      visibleLines: visibleLines,
+      initialText: initialText,
+      allowEmpty: allowEmpty,
+    );
+  }
 
   /// Runs the editor and returns the final snippet.
   /// Returns an empty string when cancelled.

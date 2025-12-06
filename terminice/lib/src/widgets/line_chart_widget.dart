@@ -12,8 +12,14 @@ import '../system/widget_frame.dart';
 ///
 /// Aligns with ThemeDemo styling: titled frame, themed left gutter,
 /// tasteful use of accent/highlight colors, and concise hints.
-class LineChartWidget {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// LineChartWidget('CPU').withMatrixTheme().run();
+/// ```
+class LineChartWidget with Themeable {
   final String title;
+  @override
   final PromptTheme theme;
   final int width;
   final int height;
@@ -48,6 +54,25 @@ class LineChartWidget {
         assert(height >= 6),
         assert(!tick.isNegative && tick > Duration.zero),
         assert(yAutoScale || (yMin != null && yMax != null && yMax > yMin));
+
+  @override
+  LineChartWidget copyWithTheme(PromptTheme theme) {
+    return LineChartWidget(
+      title,
+      theme: theme,
+      width: width,
+      height: height,
+      tick: tick,
+      duration: duration,
+      yAutoScale: yAutoScale,
+      yMin: yMin,
+      yMax: yMax,
+      grid: grid,
+      gridStep: gridStep,
+      paddingFrac: paddingFrac,
+      generator: generator,
+    );
+  }
 
   Future<void> run() async {
     PromptTheme currentTheme = theme;

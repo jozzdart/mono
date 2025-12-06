@@ -14,9 +14,15 @@ import '../system/widget_frame.dart';
 /// - Themed title bar and bottom border
 /// - Left gutter uses the theme's vertical border glyph
 /// - Tasteful use of accent/highlight colors and inverse selection
-class LaunchPad {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// LaunchPad('Actions', actions).withMatrixTheme().run();
+/// ```
+class LaunchPad with Themeable {
   final String title;
   final List<LaunchAction> actions;
+  @override
   final PromptTheme theme;
 
   /// Fixed number of columns. If <= 0, columns are computed from terminal width.
@@ -36,15 +42,28 @@ class LaunchPad {
   /// When true, shows a single-line description beneath the icon if provided.
   final bool showDescriptions;
 
-  const LaunchPad(
+  LaunchPad(
     this.title,
     this.actions, {
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.columns = 0,
     this.cellWidth = 0,
     this.tileHeight = 4,
     this.showDescriptions = true,
   });
+
+  @override
+  LaunchPad copyWithTheme(PromptTheme theme) {
+    return LaunchPad(
+      title,
+      actions,
+      theme: theme,
+      columns: columns,
+      cellWidth: cellWidth,
+      tileHeight: tileHeight,
+      showDescriptions: showDescriptions,
+    );
+  }
 
   /// Runs the launch pad UI. Returns the selected action or null if cancelled.
   LaunchAction? run({bool executeOnEnter = false}) {

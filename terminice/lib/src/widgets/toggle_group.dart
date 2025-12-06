@@ -12,6 +12,13 @@ import '../system/widget_frame.dart';
 /// - A toggles all
 /// - Enter confirms
 /// - Esc / Ctrl+C cancels (returns initial states)
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final settings = ToggleGroup('Settings', items)
+///   .withPastelTheme()
+///   .run();
+/// ```
 class ToggleItem {
   final String label;
   final bool initialOn;
@@ -19,9 +26,10 @@ class ToggleItem {
   const ToggleItem(this.label, {this.initialOn = false});
 }
 
-class ToggleGroup {
+class ToggleGroup with Themeable {
   final String title;
   final List<ToggleItem> items;
+  @override
   final PromptTheme theme;
 
   /// Align rows to a computed content width (does not expand to terminal).
@@ -33,6 +41,16 @@ class ToggleGroup {
     this.theme = PromptTheme.dark,
     this.alignContent = true,
   });
+
+  @override
+  ToggleGroup copyWithTheme(PromptTheme theme) {
+    return ToggleGroup(
+      title,
+      items,
+      theme: theme,
+      alignContent: alignContent,
+    );
+  }
 
   /// Returns a map of label -> on/off after confirmation.
   /// If cancelled, returns the original initial states.

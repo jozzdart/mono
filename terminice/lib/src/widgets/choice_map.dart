@@ -22,10 +22,18 @@ class ChoiceMapItem {
 ///
 /// **Implementation:** Uses [SelectableGridPrompt] for core functionality,
 /// demonstrating composition over inheritance.
-class ChoiceMap {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final selected = ChoiceMap(items)
+///   .withPastelTheme()
+///   .run();
+/// ```
+class ChoiceMap with Themeable {
   final List<ChoiceMapItem> items;
   final String prompt;
   final bool multiSelect;
+  @override
   final PromptTheme theme;
   final int columns; // If <= 0, auto-calc
   final int? cardWidth;
@@ -40,6 +48,19 @@ class ChoiceMap {
     this.cardWidth,
     this.maxColumns,
   });
+
+  @override
+  ChoiceMap copyWithTheme(PromptTheme theme) {
+    return ChoiceMap(
+      items,
+      prompt: prompt,
+      multiSelect: multiSelect,
+      theme: theme,
+      columns: columns,
+      cardWidth: cardWidth,
+      maxColumns: maxColumns,
+    );
+  }
 
   List<String> run() {
     if (items.isEmpty) return [];

@@ -9,9 +9,17 @@ import '../system/widget_frame.dart';
 /// - ← back
 /// - → or Enter next
 /// - Esc / Ctrl+C cancel (returns -1)
-class StepperPrompt {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final step = StepperPrompt(title: 'Setup', steps: steps)
+///   .withPastelTheme()
+///   .run();
+/// ```
+class StepperPrompt with Themeable {
   final String title;
   final List<String> steps;
+  @override
   final PromptTheme theme;
   final int startIndex;
   final bool showStepNumbers;
@@ -24,6 +32,17 @@ class StepperPrompt {
     this.showStepNumbers = true,
   })  : assert(steps.isNotEmpty),
         assert(startIndex >= 0);
+
+  @override
+  StepperPrompt copyWithTheme(PromptTheme theme) {
+    return StepperPrompt(
+      title: title,
+      steps: steps,
+      theme: theme,
+      startIndex: startIndex,
+      showStepNumbers: showStepNumbers,
+    );
+  }
 
   /// Runs the wizard. Returns the last confirmed step index (0-based),
   /// or -1 if cancelled.

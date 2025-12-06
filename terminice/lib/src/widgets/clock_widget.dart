@@ -11,8 +11,14 @@ import '../system/widget_frame.dart';
 ///
 /// Aligns with ThemeDemo styling: titled frame, themed left gutter,
 /// tasteful use of accent/highlight colors, and concise hints.
-class ClockWidget {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// ClockWidget('Time').withPastelTheme().run();
+/// ```
+class ClockWidget with Themeable {
   final String title;
+  @override
   final PromptTheme theme;
   final bool analog;
   final bool digital;
@@ -33,6 +39,21 @@ class ClockWidget {
     this.duration,
     this.layout = ClockLayout.stacked,
   }) : assert(radius >= 4, 'radius should be >= 4 for a readable clock');
+
+  @override
+  ClockWidget copyWithTheme(PromptTheme theme) {
+    return ClockWidget(
+      title,
+      theme: theme,
+      analog: analog,
+      digital: digital,
+      showSeconds: showSeconds,
+      radius: radius,
+      tick: tick,
+      duration: duration,
+      layout: layout,
+    );
+  }
 
   Future<void> run() async {
     PromptTheme currentTheme = theme;

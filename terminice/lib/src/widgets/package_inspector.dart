@@ -9,7 +9,13 @@ import '../system/widget_frame.dart';
 /// - Themed title bar and bottom border
 /// - Left gutter uses the theme's vertical border glyph
 /// - Tasteful use of accent/info/warn/error colors
-class PackageInspector {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// PackageInspector(packageName: 'my_pkg').withPastelTheme().show();
+/// ```
+class PackageInspector with Themeable {
+  @override
   final PromptTheme theme;
   final String packageName;
   final String? sdkConstraint;
@@ -17,13 +23,24 @@ class PackageInspector {
   final Map<String, String> devDependencies;
 
   PackageInspector({
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     required this.packageName,
     this.sdkConstraint,
     Map<String, String>? dependencies,
     Map<String, String>? devDependencies,
   })  : dependencies = dependencies ?? const {},
         devDependencies = devDependencies ?? const {};
+
+  @override
+  PackageInspector copyWithTheme(PromptTheme theme) {
+    return PackageInspector(
+      theme: theme,
+      packageName: packageName,
+      sdkConstraint: sdkConstraint,
+      dependencies: dependencies,
+      devDependencies: devDependencies,
+    );
+  }
 
   void show() {
     final frame = WidgetFrame(title: _title(), theme: theme);

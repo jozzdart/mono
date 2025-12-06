@@ -18,9 +18,17 @@ import '../system/simple_prompt.dart';
 ///
 /// **Implementation:** Uses [AsyncTextPrompt] for core functionality,
 /// demonstrating composition over inheritance.
-class TextPrompt {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// final name = await TextPrompt(prompt: 'Name')
+///   .withPastelTheme()
+///   .run();
+/// ```
+class TextPrompt with Themeable {
   final String prompt;
   final String? placeholder;
+  @override
   final PromptTheme theme;
   final String Function(String)? validator;
   final bool required;
@@ -32,6 +40,17 @@ class TextPrompt {
     this.validator,
     this.required = true,
   });
+
+  @override
+  TextPrompt copyWithTheme(PromptTheme theme) {
+    return TextPrompt(
+      prompt: prompt,
+      placeholder: placeholder,
+      theme: theme,
+      validator: validator,
+      required: required,
+    );
+  }
 
   /// Runs the prompt and returns the entered text.
   ///

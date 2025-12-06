@@ -7,25 +7,48 @@ enum InfoBoxType { info, warn, error }
 ///
 /// Aligns with ThemeDemo styling: uses themed title borders and
 /// left gutter with the theme's vertical border glyph.
-class InfoBox {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// InfoBox('Message').withFireTheme().show();
+/// ```
+class InfoBox with Themeable {
   final List<String> lines;
   final InfoBoxType type;
+  @override
   final PromptTheme theme;
   final String? title;
 
   InfoBox(
     String message, {
     this.type = InfoBoxType.info,
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title,
   }) : lines = [message];
 
   InfoBox.multi(
     List<String> messages, {
     this.type = InfoBoxType.info,
-    this.theme = const PromptTheme(),
+    this.theme = PromptTheme.dark,
     this.title,
   }) : lines = messages;
+
+  InfoBox._internal({
+    required this.lines,
+    required this.type,
+    required this.theme,
+    this.title,
+  });
+
+  @override
+  InfoBox copyWithTheme(PromptTheme theme) {
+    return InfoBox._internal(
+      lines: lines,
+      type: type,
+      theme: theme,
+      title: title,
+    );
+  }
 
   /// Render the box to stdout.
   void show() {
@@ -45,7 +68,7 @@ class InfoBox {
 void infoBox(
   String message, {
   InfoBoxType type = InfoBoxType.info,
-  PromptTheme theme = const PromptTheme(),
+  PromptTheme theme = PromptTheme.dark,
   String? title,
 }) {
   InfoBox(message, type: type, theme: theme, title: title).show();

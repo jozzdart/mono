@@ -20,8 +20,14 @@ import '../system/widget_frame.dart';
 /// - Ctrl+R run snippet, append result to output
 /// - Ctrl+L clear output
 /// - Ctrl+D confirm/exit, Esc or Ctrl+C cancel
-class CodePlayground {
+///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// CodePlayground().withMatrixTheme().run();
+/// ```
+class CodePlayground with Themeable {
   final String title;
+  @override
   final PromptTheme theme;
   final int inputVisibleLines;
   final int outputVisibleLines;
@@ -45,6 +51,19 @@ class CodePlayground {
         assert(outputVisibleLines >= 4),
         assert(maxInputLines >= inputVisibleLines),
         assert(maxOutputLines >= outputVisibleLines);
+
+  @override
+  CodePlayground copyWithTheme(PromptTheme theme) {
+    return CodePlayground(
+      title: title,
+      theme: theme,
+      inputVisibleLines: inputVisibleLines,
+      outputVisibleLines: outputVisibleLines,
+      maxInputLines: maxInputLines,
+      maxOutputLines: maxOutputLines,
+      evaluator: evaluator,
+    );
+  }
 
   /// Runs the interactive playground. Returns the last code snippet entered,
   /// or an empty string when cancelled.

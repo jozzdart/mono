@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import '../style/theme.dart';
 import '../system/hints.dart';
+import '../system/prompt_animations.dart';
 import '../system/prompt_runner.dart';
 import '../system/widget_frame.dart';
 
@@ -14,13 +15,19 @@ import '../system/widget_frame.dart';
 /// - Shimmering head and subtle gradient fill
 /// - Percent, elapsed and ETA
 ///
+/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// ```dart
+/// ProgressBar('Downloading').withMatrixTheme().run();
+/// ```
+///
 /// Usage:
 ///   ProgressBar('Downloading', total: 120, width: 40).run();
-class ProgressBar {
+class ProgressBar with Themeable {
   final String label;
   final int total; // logical steps to complete
   final int width; // visual bar width
   final Duration? totalDuration; // optional target duration for full progress
+  @override
   final PromptTheme theme;
 
   ProgressBar(
@@ -31,6 +38,17 @@ class ProgressBar {
     this.theme = PromptTheme.dark,
   })  : assert(total > 0),
         assert(width > 4);
+
+  @override
+  ProgressBar copyWithTheme(PromptTheme theme) {
+    return ProgressBar(
+      label,
+      total: total,
+      width: width,
+      totalDuration: totalDuration,
+      theme: theme,
+    );
+  }
 
   void run() {
     final Duration target = totalDuration ?? const Duration(milliseconds: 2200);
@@ -110,7 +128,7 @@ class ProgressBar {
       int current = 0;
       while (current < total) {
         final t = stopwatch.elapsed.inMilliseconds / target.inMilliseconds;
-        final eased = _easeInOutCubic(t.clamp(0.0, 1.0));
+        final eased = Easing.easeInOutCubic(t.clamp(0.0, 1.0));
         final next = (eased * total).clamp(0, total.toDouble()).round();
         if (next > current) current = next;
 
@@ -144,14 +162,3 @@ String _fmt(Duration d) {
   final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
   return '$m:$s';
 }
-
-double _easeInOutCubic(double t) {
-  if (t < 0.5) {
-    return 4 * t * t * t;
-  } else {
-    final f = ((2 * t) - 2);
-    return 0.5 * f * f * f + 1;
-  }
-}
-
-
