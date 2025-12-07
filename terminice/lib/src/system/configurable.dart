@@ -262,4 +262,3 @@ PromptTheme _resolveThemePreset(String name) {
       return (null, null);
   }
 }
-

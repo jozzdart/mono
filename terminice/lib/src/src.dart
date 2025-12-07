@@ -1,5 +1,6 @@
 export 'style/prompt_config.dart';
 export 'style/theme.dart';
+export 'terminice_api.dart';
 export 'system/focus_navigation.dart';
 export 'system/frame_renderer.dart';
 export 'system/highlighter.dart';
