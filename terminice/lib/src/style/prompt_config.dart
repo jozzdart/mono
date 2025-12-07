@@ -102,6 +102,46 @@ class PromptConfig {
   /// Pastel theme (soft, gentle colors).
   static const PromptConfig pastel = PromptConfig(theme: PromptTheme.pastel);
 
+  /// Ocean theme (calming blue/cyan tones).
+  static const PromptConfig ocean = PromptConfig(theme: PromptTheme.ocean);
+
+  /// Ocean theme with smooth animations.
+  static PromptConfig oceanAnimated() => const PromptConfig(
+        theme: PromptTheme.ocean,
+        animated: true,
+      );
+
+  /// Monochrome theme (high-contrast ASCII retro).
+  static const PromptConfig monochrome =
+      PromptConfig(theme: PromptTheme.monochrome);
+
+  /// Neon theme (vibrant synthwave cyberpunk).
+  static const PromptConfig neon = PromptConfig(theme: PromptTheme.neon);
+
+  /// Neon theme with flashy animations.
+  static PromptConfig neonAnimated() => const PromptConfig(
+        theme: PromptTheme.neon,
+        animated: true,
+      );
+
+  /// Arcane theme (mystical ancient tome aesthetic).
+  static const PromptConfig arcane = PromptConfig(theme: PromptTheme.arcane);
+
+  /// Arcane theme with smooth mystical animations.
+  static PromptConfig arcaneAnimated() => const PromptConfig(
+        theme: PromptTheme.arcane,
+        animated: true,
+      );
+
+  /// Phantom theme (ghostly apparition aesthetic).
+  static const PromptConfig phantom = PromptConfig(theme: PromptTheme.phantom);
+
+  /// Phantom theme with smooth ethereal animations.
+  static PromptConfig phantomAnimated() => const PromptConfig(
+        theme: PromptTheme.phantom,
+        animated: true,
+      );
+
   // ──────────────────────────────────────────────────────────────────────────
   // COPY WITH METHODS
   // ──────────────────────────────────────────────────────────────────────────
@@ -137,6 +177,21 @@ class PromptConfig {
 
   /// Creates a copy with the pastel theme (soft, gentle colors).
   PromptConfig withPastelTheme() => withTheme(PromptTheme.pastel);
+
+  /// Creates a copy with the ocean theme (calming blue/cyan).
+  PromptConfig withOceanTheme() => withTheme(PromptTheme.ocean);
+
+  /// Creates a copy with the monochrome theme (high-contrast ASCII).
+  PromptConfig withMonochromeTheme() => withTheme(PromptTheme.monochrome);
+
+  /// Creates a copy with the neon theme (vibrant synthwave).
+  PromptConfig withNeonTheme() => withTheme(PromptTheme.neon);
+
+  /// Creates a copy with the arcane theme (mystical ancient tome).
+  PromptConfig withArcaneTheme() => withTheme(PromptTheme.arcane);
+
+  /// Creates a copy with the phantom theme (ghostly apparition).
+  PromptConfig withPhantomTheme() => withTheme(PromptTheme.phantom);
 
   // ──────────────────────────────────────────────────────────────────────────
   // ANIMATION BUILDER METHODS
@@ -218,6 +273,51 @@ class PromptConfig {
       theme: PromptTheme.dark,
       animated: false,
       animations: PromptAnimations.none,
+    );
+  }
+
+  /// Ocean visual style: blue theme + smooth animations.
+  PromptConfig withOceanStyle() {
+    return copyWith(
+      theme: PromptTheme.ocean,
+      animated: true,
+      animations: PromptAnimations.smooth(),
+    );
+  }
+
+  /// Monochrome visual style: ASCII theme + no animations.
+  PromptConfig withMonochromeStyle() {
+    return copyWith(
+      theme: PromptTheme.monochrome,
+      animated: false,
+      animations: PromptAnimations.none,
+    );
+  }
+
+  /// Neon visual style: synthwave theme + flashy animations.
+  PromptConfig withNeonStyle() {
+    return copyWith(
+      theme: PromptTheme.neon,
+      animated: true,
+      animations: PromptAnimations.flashy(),
+    );
+  }
+
+  /// Arcane visual style: mystical theme + smooth enchanting animations.
+  PromptConfig withArcaneStyle() {
+    return copyWith(
+      theme: PromptTheme.arcane,
+      animated: true,
+      animations: PromptAnimations.smooth(),
+    );
+  }
+
+  /// Phantom visual style: ghostly theme + smooth ethereal animations.
+  PromptConfig withPhantomStyle() {
+    return copyWith(
+      theme: PromptTheme.phantom,
+      animated: true,
+      animations: PromptAnimations.smooth(),
     );
   }
 

@@ -24,6 +24,11 @@ class ThemeDemo {
               'Matrix': PromptTheme.matrix,
               'Fire': PromptTheme.fire,
               'Pastel': PromptTheme.pastel,
+              'Ocean': PromptTheme.ocean,
+              'Monochrome': PromptTheme.monochrome,
+              'Neon': PromptTheme.neon,
+              'Arcane': PromptTheme.arcane,
+              'Phantom': PromptTheme.phantom,
             };
 
   void run() {
@@ -50,8 +55,10 @@ class ThemeDemo {
             'Checkbox: ${theme.checkboxOn}${style.checkboxOnSymbol}${theme.reset} / ${theme.checkboxOff}${style.checkboxOffSymbol}${theme.reset}');
         ctx.gutterLine(
             'Border: ${theme.selection}${style.borderTop}${style.borderConnector}${style.borderBottom}${theme.reset}');
-        ctx.gutterLine('Highlight: ${theme.highlight}Highlight text${theme.reset}');
-        ctx.gutterLine('Inverse: ${theme.inverse} Inverted line ${theme.reset}');
+        ctx.gutterLine(
+            'Highlight: ${theme.highlight}Highlight text${theme.reset}');
+        ctx.gutterLine(
+            'Inverse: ${theme.inverse} Inverted line ${theme.reset}');
       });
 
       out.writeln(
