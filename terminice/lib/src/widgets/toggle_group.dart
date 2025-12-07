@@ -1,3 +1,4 @@
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/focus_navigation.dart';
 import '../system/key_bindings.dart';
@@ -13,11 +14,16 @@ import '../system/widget_frame.dart';
 /// - Enter confirms
 /// - Esc / Ctrl+C cancels (returns initial states)
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// final settings = ToggleGroup('Settings', items)
 ///   .withPastelTheme()
 ///   .run();
+///
+/// // With shared config
+/// final config = PromptConfig.pastel;
+/// final settings = ToggleGroup('Settings', items, config: config).run();
 /// ```
 class ToggleItem {
   final String label;
@@ -35,12 +41,20 @@ class ToggleGroup with Themeable {
   /// Align rows to a computed content width (does not expand to terminal).
   final bool alignContent;
 
+  /// Creates a toggle group.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   ToggleGroup(
     this.title,
     this.items, {
-    this.theme = PromptTheme.dark,
     this.alignContent = true,
-  });
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  }) : theme = config?.theme ?? theme;
 
   @override
   ToggleGroup copyWithTheme(PromptTheme theme) {

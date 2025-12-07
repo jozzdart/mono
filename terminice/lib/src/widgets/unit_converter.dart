@@ -84,7 +84,8 @@ class UnitConverter with Themeable {
     )}');
 
     // Currency section
-    stdout.writeln('${lb.gutter()}${sectionHeader(theme, 'Currency · USD ↔ EUR')}');
+    stdout.writeln(
+        '${lb.gutter()}${sectionHeader(theme, 'Currency · USD ↔ EUR')}');
     final pairCur = _resolveCurrencyPair();
     stdout.writeln('${lb.gutter()}${_rateLine()}');
     stdout.writeln('${lb.gutter()}${_equation(
@@ -139,7 +140,8 @@ class UnitConverter with Themeable {
     int mode = 0; // which converter
     bool inputLeft = true; // which side is active input
     // Use centralized text input for numeric input handling
-    final buffer = TextInputBuffer(initialText: _initialBuffer(mode, inputLeft));
+    final buffer =
+        TextInputBuffer(initialText: _initialBuffer(mode, inputLeft));
 
     // Use KeyBindings for declarative key handling
     final bindings = KeyBindings([
@@ -186,7 +188,8 @@ class UnitConverter with Themeable {
             (c) => c == 'r' || c == 'R',
             (event) {
               mode = (mode + 1) % converters.length;
-              buffer.setText(_initialBuffer(mode, inputLeft, fallback: buffer.text));
+              buffer.setText(
+                  _initialBuffer(mode, inputLeft, fallback: buffer.text));
               return KeyActionResult.handled;
             },
             hintLabel: 'R',
@@ -259,8 +262,6 @@ class UnitConverter with Themeable {
 
   // --- Rendering helpers -------------------------------------------------
 
-
-
   String _equation({
     required String leftLabel,
     required double leftValue,
@@ -268,8 +269,10 @@ class UnitConverter with Themeable {
     required double rightValue,
     String direction = '→',
   }) {
-    final numL = '${theme.selection}${leftValue.toStringAsFixed(2)}${theme.reset}';
-    final numR = '${theme.selection}${rightValue.toStringAsFixed(2)}${theme.reset}';
+    final numL =
+        '${theme.selection}${leftValue.toStringAsFixed(2)}${theme.reset}';
+    final numR =
+        '${theme.selection}${rightValue.toStringAsFixed(2)}${theme.reset}';
     final labL = '${theme.highlight}$leftLabel${theme.reset}';
     final labR = '${theme.highlight}$rightLabel${theme.reset}';
     final arrow = '${theme.dim}$direction${theme.reset}';
@@ -279,9 +282,11 @@ class UnitConverter with Themeable {
 
   String _rateLine() {
     final inv = 1 / usdToEurRate;
-    final r1 = '${theme.dim}Rate:${theme.reset} 1 ${theme.highlight}USD${theme.reset} '
+    final r1 =
+        '${theme.dim}Rate:${theme.reset} 1 ${theme.highlight}USD${theme.reset} '
         '${theme.dim}=${theme.reset} ${theme.selection}${usdToEurRate.toStringAsFixed(4)}${theme.reset} ${theme.highlight}EUR${theme.reset}';
-    final r2 = '     1 ${theme.highlight}EUR${theme.reset} ${theme.dim}=${theme.reset} '
+    final r2 =
+        '     1 ${theme.highlight}EUR${theme.reset} ${theme.dim}=${theme.reset} '
         '${theme.selection}${inv.toStringAsFixed(4)}${theme.reset} ${theme.highlight}USD${theme.reset}';
     return '$r1  ${theme.dim}|${theme.reset}  $r2';
   }
@@ -407,5 +412,3 @@ String _initialBuffer(int mode, bool inputLeft, {String? fallback}) {
     return '100';
   }
 }
-
-

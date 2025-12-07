@@ -1,5 +1,6 @@
 import 'dart:io' show sleep;
 
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/prompt_runner.dart';
@@ -10,17 +11,15 @@ import '../system/widget_frame.dart';
 /// Styles: dots (braille), bars (rising/falling), arcs (quarter/half circles).
 /// Aligned with ThemeDemo borders, accents, and layout.
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// LoadingSpinner('Loading').withPastelTheme().run();
-/// ```
 ///
-/// Example:
-///   LoadingSpinner(
-///     'Loading',
-///     message: 'Fetching data',
-///     style: SpinnerStyle.dots,
-///   ).withPastelTheme().run();
+/// // With shared config
+/// final config = PromptConfig.pastel;
+/// LoadingSpinner('Loading', config: config).run();
+/// ```
 class LoadingSpinner with Themeable {
   final String label;
   final String message;
@@ -30,14 +29,23 @@ class LoadingSpinner with Themeable {
   @override
   final PromptTheme theme;
 
+  /// Creates a loading spinner.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   LoadingSpinner(
     this.label, {
     this.message = 'Loading',
     this.style = SpinnerStyle.dots,
     this.duration = const Duration(seconds: 2),
     this.fps = 12,
-    this.theme = PromptTheme.dark,
-  }) : assert(fps > 0);
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  })  : theme = config?.theme ?? theme,
+        assert(fps > 0);
 
   @override
   LoadingSpinner copyWithTheme(PromptTheme theme) {

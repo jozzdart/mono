@@ -1,3 +1,4 @@
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/focus_navigation.dart';
 import '../system/key_bindings.dart';
@@ -17,11 +18,16 @@ import '../system/widget_frame.dart';
 /// - Enter submit (validates all fields)
 /// - Esc cancel (returns null)
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// final result = Form(title: 'Login', fields: fields)
 ///   .withMatrixTheme()
 ///   .run();
+///
+/// // With shared config
+/// final config = PromptConfig.matrix;
+/// final result = Form(title: 'Login', fields: fields, config: config).run();
 /// ```
 class FormFieldSpec {
   final String name; // key in the result map
@@ -54,11 +60,20 @@ class Form with Themeable {
   @override
   final PromptTheme theme;
 
+  /// Creates a form.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   Form({
     required this.title,
     required this.fields,
-    this.theme = PromptTheme.dark,
-  }) : assert(fields.isNotEmpty, 'Form requires at least one field');
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  })  : theme = config?.theme ?? theme,
+        assert(fields.isNotEmpty, 'Form requires at least one field');
 
   @override
   Form copyWithTheme(PromptTheme theme) {
@@ -212,6 +227,16 @@ class Form with Themeable {
 }
 
 /// Convenience function mirroring the requested API name.
-FormResult? form(String title, List<FormFieldSpec> fields,
-        {PromptTheme theme = PromptTheme.dark}) =>
-    Form(title: title, fields: fields, theme: theme).run();
+///
+/// Supports [PromptConfig] for shared configuration:
+/// ```dart
+/// final config = PromptConfig.matrix;
+/// final result = form('Login', fields, config: config);
+/// ```
+FormResult? form(
+  String title,
+  List<FormFieldSpec> fields, {
+  PromptConfig? config,
+  PromptTheme theme = PromptTheme.dark,
+}) =>
+    Form(title: title, fields: fields, config: config, theme: theme).run();

@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
+import '../system/configurable.dart';
 import '../system/prompt_animations.dart';
 import '../system/terminal.dart';
 import '../system/value_prompt.dart';
@@ -17,12 +19,18 @@ import '../system/widget_frame.dart';
 /// **Implementation:** Uses [AnimatedRangeValuePrompt] when animations are enabled,
 /// demonstrating composition over inheritance.
 ///
-/// **Mixins:** Implements [Animatable] and [Themeable] for fluent configuration:
+/// **Configuration:** Uses [Configurable] mixin for unified theme + animation config:
 /// ```dart
 /// final (start, end) = RangePrompt('Price Range')
 ///   .withMatrixTheme()        // Theme customization
 ///   .withSmoothAnimations()   // Animation customization
 ///   .run();
+/// ```
+///
+/// **Config Object:** Also accepts a [PromptConfig] for reusable configuration:
+/// ```dart
+/// final config = PromptConfig().withFireStyle();
+/// final (start, end) = RangePrompt('Price', config: config).run();
 /// ```
 ///
 /// **Example:**
@@ -36,26 +44,30 @@ import '../system/widget_frame.dart';
 ///   .withQuickAnimations()
 ///   .run();
 /// ```
-class RangePrompt with Animatable, Themeable {
+class RangePrompt with Configurable {
   final String label;
   final num min;
   final num max;
   final num startInitial;
   final num endInitial;
   final num step;
-  @override
-  final PromptTheme theme;
   final int width;
   final String unit; // "%" for percent, "" for plain numbers
 
-  /// Whether to show animations (entry/exit/pulse).
+  @override
+  final PromptTheme theme;
+
   @override
   final bool animated;
 
-  /// Custom animation configuration (overrides [animated]).
   @override
   final PromptAnimations? animations;
 
+  /// Creates a range prompt.
+  ///
+  /// Accepts either:
+  /// - Individual [theme], [animated], [animations] parameters
+  /// - A [PromptConfig] object (which takes precedence if provided)
   RangePrompt(
     this.label, {
     this.min = 0,
@@ -63,16 +75,24 @@ class RangePrompt with Animatable, Themeable {
     this.startInitial = 20,
     this.endInitial = 80,
     this.step = 1,
-    this.theme = PromptTheme.dark,
     this.width = 28,
     this.unit = '%',
-    this.animated = false,
-    this.animations,
-  });
+    // Config object (preferred for reusability)
+    PromptConfig? config,
+    // Individual parameters (for convenience/backward compatibility)
+    PromptTheme theme = PromptTheme.dark,
+    bool animated = false,
+    PromptAnimations? animations,
+  })  : theme = config?.theme ?? theme,
+        animated = config?.animated ?? animated,
+        animations = config?.animations ?? animations;
 
   @override
-  RangePrompt copyWithAnimations(
-      {bool? animated, PromptAnimations? animations}) {
+  RangePrompt copyWith({
+    PromptTheme? theme,
+    bool? animated,
+    PromptAnimations? animations,
+  }) {
     return RangePrompt(
       label,
       min: min,
@@ -80,34 +100,17 @@ class RangePrompt with Animatable, Themeable {
       startInitial: startInitial,
       endInitial: endInitial,
       step: step,
-      theme: theme,
       width: width,
       unit: unit,
+      theme: theme ?? this.theme,
       animated: animated ?? this.animated,
       animations: animations ?? this.animations,
     );
   }
 
-  @override
-  RangePrompt copyWithTheme(PromptTheme theme) {
-    return RangePrompt(
-      label,
-      min: min,
-      max: max,
-      startInitial: startInitial,
-      endInitial: endInitial,
-      step: step,
-      theme: theme,
-      width: width,
-      unit: unit,
-      animated: animated,
-      animations: animations,
-    );
-  }
-
   /// Returns the selected range as (start: x, end: y)
   (num start, num end) run() {
-    // Use Animatable helper to resolve animation configuration
+    // Use Configurable helper to resolve animation configuration
     final anims = resolveAnimations(PromptAnimations.quick);
 
     // Use animated prompt if any animation is enabled
@@ -257,6 +260,3 @@ class RangePrompt with Animatable, Themeable {
     }
   }
 }
-
-// Builder methods (withAnimations, withSmoothAnimations, etc.) are provided
-// automatically by the Animatable mixin. See AnimatableBuilder extension.

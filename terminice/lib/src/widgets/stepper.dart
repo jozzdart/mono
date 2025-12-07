@@ -1,3 +1,4 @@
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
@@ -10,11 +11,16 @@ import '../system/widget_frame.dart';
 /// - → or Enter next
 /// - Esc / Ctrl+C cancel (returns -1)
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// final step = StepperPrompt(title: 'Setup', steps: steps)
 ///   .withPastelTheme()
 ///   .run();
+///
+/// // With shared config
+/// final config = PromptConfig.pastel;
+/// final step = StepperPrompt(title: 'Setup', steps: steps, config: config).run();
 /// ```
 class StepperPrompt with Themeable {
   final String title;
@@ -24,13 +30,22 @@ class StepperPrompt with Themeable {
   final int startIndex;
   final bool showStepNumbers;
 
+  /// Creates a stepper prompt.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   StepperPrompt({
     required this.title,
     required this.steps,
-    this.theme = PromptTheme.dark,
     this.startIndex = 0,
     this.showStepNumbers = true,
-  })  : assert(steps.isNotEmpty),
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  })  : theme = config?.theme ?? theme,
+        assert(steps.isNotEmpty),
         assert(startIndex >= 0);
 
   @override

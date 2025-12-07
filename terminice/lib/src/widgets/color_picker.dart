@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/terminal.dart';
 import '../system/key_bindings.dart';
@@ -15,11 +16,16 @@ import '../system/widget_frame.dart';
 ///
 /// Visuals align with ThemeDemo via FrameRenderer and PromptTheme.
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// final color = ColorPickerPrompt()
 ///   .withDarkTheme()
 ///   .run();
+///
+/// // With shared config
+/// final config = PromptConfig.defaults;
+/// final color = ColorPickerPrompt(config: config).run();
 /// ```
 class ColorPickerPrompt with Themeable {
   final String label;
@@ -31,13 +37,22 @@ class ColorPickerPrompt with Themeable {
   final int cols;
   final int rows;
 
+  /// Creates a color picker.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   ColorPickerPrompt({
     this.label = 'Pick a color',
-    this.theme = PromptTheme.dark,
     this.initialHex,
     this.cols = 24,
     this.rows = 8,
-  })  : assert(cols >= 6 && cols <= 48),
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  })  : theme = config?.theme ?? theme,
+        assert(cols >= 6 && cols <= 48),
         assert(rows >= 3 && rows <= 24);
 
   @override

@@ -1,3 +1,4 @@
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/dynamic_list_prompt.dart';
 
@@ -25,11 +26,16 @@ class TreeNode {
 /// **Implementation:** Uses [DynamicListPrompt] for core functionality,
 /// demonstrating composition over inheritance.
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// final path = TreeExplorer(title: 'Files', roots: nodes)
 ///   .withFireTheme()
 ///   .run();
+///
+/// // With shared config
+/// final config = PromptConfig.fire;
+/// final path = TreeExplorer(title: 'Files', roots: nodes, config: config).run();
 /// ```
 class TreeExplorer with Themeable {
   final String title;
@@ -39,13 +45,21 @@ class TreeExplorer with Themeable {
   final bool allowCollapseAll;
   final int maxVisible;
 
+  /// Creates a tree explorer.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   TreeExplorer({
     required this.title,
     required this.roots,
-    this.theme = PromptTheme.dark,
     this.allowCollapseAll = true,
     this.maxVisible = 18,
-  });
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  }) : theme = config?.theme ?? theme;
 
   @override
   TreeExplorer copyWithTheme(PromptTheme theme) {
@@ -81,7 +95,6 @@ class TreeExplorer with Themeable {
 
     final result = prompt.run(
       buildItems: () => _buildVisible(roots, expanded),
-
       onPrimary: (entry, index) {
         if (entry.node.isLeaf) {
           confirmed = true;
@@ -91,7 +104,6 @@ class TreeExplorer with Themeable {
         expanded[entry.node] = true;
         return DynamicAction.rebuild;
       },
-
       onSecondary: (entry, index) {
         if (!entry.node.isLeaf && (expanded[entry.node] ?? false)) {
           // Collapse if expanded
@@ -101,14 +113,14 @@ class TreeExplorer with Themeable {
         // Otherwise, try to focus parent
         if (entry.parent != null) {
           final items = _buildVisible(roots, expanded);
-          final parentIdx = items.indexWhere((e) => e.node == entry.parent!.node);
+          final parentIdx =
+              items.indexWhere((e) => e.node == entry.parent!.node);
           if (parentIdx >= 0) {
             prompt.nav.jumpTo(parentIdx);
           }
         }
         return DynamicAction.none;
       },
-
       onToggle: (entry, index) {
         if (entry.node.isLeaf) {
           confirmed = true;
@@ -117,7 +129,6 @@ class TreeExplorer with Themeable {
         expanded[entry.node] = !(expanded[entry.node] ?? false);
         return DynamicAction.rebuild;
       },
-
       renderItem: (ctx, entry, index, isFocused) {
         final arrow = ctx.lb.arrow(isFocused);
         final branch = _treeBranchGlyph(entry, theme);

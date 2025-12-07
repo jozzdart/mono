@@ -272,7 +272,8 @@ class ConfigEditor with Themeable {
             final after = raw.substring(safeColumn);
             final cursorChar = after.isEmpty ? ' ' : after[0];
             final beforeH = _highlight(before, lang);
-            final afterH = after.isEmpty ? '' : _highlight(after.substring(1), lang);
+            final afterH =
+                after.isEmpty ? '' : _highlight(after.substring(1), lang);
             ctx.gutterLine(
                 '$prefix $beforeH${theme.inverse}$cursorChar${theme.reset}$afterH');
           } else {
@@ -384,7 +385,8 @@ class ConfigEditor with Themeable {
     // Keys: start-of-line or after indent: key:
     out = out.replaceAllMapped(
       RegExp(r'^(\s*)([A-Za-z0-9_\-\.]+)(\s*:)'),
-      (m) => '${m[1]}${theme.accent}${theme.bold}${m[2]}${theme.reset}${theme.dim}${m[3]}${theme.reset}',
+      (m) =>
+          '${m[1]}${theme.accent}${theme.bold}${m[2]}${theme.reset}${theme.dim}${m[3]}${theme.reset}',
     );
 
     // Anchors (&name) and aliases (*name)
@@ -442,11 +444,11 @@ class ConfigEditor with Themeable {
     final baseIndent = before.length - before.trimLeft().length;
     final trimmed = before.trimRight();
     int extra = 0;
-    if (trimmed.endsWith(':') || trimmed.endsWith('{') || trimmed.endsWith('[')) {
+    if (trimmed.endsWith(':') ||
+        trimmed.endsWith('{') ||
+        trimmed.endsWith('[')) {
       extra = tabSize;
     }
     return ' ' * (baseIndent + extra);
   }
 }
-
-

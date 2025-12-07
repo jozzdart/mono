@@ -1,4 +1,6 @@
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
+import '../system/configurable.dart';
 import '../system/prompt_animations.dart';
 import '../system/value_prompt.dart';
 import '../system/widget_frame.dart';
@@ -14,12 +16,18 @@ import '../system/widget_frame.dart';
 /// **Implementation:** Uses [AnimatedDiscreteValuePrompt] for core functionality
 /// when animations are enabled, demonstrating composition over inheritance.
 ///
-/// **Mixins:** Implements [Animatable] and [Themeable] for fluent configuration:
+/// **Configuration:** Uses [Configurable] mixin for unified theme + animation config:
 /// ```dart
 /// final rating = RatingPrompt('Rate this')
 ///   .withFireTheme()          // Theme customization
 ///   .withQuickAnimations()    // Animation customization
 ///   .run();
+/// ```
+///
+/// **Config Object:** Also accepts a [PromptConfig] for reusable configuration:
+/// ```dart
+/// final config = PromptConfig().withPastelStyle();
+/// RatingPrompt('Rate this', config: config).run();
 /// ```
 ///
 /// **Example:**
@@ -33,61 +41,62 @@ import '../system/widget_frame.dart';
 ///   .withSmoothAnimations()
 ///   .run();
 /// ```
-class RatingPrompt with Animatable, Themeable {
+class RatingPrompt with Configurable {
   final String prompt;
   final int maxStars;
   final int initial;
-  @override
-  final PromptTheme theme;
   final List<String>? labels; // Optional per-star labels
 
-  /// Whether to show animations (entry/exit/pulse).
+  @override
+  final PromptTheme theme;
+
   @override
   final bool animated;
 
-  /// Custom animation configuration (overrides [animated]).
   @override
   final PromptAnimations? animations;
 
+  /// Creates a rating prompt.
+  ///
+  /// Accepts either:
+  /// - Individual [theme], [animated], [animations] parameters
+  /// - A [PromptConfig] object (which takes precedence if provided)
   RatingPrompt(
     this.prompt, {
     this.maxStars = 5,
     this.initial = 3,
-    this.theme = PromptTheme.dark,
     this.labels,
-    this.animated = false,
-    this.animations,
+    // Config object (preferred for reusability)
+    PromptConfig? config,
+    // Individual parameters (for convenience/backward compatibility)
+    PromptTheme theme = PromptTheme.dark,
+    bool animated = false,
+    PromptAnimations? animations,
   })  : assert(maxStars > 0),
-        assert(initial >= 0);
+        assert(initial >= 0),
+        theme = config?.theme ?? theme,
+        animated = config?.animated ?? animated,
+        animations = config?.animations ?? animations;
 
   @override
-  RatingPrompt copyWithAnimations({bool? animated, PromptAnimations? animations}) {
+  RatingPrompt copyWith({
+    PromptTheme? theme,
+    bool? animated,
+    PromptAnimations? animations,
+  }) {
     return RatingPrompt(
       prompt,
       maxStars: maxStars,
       initial: initial,
-      theme: theme,
       labels: labels,
+      theme: theme ?? this.theme,
       animated: animated ?? this.animated,
       animations: animations ?? this.animations,
     );
   }
 
-  @override
-  RatingPrompt copyWithTheme(PromptTheme theme) {
-    return RatingPrompt(
-      prompt,
-      maxStars: maxStars,
-      initial: initial,
-      theme: theme,
-      labels: labels,
-      animated: animated,
-      animations: animations,
-    );
-  }
-
   int run() {
-    // Use Animatable helper to resolve animation configuration
+    // Use Configurable helper to resolve animation configuration
     final anims = resolveAnimations(PromptAnimations.quick);
 
     // Use animated prompt if any animation is enabled
@@ -154,6 +163,3 @@ class RatingPrompt with Animatable, Themeable {
     }
   }
 }
-
-// Builder methods (withAnimations, withSmoothAnimations, etc.) are provided
-// automatically by the Animatable mixin. See AnimatableBuilder extension.

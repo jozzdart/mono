@@ -1,3 +1,4 @@
+export 'style/prompt_config.dart';
 export 'style/theme.dart';
 export 'system/focus_navigation.dart';
 export 'system/frame_renderer.dart';
@@ -18,6 +19,7 @@ export 'system/dynamic_list_prompt.dart';
 export 'system/value_prompt.dart';
 export 'system/prompt_animations.dart';
 export 'system/simple_prompt.dart';
+export 'system/configurable.dart';
 export 'system/table_renderer.dart';
 export 'system/terminal.dart';
 export 'system/text_input_buffer.dart';

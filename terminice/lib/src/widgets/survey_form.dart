@@ -354,7 +354,8 @@ class SurveyForm with Themeable {
               if (focus.focusedIndex < questions.length - 1) {
                 focus.moveDown();
               } else {
-                if (focus.validateAll(validateQuestion, focusFirstInvalid: true)) {
+                if (focus.validateAll(validateQuestion,
+                    focusFirstInvalid: true)) {
                   return KeyActionResult.confirmed;
                 }
               }
@@ -442,7 +443,8 @@ class SurveyForm with Themeable {
           for (var i = 0; i < questions.length; i++) {
             final isFocused = focus.isFocused(i);
             final arrow = lb.arrow(isFocused);
-            final label = '${theme.selection}${questions[i].prompt}${theme.reset}';
+            final label =
+                '${theme.selection}${questions[i].prompt}${theme.reset}';
             final value = renderValue(i);
             var line = '$arrow $label: $value';
 

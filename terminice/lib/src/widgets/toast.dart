@@ -1,5 +1,6 @@
 import 'dart:io' show sleep;
 
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/prompt_runner.dart';
@@ -7,13 +8,15 @@ import '../system/widget_frame.dart';
 
 /// Toast — a transient, theme-aware popup message that gently fades away.
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// Toast('Saved!', variant: ToastVariant.success).withMatrixTheme().run();
-/// ```
 ///
-/// Usage:
-///   Toast('Saved successfully', variant: ToastVariant.success).run();
+/// // With shared config
+/// final config = PromptConfig.matrix;
+/// Toast('Saved!', variant: ToastVariant.success, config: config).run();
+/// ```
 class Toast with Themeable {
   final String message;
   final String label;
@@ -24,6 +27,11 @@ class Toast with Themeable {
   @override
   final PromptTheme theme;
 
+  /// Creates a toast notification.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   Toast(
     this.message, {
     this.label = 'Toast',
@@ -31,8 +39,12 @@ class Toast with Themeable {
     this.duration = const Duration(milliseconds: 1200),
     this.fadeOut = const Duration(milliseconds: 600),
     this.fps = 18,
-    this.theme = PromptTheme.dark,
-  }) : assert(fps > 0);
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  })  : theme = config?.theme ?? theme,
+        assert(fps > 0);
 
   @override
   Toast copyWithTheme(PromptTheme theme) {
@@ -115,7 +127,8 @@ class Toast with Themeable {
       }
 
       // Fade-out phase
-      final totalFrames = (fadeOut.inMilliseconds / frameMs).clamp(1, 240).round();
+      final totalFrames =
+          (fadeOut.inMilliseconds / frameMs).clamp(1, 240).round();
       for (int i = 0; i <= totalFrames; i++) {
         final t = i / totalFrames; // 0..1
         final eased = _easeOutCubic(1 - t); // 1..0
@@ -133,5 +146,3 @@ double _easeOutCubic(double t) {
   final f = t - 1;
   return f * f * f + 1;
 }
-
-

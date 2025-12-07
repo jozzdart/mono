@@ -1,4 +1,7 @@
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
+import '../system/configurable.dart';
+import '../system/prompt_animations.dart';
 import '../system/simple_prompt.dart';
 
 /// ConfirmPrompt – elegant instant confirmation dialog (no timers or delays).
@@ -11,11 +14,17 @@ import '../system/simple_prompt.dart';
 /// **Implementation:** Uses [SimplePrompt] for core functionality,
 /// demonstrating composition over inheritance.
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Uses [Configurable] mixin for unified theme config:
 /// ```dart
 /// final confirmed = ConfirmPrompt(label: 'Delete', message: 'Sure?')
 ///   .withFireTheme()
 ///   .run();
+/// ```
+///
+/// **Config Object:** Also accepts a [PromptConfig] for reusable configuration:
+/// ```dart
+/// final config = PromptConfig.fire;
+/// ConfirmPrompt(label: 'Delete', message: 'Sure?', config: config).run();
 /// ```
 ///
 /// **Example:**
@@ -29,33 +38,54 @@ import '../system/simple_prompt.dart';
 ///   // User selected Yes
 /// }
 /// ```
-class ConfirmPrompt with Themeable {
+class ConfirmPrompt with Configurable {
   final String label;
   final String message;
   final String yesLabel;
   final String noLabel;
-  @override
-  final PromptTheme theme;
   final bool defaultYes;
 
+  @override
+  final PromptTheme theme;
+
+  @override
+  final bool animated;
+
+  @override
+  final PromptAnimations? animations;
+
+  /// Creates a confirm prompt.
+  ///
+  /// Accepts either:
+  /// - Individual [theme] parameter (animations not used for confirm)
+  /// - A [PromptConfig] object (which takes precedence if provided)
   ConfirmPrompt({
     required this.label,
     required this.message,
     this.yesLabel = 'Yes',
     this.noLabel = 'No',
-    this.theme = PromptTheme.dark,
     this.defaultYes = true,
-  });
+    // Config object (preferred for reusability)
+    PromptConfig? config,
+    // Individual parameter (for convenience/backward compatibility)
+    PromptTheme theme = PromptTheme.dark,
+  })  : theme = config?.theme ?? theme,
+        animated = config?.animated ?? false,
+        animations = config?.animations;
 
   @override
-  ConfirmPrompt copyWithTheme(PromptTheme theme) {
+  ConfirmPrompt copyWith({
+    PromptTheme? theme,
+    bool? animated,
+    PromptAnimations? animations,
+  }) {
     return ConfirmPrompt(
       label: label,
       message: message,
       yesLabel: yesLabel,
       noLabel: noLabel,
-      theme: theme,
       defaultYes: defaultYes,
+      theme: theme ?? this.theme,
     );
   }
 

@@ -175,8 +175,9 @@ class EnvManager with Themeable {
         );
 
         ctx.labeledAccent('Name', entry.name);
-        final value =
-            entry.value.isEmpty ? '${theme.dim}<empty>${theme.reset}' : entry.value;
+        final value = entry.value.isEmpty
+            ? '${theme.dim}<empty>${theme.reset}'
+            : entry.value;
         ctx.labeledValue('Value', value);
       });
     }

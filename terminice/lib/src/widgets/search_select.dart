@@ -1,3 +1,4 @@
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/searchable_list_prompt.dart';
 
@@ -14,11 +15,16 @@ import '../system/searchable_list_prompt.dart';
 /// **Implementation:** Uses [SearchableListPrompt] for core functionality,
 /// demonstrating composition over inheritance.
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// final selected = SearchSelectPrompt(options)
 ///   .withMatrixTheme()
 ///   .run();
+///
+/// // With shared config
+/// final config = PromptConfig.matrix;
+/// final selected = SearchSelectPrompt(options, config: config).run();
 /// ```
 class SearchSelectPrompt with Themeable {
   final List<String> allOptions;
@@ -29,14 +35,22 @@ class SearchSelectPrompt with Themeable {
   @override
   final PromptTheme theme;
 
+  /// Creates a searchable select prompt.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   SearchSelectPrompt(
     this.allOptions, {
     this.prompt = 'Select an option',
     this.multiSelect = false,
     this.showSearch = false,
     this.maxVisible = 10,
-    this.theme = PromptTheme.dark,
-  });
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  }) : theme = config?.theme ?? theme;
 
   @override
   SearchSelectPrompt copyWithTheme(PromptTheme theme) {

@@ -53,7 +53,8 @@ class Badge with Themeable {
     bool inverted = true,
     bool bracketed = true,
     bool bold = true,
-  }) : this(text,
+  }) : this(
+          text,
           tone: BadgeTone.success,
           theme: theme,
           inverted: inverted,
@@ -67,7 +68,8 @@ class Badge with Themeable {
     bool inverted = true,
     bool bracketed = true,
     bool bold = true,
-  }) : this(text,
+  }) : this(
+          text,
           tone: BadgeTone.info,
           theme: theme,
           inverted: inverted,
@@ -81,7 +83,8 @@ class Badge with Themeable {
     bool inverted = true,
     bool bracketed = true,
     bool bold = true,
-  }) : this(text,
+  }) : this(
+          text,
           tone: BadgeTone.warning,
           theme: theme,
           inverted: inverted,
@@ -95,7 +98,8 @@ class Badge with Themeable {
     bool inverted = true,
     bool bracketed = true,
     bool bold = true,
-  }) : this(text,
+  }) : this(
+          text,
           tone: BadgeTone.danger,
           theme: theme,
           inverted: inverted,
@@ -109,7 +113,8 @@ class Badge with Themeable {
     bool inverted = true,
     bool bracketed = true,
     bool bold = true,
-  }) : this(text,
+  }) : this(
+          text,
           tone: BadgeTone.neutral,
           theme: theme,
           inverted: inverted,
@@ -151,5 +156,3 @@ class Badge with Themeable {
 
 /// Tone for badges: influences the color.
 enum BadgeTone { neutral, info, success, warning, danger }
-
-

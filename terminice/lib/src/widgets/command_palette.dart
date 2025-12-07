@@ -1,3 +1,4 @@
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/ranked_list_prompt.dart';
 import '../system/terminal.dart';
@@ -25,11 +26,16 @@ class CommandEntry {
 /// **Implementation:** Uses [RankedListPrompt] for core functionality,
 /// demonstrating composition over inheritance.
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// final cmd = CommandPalette(commands: cmds)
 ///   .withMatrixTheme()
 ///   .run();
+///
+/// // With shared config
+/// final config = PromptConfig.matrix;
+/// final cmd = CommandPalette(commands: cmds, config: config).run();
 /// ```
 class CommandPalette with Themeable {
   final List<CommandEntry> commands;
@@ -38,12 +44,20 @@ class CommandPalette with Themeable {
   final PromptTheme theme;
   final int maxVisible;
 
+  /// Creates a command palette.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   CommandPalette({
     required this.commands,
     this.label = 'Command Palette',
-    this.theme = PromptTheme.dark,
     this.maxVisible = 12,
-  });
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  }) : theme = config?.theme ?? theme;
 
   @override
   CommandPalette copyWithTheme(PromptTheme theme) {

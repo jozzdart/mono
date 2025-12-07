@@ -1,6 +1,7 @@
 import 'dart:io' show sleep;
 import 'dart:math' as math;
 
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/prompt_animations.dart';
@@ -15,13 +16,15 @@ import '../system/widget_frame.dart';
 /// - Shimmering head and subtle gradient fill
 /// - Percent, elapsed and ETA
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// ProgressBar('Downloading').withMatrixTheme().run();
-/// ```
 ///
-/// Usage:
-///   ProgressBar('Downloading', total: 120, width: 40).run();
+/// // With shared config
+/// final config = PromptConfig.matrix;
+/// ProgressBar('Downloading', config: config).run();
+/// ```
 class ProgressBar with Themeable {
   final String label;
   final int total; // logical steps to complete
@@ -30,13 +33,22 @@ class ProgressBar with Themeable {
   @override
   final PromptTheme theme;
 
+  /// Creates a progress bar.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   ProgressBar(
     this.label, {
     this.total = 100,
     this.width = 36,
     this.totalDuration,
-    this.theme = PromptTheme.dark,
-  })  : assert(total > 0),
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  })  : theme = config?.theme ?? theme,
+        assert(total > 0),
         assert(width > 4);
 
   @override

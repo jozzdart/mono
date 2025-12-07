@@ -92,8 +92,10 @@ class Highlight with Themeable {
     final trimmed = line.trimLeft();
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) return 'json';
     if (trimmed.startsWith('#')) return 'shell';
-    if (trimmed.startsWith('import ') || trimmed.contains(' void ') ||
-        trimmed.contains(' class ') || trimmed.contains(' final ') ||
+    if (trimmed.startsWith('import ') ||
+        trimmed.contains(' void ') ||
+        trimmed.contains(' class ') ||
+        trimmed.contains(' final ') ||
         trimmed.contains(' const ')) {
       return 'dart';
     }
@@ -155,8 +157,6 @@ String _defaultTitle(String lang) {
       return 'Highlight';
   }
 }
-
- 
 
 /// Convenience function mirroring the requested API name.
 void highlight(

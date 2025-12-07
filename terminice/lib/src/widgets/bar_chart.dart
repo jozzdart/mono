@@ -179,7 +179,6 @@ class BarChartWidget with Themeable {
         return theme.warn;
     }
   }
-
 }
 
 /// Styles for rendering the bar fill.

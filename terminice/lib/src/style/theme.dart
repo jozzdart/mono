@@ -1,3 +1,5 @@
+import 'prompt_config.dart';
+
 /// Defines a complete styling system for the terminal prompt:
 /// - Colors
 /// - Box drawing characters
@@ -169,7 +171,8 @@ class PromptStyle {
 ///   .withDarkTheme()                // Dark preset
 ///   .withMatrixTheme()              // Matrix preset
 ///   .withFireTheme()                // Fire preset
-///   .withPastelTheme();             // Pastel preset
+///   .withPastelTheme()              // Pastel preset
+///   .withConfig(myConfig);          // Apply from PromptConfig
 /// ```
 mixin Themeable {
   /// The current theme for styling.
@@ -193,13 +196,19 @@ mixin Themeable {
 /// - [withMatrixTheme] - Apply the matrix/green theme
 /// - [withFireTheme] - Apply the fire/red theme
 /// - [withPastelTheme] - Apply the pastel/soft theme
+/// - [withConfig] - Apply theme from a [PromptConfig] object
 ///
 /// **Example:**
 /// ```dart
-/// final prompt = SliderPrompt('Volume')
+/// // Direct theme methods
+/// final prompt = Banner('Title')
 ///   .withMatrixTheme()
-///   .withSmoothAnimations()
-///   .run();
+///   .show();
+///
+/// // Using PromptConfig (shared config)
+/// final config = PromptConfig.matrix;
+/// final banner = Banner('Title').withConfig(config);
+/// final box = InfoBox('Content').withConfig(config);
 /// ```
 extension ThemeableBuilder<T extends Themeable> on T {
   /// Creates a copy with a custom theme.
@@ -218,4 +227,23 @@ extension ThemeableBuilder<T extends Themeable> on T {
 
   /// Creates a copy with the pastel theme (soft, gentle colors).
   T withPastelTheme() => withTheme(PromptTheme.pastel);
+
+  /// Creates a copy with the theme from a [PromptConfig].
+  ///
+  /// This enables using shared [PromptConfig] objects with any
+  /// [Themeable] widget, even those that don't support animations.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Create a shared config
+  /// final teamConfig = PromptConfig.matrix;
+  ///
+  /// // Use with ANY Themeable widget (all 60+ widgets!)
+  /// final banner = Banner('Title').withConfig(teamConfig);
+  /// final box = InfoBox('Info').withConfig(teamConfig);
+  /// final table = TableView(data).withConfig(teamConfig);
+  /// ```
+  T withConfig(PromptConfig config) {
+    return copyWithTheme(config.theme) as T;
+  }
 }

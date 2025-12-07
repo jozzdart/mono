@@ -80,7 +80,8 @@ class ChoiceMap with Themeable {
       final unit = computedCardWidth + sepWidth;
       final colsByWidth = max(1, ((termWidth - leftPrefix) + sepWidth) ~/ unit);
       final desired = max(2, min(items.length, sqrt(items.length).ceil()));
-      final cap = (maxColumns != null && maxColumns! > 0) ? maxColumns! : desired;
+      final cap =
+          (maxColumns != null && maxColumns! > 0) ? maxColumns! : desired;
       return min(colsByWidth, cap);
     }
 

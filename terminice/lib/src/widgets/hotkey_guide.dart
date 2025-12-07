@@ -68,15 +68,16 @@ class HotkeyGuide with Themeable {
   void run() {
     // Use KeyBindings for declarative key handling
     final bindings = KeyBindings([
-      KeyBinding.multi(
-        {KeyEventType.esc, KeyEventType.enter},
-        (event) => KeyActionResult.confirmed,
-      ),
-      KeyBinding.char(
-        (c) => c == '?',
-        (event) => KeyActionResult.confirmed,
-      ),
-    ]) + KeyBindings.cancel();
+          KeyBinding.multi(
+            {KeyEventType.esc, KeyEventType.enter},
+            (event) => KeyActionResult.confirmed,
+          ),
+          KeyBinding.char(
+            (c) => c == '?',
+            (event) => KeyActionResult.confirmed,
+          ),
+        ]) +
+        KeyBindings.cancel();
 
     final runner = PromptRunner(hideCursor: true);
     runner.runWithBindings(

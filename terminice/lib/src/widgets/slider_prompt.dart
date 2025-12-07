@@ -1,4 +1,6 @@
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
+import '../system/configurable.dart';
 import '../system/prompt_animations.dart';
 import '../system/value_prompt.dart';
 
@@ -12,12 +14,18 @@ import '../system/value_prompt.dart';
 /// **Implementation:** Uses [AnimatedValuePrompt] + [PromptAnimations] for
 /// composable animation support, demonstrating composition over inheritance.
 ///
-/// **Mixins:** Implements [Animatable] and [Themeable] for fluent configuration:
+/// **Configuration:** Uses [Configurable] mixin for unified theme + animation config:
 /// ```dart
 /// final volume = SliderPrompt('Volume')
 ///   .withPastelTheme()        // Theme customization
 ///   .withSmoothAnimations()   // Animation customization
 ///   .run();
+/// ```
+///
+/// **Config Object:** Also accepts a [PromptConfig] for reusable configuration:
+/// ```dart
+/// final config = PromptConfig.matrixAnimated();
+/// SliderPrompt('Volume', config: config).run();
 /// ```
 ///
 /// **Example:**
@@ -29,14 +37,12 @@ import '../system/value_prompt.dart';
 ///   initial: 50,
 /// ).withMatrixTheme().run();
 /// ```
-class SliderPrompt with Animatable, Themeable {
+class SliderPrompt with Configurable {
   final String label;
   final num min;
   final num max;
   final num initial;
   final num step;
-  @override
-  final PromptTheme theme;
 
   /// Width of the slider bar in characters.
   final int width;
@@ -44,62 +50,60 @@ class SliderPrompt with Animatable, Themeable {
   /// Unit suffix for the tooltip (default '%').
   final String unit;
 
-  /// Whether to show animations (entry/exit/pulse).
+  @override
+  final PromptTheme theme;
+
   @override
   final bool animated;
 
-  /// Custom animation configuration (overrides [animated]).
   @override
   final PromptAnimations? animations;
 
+  /// Creates a slider prompt.
+  ///
+  /// Accepts either:
+  /// - Individual [theme], [animated], [animations] parameters
+  /// - A [PromptConfig] object (which takes precedence if provided)
   SliderPrompt(
     this.label, {
     this.min = 0,
     this.max = 100,
     this.initial = 50,
     this.step = 1,
-    this.theme = PromptTheme.dark,
     this.width = 28,
     this.unit = '%',
-    this.animated = true,
-    this.animations,
-  });
+    // Config object (preferred for reusability)
+    PromptConfig? config,
+    // Individual parameters (for convenience/backward compatibility)
+    PromptTheme theme = PromptTheme.dark,
+    bool animated = true,
+    PromptAnimations? animations,
+  })  : theme = config?.theme ?? theme,
+        animated = config?.animated ?? animated,
+        animations = config?.animations ?? animations;
 
   @override
-  SliderPrompt copyWithAnimations(
-      {bool? animated, PromptAnimations? animations}) {
+  SliderPrompt copyWith({
+    PromptTheme? theme,
+    bool? animated,
+    PromptAnimations? animations,
+  }) {
     return SliderPrompt(
       label,
       min: min,
       max: max,
       initial: initial,
       step: step,
-      theme: theme,
       width: width,
       unit: unit,
+      theme: theme ?? this.theme,
       animated: animated ?? this.animated,
       animations: animations ?? this.animations,
     );
   }
 
-  @override
-  SliderPrompt copyWithTheme(PromptTheme theme) {
-    return SliderPrompt(
-      label,
-      min: min,
-      max: max,
-      initial: initial,
-      step: step,
-      theme: theme,
-      width: width,
-      unit: unit,
-      animated: animated,
-      animations: animations,
-    );
-  }
-
   num run() {
-    // Use Animatable helper to resolve animation configuration
+    // Use Configurable helper to resolve animation configuration
     final anims = resolveAnimations(PromptAnimations.smooth);
 
     // Use AnimatedValuePrompt for composable animation support
@@ -127,6 +131,3 @@ class SliderPrompt with Animatable, Themeable {
     );
   }
 }
-
-// Builder methods (withAnimations, withSmoothAnimations, etc.) are provided
-// automatically by the Animatable mixin. See AnimatableBuilder extension.

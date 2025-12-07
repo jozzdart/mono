@@ -1,3 +1,4 @@
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/key_bindings.dart';
 import '../system/selectable_list_prompt.dart';
@@ -16,11 +17,16 @@ import '../system/widget_frame.dart';
 /// **Implementation:** Uses [SelectableListPrompt] for core functionality,
 /// demonstrating composition over inheritance.
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// final selected = CheckboxMenu(label: 'Options', options: items)
 ///   .withMatrixTheme()
 ///   .run();
+///
+/// // With shared config
+/// final config = PromptConfig.matrix;
+/// final selected = CheckboxMenu(label: 'Options', options: items, config: config).run();
 /// ```
 class CheckboxMenu with Themeable {
   final String label;
@@ -30,13 +36,22 @@ class CheckboxMenu with Themeable {
   final int maxVisible; // soft cap; may reduce based on terminal size
   final Set<int> initialSelected;
 
+  /// Creates a checkbox menu.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   CheckboxMenu({
     required this.label,
     required this.options,
-    this.theme = PromptTheme.dark,
     this.maxVisible = 12,
     Set<int>? initialSelected,
-  }) : initialSelected = {...(initialSelected ?? const <int>{})};
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  })  : theme = config?.theme ?? theme,
+        initialSelected = {...(initialSelected ?? const <int>{})};
 
   @override
   CheckboxMenu copyWithTheme(PromptTheme theme) {

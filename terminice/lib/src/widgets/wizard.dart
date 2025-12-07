@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/line_builder.dart';
@@ -14,28 +15,17 @@ import '../system/widget_frame.dart';
 /// - Auto state passing between steps (mutable state map)
 /// - Flexible step result handling
 ///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
+/// // Fluent API
 /// final result = await Wizard(title: 'Setup', steps: steps)
 ///   .withPastelTheme()
 ///   .run();
+///
+/// // With shared config
+/// final config = PromptConfig.pastel;
+/// final result = await Wizard(title: 'Setup', steps: steps, config: config).run();
 /// ```
-///
-/// Typical usage:
-///   final result = await Wizard(
-///     title: 'Project Setup',
-///     steps: [
-///       WizardStep(
-///         id: 'name',
-///         label: 'Project Name',
-///         run: (state, theme) async =>
-///             await TextPrompt(prompt: 'Project name', theme: theme).run(),
-///       ),
-///       // ... more steps ...
-///     ],
-///   ).withPastelTheme().run();
-///
-/// The returned map contains values keyed by step `id`.
 class Wizard with Themeable {
   final String title;
   final List<WizardStep> steps;
@@ -43,12 +33,21 @@ class Wizard with Themeable {
   final PromptTheme theme;
   final bool showProgress;
 
+  /// Creates a wizard.
+  ///
+  /// Accepts either:
+  /// - A [PromptConfig] object (theme extracted automatically)
+  /// - A direct [theme] parameter (for convenience)
   Wizard({
     required this.title,
     required this.steps,
-    this.theme = PromptTheme.dark,
     this.showProgress = true,
-  }) : assert(steps.isNotEmpty, 'Wizard requires at least one step');
+    // Config object (preferred for shared configuration)
+    PromptConfig? config,
+    // Direct theme (for convenience)
+    PromptTheme theme = PromptTheme.dark,
+  })  : theme = config?.theme ?? theme,
+        assert(steps.isNotEmpty, 'Wizard requires at least one step');
 
   @override
   Wizard copyWithTheme(PromptTheme theme) {
