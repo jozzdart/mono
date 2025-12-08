@@ -44,6 +44,14 @@ import 'widgets/toast.dart';
 import 'widgets/toggle_group.dart';
 import 'widgets/tree_explorer.dart';
 import 'widgets/wizard.dart';
+import 'widgets/changelog_viewer.dart';
+import 'widgets/cheat_sheet.dart';
+import 'widgets/stat_cards.dart';
+import 'widgets/system_clock_line.dart';
+import 'widgets/env_manager.dart';
+import 'widgets/mini_map.dart';
+import 'widgets/mini_analytics.dart';
+import 'widgets/resource_grid.dart';
 
 /// Global terminice instance for easy widget access.
 ///
@@ -867,7 +875,7 @@ class Terminice {
       columnAlignments: columnAlignments,
       zebraStripes: zebraStripes,
       theme: theme ?? defaultTheme,
-    ).run();
+    ).show();
   }
 
   /// Interactive table editor.
@@ -1016,7 +1024,7 @@ class Terminice {
       hScale: hScale,
       letterSpacing: letterSpacing,
       theme: theme ?? defaultTheme,
-    ).run();
+    ).show();
   }
 
   /// Creates a loading spinner for manual updates.
@@ -1417,5 +1425,178 @@ class Terminice {
       label: label,
       theme: theme ?? defaultTheme,
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DISPLAY WIDGETS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Display a changelog from a file or content.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// terminice.changelog(filePath: 'CHANGELOG.md');
+  /// ```
+  void changelog({
+    String? filePath,
+    String? content,
+    String title = 'Changelog',
+    int maxReleases = 6,
+    PromptTheme? theme,
+  }) {
+    ChangeLogViewer(
+      filePath: filePath,
+      content: content,
+      title: title,
+      maxReleases: maxReleases,
+      theme: theme ?? defaultTheme,
+    ).show();
+  }
+
+  /// Display a command cheat sheet.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// terminice.cheatSheet([
+  ///   ['git status', 'gs', 'Show working tree status'],
+  ///   ['git add', 'ga', 'Add files to staging'],
+  /// ]);
+  /// ```
+  void cheatSheet(
+    List<List<String>> entries, {
+    String title = 'Cheat Sheet',
+    PromptTheme? theme,
+  }) {
+    CheatSheet(
+      entries,
+      title: title,
+      theme: theme ?? defaultTheme,
+    ).show();
+  }
+
+  /// Display stat cards with big numeric highlights.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// terminice.stats([
+  ///   StatCardItem(label: 'Tests', value: '98%'),
+  ///   StatCardItem(label: 'Coverage', value: '85%'),
+  /// ]);
+  /// ```
+  void stats(
+    List<StatCardItem> items, {
+    String? title,
+    PromptTheme? theme,
+  }) {
+    StatCards(
+      items: items,
+      title: title,
+      theme: theme ?? defaultTheme,
+    ).show();
+  }
+
+  /// Display a system clock line with scheduled events.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// terminice.clockLine([
+  ///   CronEvent('Backup', DateTime.now().add(Duration(minutes: 10))),
+  /// ]);
+  /// ```
+  void clockLine(
+    List<CronEvent> events, {
+    String? title,
+    Duration window = const Duration(hours: 1),
+    PromptTheme? theme,
+  }) {
+    SystemClockLine(
+      events,
+      title: title,
+      window: window,
+      theme: theme ?? defaultTheme,
+    ).show();
+  }
+
+  /// Interactive environment variable manager.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// terminice.envManager();
+  /// ```
+  void envManager({
+    String? title,
+    PromptTheme? theme,
+  }) {
+    EnvManager(
+      title: title,
+      theme: theme ?? defaultTheme,
+    ).run();
+  }
+
+  /// Display a mini-map showing document position.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// terminice.miniMap(totalLines: 1000, viewportStart: 100, viewportSize: 50);
+  /// ```
+  void miniMap({
+    required int totalLines,
+    required int viewportStart,
+    required int viewportSize,
+    String? label,
+    PromptTheme? theme,
+  }) {
+    MiniMap(
+      totalLines: totalLines,
+      viewportStart: viewportStart,
+      viewportSize: viewportSize,
+      label: label,
+      theme: theme ?? defaultTheme,
+    ).show();
+  }
+
+  /// Display mini analytics sparkline with trend.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// terminice.miniAnalytics(series: [10, 25, 18, 30, 22]);
+  /// ```
+  void miniAnalytics({
+    required List<num> series,
+    String label = 'Growth',
+    String? title,
+    PromptTheme? theme,
+  }) {
+    MiniAnalytics(
+      series: series,
+      label: label,
+      title: title,
+      theme: theme ?? defaultTheme,
+    ).show();
+  }
+
+  /// Display a resource grid with cells.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// terminice.resourceGrid(
+  ///   title: 'System Resources',
+  ///   resources: [
+  ///     ResourceCell(label: 'CPU', value: '45%', series: [10, 20, 45]),
+  ///   ],
+  /// );
+  /// ```
+  void resourceGrid({
+    required String title,
+    required List<ResourceCell> resources,
+    int columns = 0,
+    PromptTheme? theme,
+  }) {
+    ResourceGrid(
+      title: title,
+      resources: resources,
+      columns: columns,
+      theme: theme ?? defaultTheme,
+    ).show();
   }
 }

@@ -21,5 +21,5 @@ void main() {
     rows: edited,
     theme: PromptTheme.pastel,
   );
-  preview.run();
+  preview.show();
 }

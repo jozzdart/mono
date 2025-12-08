@@ -18,7 +18,7 @@ void main() {
     window: const Duration(hours: 2),
   );
 
-  clock.run();
+  clock.show();
 }
 
 

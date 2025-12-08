@@ -1,25 +1,26 @@
 import '../style/theme.dart';
+import '../system/prompt_runner.dart';
 import '../system/widget_frame.dart' as wf;
 
 /// Badge – inline, theme-aware colored label (e.g., "SUCCESS", "FAILED").
 ///
 /// Use it to decorate logs or inline outputs with compact, readable labels.
 ///
-/// **Fluent API:** Use [withTheme], [withDarkTheme], [withMatrixTheme],
-/// [withFireTheme], [withPastelTheme] for easy theme switching:
+/// **Example:**
 /// ```dart
-/// Badge.success('OK').withMatrixTheme().render();
-/// ```
+/// Badge.success('OK').show();
+/// Badge.warning('SLOW').withMatrixTheme().show();
 ///
-/// Example:
-///   stdout.writeln('Build: ' + Badge.success('SUCCESS').render());
+/// // Or get the string to use inline:
+/// print('Build: ${Badge.success('PASS').render()}');
+/// ```
 class Badge with Themeable {
   final String text;
   final BadgeTone tone;
   @override
   final PromptTheme theme;
-  final bool inverted; // uses inverse video for a filled look
-  final bool bracketed; // wrap with [ ] for chip-like look
+  final bool inverted;
+  final bool bracketed;
   final bool bold;
 
   Badge(
@@ -119,7 +120,13 @@ class Badge with Themeable {
           bold: bold,
         );
 
-  /// Returns the colored, inline badge string using InlineStyle.
+  /// Shows the badge using centralized output.
+  void show() {
+    final out = RenderOutput();
+    out.writeln(render());
+  }
+
+  /// Returns the colored badge string (for inline use).
   String render() {
     final inline = wf.InlineStyle(theme);
     return inline.badge(

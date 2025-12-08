@@ -14,11 +14,7 @@ import '../system/widget_frame.dart';
 /// - Uses Theme borderVertical as column separators
 ///
 /// ```dart
-/// // Fluent API
-/// TableView('Data', columns: cols, rows: data).withMatrixTheme().run();
-///
-/// // With shared config
-/// TableView('Data', columns: cols, rows: data).run();
+/// TableView('Data', columns: cols, rows: data).withMatrixTheme().show();
 /// ```
 class TableView with Themeable {
   final String title;
@@ -55,7 +51,8 @@ class TableView with Themeable {
     );
   }
 
-  void run() {
+  /// Shows the table using centralized output.
+  void show() {
     final out = RenderOutput();
     _render(out);
   }

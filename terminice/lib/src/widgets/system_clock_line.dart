@@ -58,7 +58,8 @@ class SystemClockLine with Themeable {
     );
   }
 
-  void run() {
+  /// Shows the clock line using centralized output.
+  void show() {
     final label = title ?? 'System Clock Line';
     final now = _clock();
 

@@ -19,7 +19,7 @@ void main() {
     theme: PromptTheme.pastel,
   );
 
-  table.run();
+  table.show();
 }
 
 

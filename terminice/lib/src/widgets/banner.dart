@@ -7,7 +7,7 @@ import '../system/widget_frame.dart';
 ///
 /// **Example:**
 /// ```dart
-/// Banner('MONO').withMatrixTheme().run();
+/// Banner('MONO').withMatrixTheme().show();
 /// ```
 class Banner with Themeable {
   final String text;
@@ -45,11 +45,11 @@ class Banner with Themeable {
     );
   }
 
-  void run() {
-    // Use TerminalSession for cursor hiding, RenderOutput for line tracking
+  /// Shows the banner using centralized output.
+  void show() {
     TerminalSession(hideCursor: true).runWithOutput(
       (out) => _render(out),
-      clearOnEnd: false, // Keep banner visible
+      clearOnEnd: false,
     );
   }
 
