@@ -20,7 +20,9 @@ export 'system/hints.dart';
 export 'system/table_renderer.dart';
 export 'system/text_utils.dart';
 export 'system/highlighter.dart';
-export 'system/rendering.dart' hide stripAnsi, visibleLength;
+export 'system/rendering.dart';
+// Note: animation.dart, inline_style.dart, syntax_highlight.dart are
+// re-exported from widget_frame.dart for backward compatibility
 
 // Navigation & Selection
 export 'system/list_navigation.dart';

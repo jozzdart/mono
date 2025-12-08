@@ -1,8 +1,5 @@
-import 'dart:io' show stdout;
-
 import '../style/theme.dart';
 import '../system/focus_navigation.dart';
-import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
@@ -154,57 +151,62 @@ class QuizWidget with Themeable {
   }
 
   void _renderFeedback(int qi, bool isCorrect, QuizQuestion q, int selected) {
-    final style = theme.style;
-    final title = _title(qi);
-    final frame = FramedLayout(title, theme: theme);
-    final gutter = frame.gutter();
-
-    final verdict = isCorrect
-        ? '${theme.info}${theme.bold}Correct!${theme.reset}'
-        : '${theme.error}${theme.bold}Incorrect${theme.reset}';
-
+    final verdictText = isCorrect ? 'Correct!' : 'Incorrect';
     final correctAns = q.options[q.correctIndex];
     final chosen = q.options[selected];
 
-    stdout.writeln('$gutter$verdict');
-    if (!isCorrect) {
-      stdout.writeln('$gutter${theme.dim}Your answer:${theme.reset} $chosen');
-      stdout.writeln(
-          '$gutter${theme.dim}Correct answer:${theme.reset} ${theme.info}$correctAns${theme.reset}');
-    }
+    // Use WidgetFrame for consistent rendering
+    final feedbackFrame = WidgetFrame(
+      title: _title(qi),
+      theme: theme,
+    );
 
-    if (style.showBorder) {
-      stdout.writeln(frame.bottom());
-    }
-
-    // Use KeyBindings for continue/skip scenario
     final continueBindings = KeyBindings.continuePrompt(
       hintDescription: 'continue / skip summary',
     );
-    stdout.writeln(Hints.comma(
-      continueBindings.toHintEntries().map((e) => e[1]).toList(),
-      theme,
-    ));
 
-    // Wait for continue key
+    void renderFeedback(RenderOutput out) {
+      feedbackFrame.render(out, (ctx) {
+        // Verdict line
+        if (isCorrect) {
+          ctx.styledMessage(verdictText,
+              icon: '✔', tone: StatTone.success, bold: true);
+        } else {
+          ctx.styledMessage(verdictText,
+              icon: '✖', tone: StatTone.error, bold: true);
+          ctx.labeledValue('Your answer', chosen);
+          ctx.labeledAccent('Correct answer', correctAns);
+        }
+      });
+
+      // Hints for continuation
+      out.writeln(Hints.comma(
+        continueBindings.toHintEntries().map((e) => e[1]).toList(),
+        theme,
+      ));
+    }
+
+    // Display feedback and wait for key
+    final out = RenderOutput();
+    renderFeedback(out);
     continueBindings.waitForKey();
+    out.clear();
   }
 
   void _renderSummary(int correct) {
-    final style = theme.style;
-    final t = 'Quiz Summary';
-    final frame = FramedLayout(t, theme: theme);
-    final gutter = frame.gutter();
-    stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
-
     final total = questions.length;
     final percent = ((correct / total) * 100).clamp(0, 100).toStringAsFixed(0);
-    stdout.writeln(
-        '${gutter}Score: ${theme.accent}$correct${theme.reset}/${theme.bold}$total${theme.reset} (${theme.highlight}$percent%${theme.reset})');
 
-    if (style.showBorder) {
-      stdout.writeln(frame.bottom());
-    }
+    // Use WidgetFrame for consistent rendering
+    final summaryFrame = WidgetFrame(
+      title: 'Quiz Summary',
+      theme: theme,
+    );
+
+    summaryFrame.show((ctx) {
+      ctx.gutterLine(
+          'Score: ${theme.accent}$correct${theme.reset}/${theme.bold}$total${theme.reset} (${theme.highlight}$percent%${theme.reset})');
+    });
   }
 
   String _title(int qi) {
