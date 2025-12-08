@@ -1,7 +1,4 @@
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Theme-aware loading spinner with multiple visual styles.
 ///
@@ -86,20 +83,20 @@ class LoadingSpinner with Themeable {
 
   void _render(RenderOutput out, int frameIndex) {
     final frames = _framesForStyle(style);
-      final widgetFrame = WidgetFrame(title: label, theme: theme);
+    final widgetFrame = WidgetFrame(title: label, theme: theme);
 
     final color = (frameIndex % 2 == 0) ? theme.accent : theme.highlight;
 
-      widgetFrame.showTo(out, (ctx) {
-        final spin = frames[frameIndex % frames.length];
-        ctx.gutterLine(
-            '${theme.dim}$message${theme.reset}  ${theme.bold}$color$spin${theme.reset}');
-      });
+    widgetFrame.showTo(out, (ctx) {
+      final spin = frames[frameIndex % frames.length];
+      ctx.gutterLine(
+          '${theme.dim}$message${theme.reset}  ${theme.bold}$color$spin${theme.reset}');
+    });
 
-      out.writeln(Hints.bullets([
-        'Theme-aware spinner',
-        'Style: ${style.name}',
-      ], theme, dim: true));
+    out.writeln(Hints.bullets([
+      'Theme-aware spinner',
+      'Style: ${style.name}',
+    ], theme, dim: true));
   }
 
   List<String> _framesForStyle(SpinnerStyle s) {

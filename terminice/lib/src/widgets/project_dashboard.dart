@@ -1,5 +1,4 @@
-import '../style/theme.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// ProjectDashboard – comprehensive project stats (builds, tests, coverage)
 ///
@@ -145,8 +144,7 @@ class ProjectDashboard with Themeable {
       ctx.keyValue('Percent', '${coveragePercent.toStringAsFixed(1)}%');
       if (coverageTarget != null) {
         final passed = coveragePercent >= coverageTarget!;
-        ctx.statItem(
-            'Quality Gate', passed ? 'PASS' : 'FAIL',
+        ctx.statItem('Quality Gate', passed ? 'PASS' : 'FAIL',
             icon: passed ? '✔' : '✖',
             tone: passed ? StatTone.info : StatTone.error);
       }
@@ -204,8 +202,6 @@ class ProjectDashboard with Themeable {
     }
     return out.toString();
   }
-
-  
 }
 
 /// Convenience function mirroring the requested API name.

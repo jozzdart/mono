@@ -1,7 +1,5 @@
+import 'package:terminice/terminice.dart';
 
-import '../style/theme.dart';
-import '../system/ranked_list_prompt.dart';
-import '../system/terminal.dart';
 import '../system/text_utils.dart' as text;
 
 /// Represents a command in the palette.
@@ -51,7 +49,7 @@ class CommandPalette with Themeable {
     this.label = 'Command Palette',
     this.maxVisible = 12,
     this.theme = PromptTheme.dark,
-  }) ;
+  });
 
   @override
   CommandPalette copyWithTheme(PromptTheme theme) {

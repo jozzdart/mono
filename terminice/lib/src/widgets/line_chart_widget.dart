@@ -2,11 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/prompt_runner.dart';
-import '../system/terminal.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// LineChartWidget – ASCII-based real-time line plot.
 ///

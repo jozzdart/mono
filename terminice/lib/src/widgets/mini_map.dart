@@ -1,6 +1,4 @@
-import '../style/theme.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// MiniMap – ASCII representation of document position.
 ///

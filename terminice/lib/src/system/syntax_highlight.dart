@@ -1,4 +1,4 @@
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // SYNTAX HIGHLIGHTING SUPPORT
@@ -42,11 +42,44 @@ class SyntaxHighlighter {
 
     // Keywords
     const keywords = [
-      'class', 'enum', 'import', 'as', 'show', 'hide', 'void', 'final',
-      'const', 'var', 'return', 'if', 'else', 'for', 'while', 'switch',
-      'case', 'break', 'continue', 'try', 'catch', 'on', 'throw', 'new',
-      'this', 'super', 'extends', 'with', 'implements', 'static', 'get',
-      'set', 'async', 'await', 'yield', 'true', 'false', 'null'
+      'class',
+      'enum',
+      'import',
+      'as',
+      'show',
+      'hide',
+      'void',
+      'final',
+      'const',
+      'var',
+      'return',
+      'if',
+      'else',
+      'for',
+      'while',
+      'switch',
+      'case',
+      'break',
+      'continue',
+      'try',
+      'catch',
+      'on',
+      'throw',
+      'new',
+      'this',
+      'super',
+      'extends',
+      'with',
+      'implements',
+      'static',
+      'get',
+      'set',
+      'async',
+      'await',
+      'yield',
+      'true',
+      'false',
+      'null'
     ];
     final kwPattern = RegExp(r'\b(' + keywords.join('|') + r')\b');
     out = out.replaceAllMapped(
@@ -145,14 +178,17 @@ class SyntaxHighlighter {
   /// Auto-detects language and highlights.
   String autoLine(String line) {
     final trimmed = line.trimLeft();
-    if (trimmed.startsWith('{') || trimmed.startsWith('[')) return jsonLine(line);
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      return jsonLine(line);
+    }
     if (trimmed.startsWith('#')) return shellLine(line);
-    if (trimmed.startsWith('import ') || trimmed.contains(' void ') ||
-        trimmed.contains(' class ') || trimmed.contains(' final ') ||
+    if (trimmed.startsWith('import ') ||
+        trimmed.contains(' void ') ||
+        trimmed.contains(' class ') ||
+        trimmed.contains(' final ') ||
         trimmed.contains(' const ')) {
       return dartLine(line);
     }
     return line;
   }
 }
-

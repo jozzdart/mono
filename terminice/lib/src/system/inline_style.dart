@@ -1,7 +1,4 @@
-import '../style/theme.dart';
-import 'widget_frame.dart' show StatTone;
-
-export 'widget_frame.dart' show StatTone;
+import 'package:terminice/terminice.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // SPINNER FRAME STYLES

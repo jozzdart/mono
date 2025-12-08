@@ -1,8 +1,6 @@
 import 'dart:math';
 
-import '../style/theme.dart';
-import '../system/selectable_grid_prompt.dart';
-import '../system/terminal.dart';
+import 'package:terminice/terminice.dart';
 
 /// ChoiceMapItem – a card with label and optional subtitle.
 class ChoiceMapItem {

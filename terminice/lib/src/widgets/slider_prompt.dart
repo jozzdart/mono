@@ -1,5 +1,4 @@
-import '../style/theme.dart';
-import '../system/value_prompt.dart';
+import 'package:terminice/terminice.dart';
 
 /// SliderPrompt – slider for continuous value selection.
 ///

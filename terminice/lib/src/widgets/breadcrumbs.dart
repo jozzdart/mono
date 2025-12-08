@@ -1,6 +1,6 @@
-import '../style/theme.dart';
 import '../system/text_utils.dart' as text_utils;
-import '../system/widget_frame.dart';
+
+import 'package:terminice/terminice.dart';
 
 /// Breadcrumbs – file path navigation line.
 ///

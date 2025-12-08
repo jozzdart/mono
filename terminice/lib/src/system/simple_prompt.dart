@@ -1,9 +1,4 @@
-import 'hints.dart';
-import 'key_bindings.dart';
-import 'prompt_runner.dart';
-import 'text_input_buffer.dart';
-import 'widget_frame.dart';
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 // ============================================================================
 // SIMPLE PROMPT – Composable system for basic prompt patterns

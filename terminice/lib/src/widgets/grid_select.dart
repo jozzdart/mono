@@ -1,6 +1,4 @@
-
-import '../style/theme.dart';
-import '../system/selectable_grid_prompt.dart';
+import 'package:terminice/terminice.dart';
 
 /// GridSelectPrompt – 2D grid selection with arrow-key navigation.
 ///
@@ -44,7 +42,7 @@ class GridSelectPrompt with Themeable {
     this.cellWidth,
     this.maxColumns,
     this.theme = PromptTheme.dark,
-  }) ;
+  });
 
   @override
   GridSelectPrompt copyWithTheme(PromptTheme theme) {

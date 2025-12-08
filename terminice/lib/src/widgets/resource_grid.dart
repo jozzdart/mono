@@ -1,9 +1,7 @@
 import 'dart:math' as math;
 
-import '../style/theme.dart';
-import '../system/terminal.dart';
 import '../system/text_utils.dart' as text;
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// ResourceGrid – tabular boxes with CPU/Memory/IO graphs.
 ///
@@ -120,9 +118,11 @@ class ResourceGrid with Themeable {
     const leftPrefix = 2;
     const sepWidth = 3;
     final unit = cellWidth + sepWidth;
-    final colsByWidth = math.max(1, ((termWidth - leftPrefix) + sepWidth) ~/ unit);
+    final colsByWidth =
+        math.max(1, ((termWidth - leftPrefix) + sepWidth) ~/ unit);
     // Aim for a balanced grid roughly sqrt(n)
-    final desired = math.max(2, math.min(resources.length, math.sqrt(resources.length).ceil()));
+    final desired = math.max(
+        2, math.min(resources.length, math.sqrt(resources.length).ceil()));
     return math.min(colsByWidth, desired);
   }
 
@@ -132,14 +132,22 @@ class ResourceGrid with Themeable {
     return 1 + (cellsInRow * cellWidth) + (math.max(0, cellsInRow - 1) * 3);
   }
 
-  List<String> _renderCell(ResourceCell cell, {required int width, required int spark}) {
+  List<String> _renderCell(ResourceCell cell,
+      {required int width, required int spark}) {
     // Name line, clipped/padded to width
-    final name = _clipPad(' ${theme.bold}${theme.accent}${cell.name}${theme.reset}', width);
+    final name = _clipPad(
+        ' ${theme.bold}${theme.accent}${cell.name}${theme.reset}', width);
 
     // Metric lines
-    final cpuPct = (cell.cpuHistory.isEmpty ? 0 : (cell.cpuHistory.last * 100)).clamp(0, 100).round();
-    final memPct = (cell.memHistory.isEmpty ? 0 : (cell.memHistory.last * 100)).clamp(0, 100).round();
-    final ioPct = (cell.ioHistory.isEmpty ? 0 : (cell.ioHistory.last * 100)).clamp(0, 100).round();
+    final cpuPct = (cell.cpuHistory.isEmpty ? 0 : (cell.cpuHistory.last * 100))
+        .clamp(0, 100)
+        .round();
+    final memPct = (cell.memHistory.isEmpty ? 0 : (cell.memHistory.last * 100))
+        .clamp(0, 100)
+        .round();
+    final ioPct = (cell.ioHistory.isEmpty ? 0 : (cell.ioHistory.last * 100))
+        .clamp(0, 100)
+        .round();
 
     final cpu = _metricLine('CPU', cell.cpuHistory, spark,
         color: theme.info, pct: cpuPct, width: width);
@@ -242,5 +250,3 @@ class ResourceCell {
 }
 
 // Uses text.stripAnsi and text.visibleLength from text_utils.dart
-
-

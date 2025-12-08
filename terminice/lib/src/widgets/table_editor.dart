@@ -1,12 +1,5 @@
 import 'dart:math';
-
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/key_bindings.dart';
-import '../system/prompt_runner.dart';
-import '../system/table_renderer.dart';
-import '../system/text_input_buffer.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Interactive CSV-like grid editor.
 ///
@@ -189,112 +182,112 @@ class TableEditor with Themeable {
     // Use KeyBindings for declarative key handling
     // Note: This widget has conditional behavior based on 'editing' state
     final bindings = KeyBindings([
-          // Enter: commit edit (editing) or finish editor (not editing)
-          KeyBinding.single(
-            KeyEventType.enter,
-            (event) {
-              if (!editing) {
-                return KeyActionResult.confirmed;
-              } else {
-                commitEdit();
-                moveToNextCell();
-              }
-              ensureInBounds();
-              return KeyActionResult.handled;
-            },
-          ),
-          // Esc/Ctrl+C: cancel edit (editing) or cancel editor (not editing)
-          KeyBinding.multi(
-            {KeyEventType.esc, KeyEventType.ctrlC},
-            (event) {
-              if (!editing) {
-                cancelled = true;
-                return KeyActionResult.cancelled;
-              } else {
-                cancelEdit();
-              }
-              ensureInBounds();
-              return KeyActionResult.handled;
-            },
-          ),
-          // Arrow Up
-          KeyBinding.single(
-            KeyEventType.arrowUp,
-            (event) {
-              if (editing) commitEdit();
-              selectedRow = (selectedRow - 1 + data.length) % data.length;
-              ensureInBounds();
-              return KeyActionResult.handled;
-            },
-          ),
-          // Arrow Down
-          KeyBinding.single(
-            KeyEventType.arrowDown,
-            (event) {
-              if (editing) commitEdit();
-              selectedRow = (selectedRow + 1) % data.length;
-              ensureInBounds();
-              return KeyActionResult.handled;
-            },
-          ),
-          // Arrow Left
-          KeyBinding.single(
-            KeyEventType.arrowLeft,
-            (event) {
-              if (editing) commitEdit();
-              selectedCol = (selectedCol - 1 + columns.length) % columns.length;
-              ensureInBounds();
-              return KeyActionResult.handled;
-            },
-          ),
-          // Arrow Right / Tab
-          KeyBinding.multi(
-            {KeyEventType.arrowRight, KeyEventType.tab},
-            (event) {
-              if (editing) commitEdit();
-              moveToNextCell();
-              ensureInBounds();
-              return KeyActionResult.handled;
-            },
-          ),
-          // Character input
-          KeyBinding.char(
-            (c) => true,
-            (event) {
-              final ch = event.char ?? '';
-              if (!editing) {
-                if (ch == 'a') {
-                  addRowBelow();
-                } else if (ch == 'd') {
-                  deleteRow();
-                } else if (ch == 'e') {
-                  startEditing(overwrite: true);
-                } else if (ch == 's') {
-                  return KeyActionResult.confirmed;
-                } else {
-                  // Begin editing with first typed char overwriting existing content
-                  startEditing(overwrite: true, firstChar: ch);
-                }
-              } else {
-                // Text input - handled by centralized TextInputBuffer
-                editBuffer.handleKey(event);
-              }
-              ensureInBounds();
-              return KeyActionResult.handled;
-            },
-          ),
-          // Backspace (only in editing mode)
-          KeyBinding.single(
-            KeyEventType.backspace,
-            (event) {
-              if (editing) {
-                editBuffer.handleKey(event);
-              }
-              ensureInBounds();
-              return KeyActionResult.handled;
-            },
-          ),
-        ]);
+      // Enter: commit edit (editing) or finish editor (not editing)
+      KeyBinding.single(
+        KeyEventType.enter,
+        (event) {
+          if (!editing) {
+            return KeyActionResult.confirmed;
+          } else {
+            commitEdit();
+            moveToNextCell();
+          }
+          ensureInBounds();
+          return KeyActionResult.handled;
+        },
+      ),
+      // Esc/Ctrl+C: cancel edit (editing) or cancel editor (not editing)
+      KeyBinding.multi(
+        {KeyEventType.esc, KeyEventType.ctrlC},
+        (event) {
+          if (!editing) {
+            cancelled = true;
+            return KeyActionResult.cancelled;
+          } else {
+            cancelEdit();
+          }
+          ensureInBounds();
+          return KeyActionResult.handled;
+        },
+      ),
+      // Arrow Up
+      KeyBinding.single(
+        KeyEventType.arrowUp,
+        (event) {
+          if (editing) commitEdit();
+          selectedRow = (selectedRow - 1 + data.length) % data.length;
+          ensureInBounds();
+          return KeyActionResult.handled;
+        },
+      ),
+      // Arrow Down
+      KeyBinding.single(
+        KeyEventType.arrowDown,
+        (event) {
+          if (editing) commitEdit();
+          selectedRow = (selectedRow + 1) % data.length;
+          ensureInBounds();
+          return KeyActionResult.handled;
+        },
+      ),
+      // Arrow Left
+      KeyBinding.single(
+        KeyEventType.arrowLeft,
+        (event) {
+          if (editing) commitEdit();
+          selectedCol = (selectedCol - 1 + columns.length) % columns.length;
+          ensureInBounds();
+          return KeyActionResult.handled;
+        },
+      ),
+      // Arrow Right / Tab
+      KeyBinding.multi(
+        {KeyEventType.arrowRight, KeyEventType.tab},
+        (event) {
+          if (editing) commitEdit();
+          moveToNextCell();
+          ensureInBounds();
+          return KeyActionResult.handled;
+        },
+      ),
+      // Character input
+      KeyBinding.char(
+        (c) => true,
+        (event) {
+          final ch = event.char ?? '';
+          if (!editing) {
+            if (ch == 'a') {
+              addRowBelow();
+            } else if (ch == 'd') {
+              deleteRow();
+            } else if (ch == 'e') {
+              startEditing(overwrite: true);
+            } else if (ch == 's') {
+              return KeyActionResult.confirmed;
+            } else {
+              // Begin editing with first typed char overwriting existing content
+              startEditing(overwrite: true, firstChar: ch);
+            }
+          } else {
+            // Text input - handled by centralized TextInputBuffer
+            editBuffer.handleKey(event);
+          }
+          ensureInBounds();
+          return KeyActionResult.handled;
+        },
+      ),
+      // Backspace (only in editing mode)
+      KeyBinding.single(
+        KeyEventType.backspace,
+        (event) {
+          if (editing) {
+            editBuffer.handleKey(event);
+          }
+          ensureInBounds();
+          return KeyActionResult.handled;
+        },
+      ),
+    ]);
 
     final runner = PromptRunner(hideCursor: true);
     runner.runWithBindings(

@@ -1,9 +1,6 @@
 import 'dart:math' as math;
 
-import 'key_bindings.dart';
-import 'widget_frame.dart';
-import 'prompt_runner.dart';
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 /// ValuePrompt – composable system for continuous value selection.
 ///
@@ -411,7 +408,7 @@ extension ValuePromptRendering on FrameContext {
 
     final percentPart = showPercent ? ' ${theme.dim}$pct%${theme.reset}' : '';
 
-    gutterLine(
+    this.gutterLine(
         '$filledPart${theme.accent}$head${theme.reset}$emptyPart$percentPart');
   }
 
@@ -433,7 +430,7 @@ extension ValuePromptRendering on FrameContext {
       buffer.write('$color$star${theme.reset}');
       if (i < maxStars) buffer.write(' ');
     }
-    gutterLine(buffer.toString());
+    this.gutterLine(buffer.toString());
   }
 
   /// Renders numeric scale display.
@@ -444,7 +441,7 @@ extension ValuePromptRendering on FrameContext {
       buffer.write('$color$i${theme.reset}');
       if (i < max) buffer.write(' ');
     }
-    gutterLine(
+    this.gutterLine(
         '$buffer   ${theme.dim}(${theme.reset}${theme.accent}$value${theme.reset}${theme.dim}/$max)${theme.reset}');
   }
 }

@@ -1,9 +1,6 @@
 import 'dart:io';
 
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/line_builder.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Wizard – orchestrates a sequence of prompts with auto state passing.
 ///

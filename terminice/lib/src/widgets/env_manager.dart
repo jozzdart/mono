@@ -1,12 +1,6 @@
 import 'dart:io';
 
-import '../style/theme.dart';
-import '../system/key_bindings.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
-import 'text_prompt.dart';
-import 'confirm_prompt.dart';
-import 'search_select.dart';
+import 'package:terminice/terminice.dart';
 
 /// EnvManager – view/edit environment variables.
 ///

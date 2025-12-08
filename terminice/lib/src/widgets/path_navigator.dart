@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import '../style/theme.dart';
-import '../system/dynamic_list_prompt.dart';
+import 'package:terminice/terminice.dart';
 
 /// PathNavigator – interactive directory (and optional file) navigation.
 ///

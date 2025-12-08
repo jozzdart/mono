@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 import 'text_utils.dart' as text;
 
 /// Alignment options for table columns.

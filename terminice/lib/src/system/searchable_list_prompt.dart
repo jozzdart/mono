@@ -1,12 +1,4 @@
-import 'list_navigation.dart';
-import 'selection_controller.dart';
-import 'key_bindings.dart';
-import 'widget_frame.dart';
-import 'prompt_runner.dart';
-import 'terminal.dart';
-import 'text_input_buffer.dart';
-import 'highlighter.dart';
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 /// SearchableListPrompt – composable system for searchable/filterable list prompts.
 ///

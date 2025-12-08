@@ -1,8 +1,4 @@
-
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/selectable_grid_prompt.dart';
-import '../system/terminal.dart';
+import 'package:terminice/terminice.dart';
 
 /// TagSelector – choose multiple "chips" (tags) from a list.
 ///
@@ -48,7 +44,7 @@ class TagSelector with Themeable {
     this.maxColumnWidth = 24,
     this.useTerminalWidth = true,
     this.theme = PromptTheme.dark,
-  }) ;
+  });
 
   @override
   TagSelector copyWithTheme(PromptTheme theme) {

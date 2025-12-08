@@ -1,4 +1,4 @@
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 /// Highlights the first case-insensitive occurrence of [query] in [text]
 /// using the theme's highlight color, preserving the rest of the string.
@@ -19,5 +19,3 @@ String highlightSubstring(
   final after = text.substring(idx + q.length);
   return '$before${theme.highlight}$match${theme.reset}$after';
 }
-
-

@@ -1,13 +1,6 @@
 import 'dart:math';
 
-import '../style/theme.dart';
-import '../system/highlighter.dart';
-import '../system/key_bindings.dart';
-import '../system/list_navigation.dart';
-import '../system/prompt_runner.dart';
-import '../system/terminal.dart';
-import '../system/text_input_buffer.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 class HelpDoc {
   final String id;
@@ -144,7 +137,8 @@ class HelpCenter with Themeable {
             (event) {
               if (filtered.isNotEmpty) {
                 final lines = filtered[nav.selectedIndex].content.split('\n');
-                previewScroll = min(previewScroll + 1, max(0, lines.length - 1));
+                previewScroll =
+                    min(previewScroll + 1, max(0, lines.length - 1));
               }
               return KeyActionResult.handled;
             },
@@ -173,7 +167,8 @@ class HelpCenter with Themeable {
         ctx.writeConnector();
 
         // Results header
-        ctx.gutterLine('${theme.dim}Results (${filtered.length})${theme.reset}');
+        ctx.gutterLine(
+            '${theme.dim}Results (${filtered.length})${theme.reset}');
 
         // Results window using ListNavigation
         if (filtered.isEmpty) {
@@ -190,7 +185,8 @@ class HelpCenter with Themeable {
             final isSel = nav.isSelected(absoluteIdx);
             final prefix = ctx.lb.arrow(isSel);
             final label = labelFor(window.items[i]);
-            final line = '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
+            final line =
+                '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
             ctx.highlightedLine(line, highlighted: isSel);
           }
 
@@ -219,8 +215,8 @@ class HelpCenter with Themeable {
 
           for (var i = viewportStart; i < viewportEnd; i++) {
             final ln = rawLines[i];
-            final highlighted =
-                highlightSubstring(truncate(ln, contentWidth), queryInput.text, theme);
+            final highlighted = highlightSubstring(
+                truncate(ln, contentWidth), queryInput.text, theme);
             ctx.gutterLine(highlighted);
           }
         }

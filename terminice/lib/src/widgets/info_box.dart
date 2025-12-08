@@ -1,6 +1,4 @@
-
-import '../style/theme.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 enum InfoBoxType { info, warn, error }
 

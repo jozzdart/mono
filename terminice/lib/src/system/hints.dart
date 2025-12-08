@@ -1,5 +1,5 @@
 import 'dart:math';
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 class Hints {
   /// Simple builder for standard bullet-separated line (legacy)

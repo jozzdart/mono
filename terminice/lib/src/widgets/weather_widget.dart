@@ -2,10 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import '../style/theme.dart';
-import '../system/frame_renderer.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Temperature units supported by the widget.
 enum TemperatureUnit { celsius, fahrenheit }
@@ -102,7 +99,8 @@ class WeatherWidget with Themeable {
   Future<_ResolvedLocation> _resolveLocation() async {
     if (latitude != null && longitude != null) {
       return _ResolvedLocation(
-        displayName: '(${latitude!.toStringAsFixed(2)}, ${longitude!.toStringAsFixed(2)})',
+        displayName:
+            '(${latitude!.toStringAsFixed(2)}, ${longitude!.toStringAsFixed(2)})',
         latitude: latitude!,
         longitude: longitude!,
       );
@@ -137,7 +135,8 @@ class WeatherWidget with Themeable {
   }
 
   Future<_CurrentWeather> _fetchWeather(_ResolvedLocation loc) async {
-    final unitParam = unit == TemperatureUnit.celsius ? 'celsius' : 'fahrenheit';
+    final unitParam =
+        unit == TemperatureUnit.celsius ? 'celsius' : 'fahrenheit';
     final uri = Uri.parse(
         'https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current_weather=true&temperature_unit=$unitParam');
     final json = await _getJson(uri);
@@ -173,7 +172,7 @@ class WeatherWidget with Themeable {
 
   _WindArrow _arrowForWind(double deg) {
     // 8-wind rose
-    const arrows = ['↑','↗','→','↘','↓','↙','←','↖'];
+    const arrows = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
     final idx = ((deg % 360) / 45).round() % 8;
     return _WindArrow(arrows[idx]);
   }
@@ -230,5 +229,3 @@ class _WindArrow {
   @override
   String toString() => arrow;
 }
-
-

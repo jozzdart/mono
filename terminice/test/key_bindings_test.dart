@@ -1,7 +1,5 @@
 import 'package:test/test.dart';
-import 'package:terminice/src/system/key_bindings.dart';
-import 'package:terminice/src/system/prompt_runner.dart';
-import 'package:terminice/src/style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   group('KeyBinding', () {

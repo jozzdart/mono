@@ -1,14 +1,4 @@
-import '../style/theme.dart';
-import 'framed_layout.dart';
-import 'hints.dart';
-import 'key_bindings.dart';
-import 'line_builder.dart';
-import 'list_navigation.dart';
-import 'prompt_runner.dart';
-
-// Re-export from split modules for backward compatibility
-export 'inline_style.dart';
-export 'syntax_highlight.dart';
+import 'package:terminice/terminice.dart';
 
 /// WidgetFrame – Composable frame rendering for terminal widgets.
 ///

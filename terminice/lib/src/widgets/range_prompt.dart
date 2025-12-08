@@ -1,9 +1,6 @@
 import 'dart:math' as math;
 
-import '../style/theme.dart';
-import '../system/terminal.dart';
-import '../system/value_prompt.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// RangePrompt – select a numeric or percent range with two handles.
 ///

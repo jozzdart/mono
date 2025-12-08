@@ -1,10 +1,8 @@
 import 'dart:io';
 import 'dart:async';
 
-import '../style/theme.dart';
-import '../system/prompt_runner.dart';
 import '../system/text_utils.dart' as text;
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 class ServiceEndpoint {
   final String name;

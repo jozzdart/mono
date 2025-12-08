@@ -1,9 +1,4 @@
-import '../style/theme.dart';
-import '../system/focus_navigation.dart';
-import '../system/key_bindings.dart';
-import '../system/prompt_runner.dart';
-import '../system/text_input_buffer.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Form – multi-field form builder for CLI with auto validation and Tab navigation.
 ///

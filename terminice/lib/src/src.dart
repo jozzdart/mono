@@ -2,8 +2,7 @@
 // CORE SYSTEM EXPORTS
 // ════════════════════════════════════════════════════════════════════════════
 
-// Theming & Styling
-export 'style/theme.dart';
+export 'core/core.dart';
 
 // Terminal & I/O
 export 'system/terminal.dart';
@@ -21,8 +20,8 @@ export 'system/table_renderer.dart';
 export 'system/text_utils.dart';
 export 'system/highlighter.dart';
 export 'system/rendering.dart';
-// Note: animation.dart, inline_style.dart, syntax_highlight.dart are
-// re-exported from widget_frame.dart for backward compatibility
+export 'system/inline_style.dart';
+export 'system/syntax_highlight.dart';
 
 // Navigation & Selection
 export 'system/list_navigation.dart';

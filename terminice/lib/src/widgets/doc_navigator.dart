@@ -1,12 +1,6 @@
 import 'dart:io';
 
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/key_bindings.dart';
-import '../system/list_navigation.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
-import 'markdown_viewer.dart';
+import 'package:terminice/terminice.dart';
 
 /// DocNavigator – navigate a Markdown docs tree.
 ///
@@ -251,7 +245,8 @@ class DocNavigator with Themeable {
 
         // Root line and selection line
         ctx.labeledValue('Root', _shortPath(root.path), dimLabel: false);
-        ctx.labeledValue('Selected', relSel.isEmpty ? '.' : relSel, dimLabel: false);
+        ctx.labeledValue('Selected', relSel.isEmpty ? '.' : relSel,
+            dimLabel: false);
 
         ctx.writeConnector();
 

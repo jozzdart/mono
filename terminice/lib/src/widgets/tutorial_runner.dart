@@ -1,10 +1,4 @@
-import '../style/theme.dart';
-import '../system/focus_navigation.dart';
-import '../system/key_bindings.dart';
-import '../system/line_builder.dart';
-import '../system/prompt_runner.dart';
-import '../system/terminal.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// TutorialRunner – interactive tutorial that tracks progress.
 ///
@@ -193,7 +187,8 @@ class TutorialRunner with Themeable {
           final s = current[i];
           final arrow = lb.arrow(isFocused);
           final cb = checkbox(s.done, highlight: isFocused);
-          final titleTxt = truncate(s.title, l.titleWidth).padRight(l.titleWidth);
+          final titleTxt =
+              truncate(s.title, l.titleWidth).padRight(l.titleWidth);
 
           final line = StringBuffer();
           line.write('$arrow $cb ');

@@ -1,11 +1,4 @@
-import '../style/theme.dart';
-import '../system/focus_navigation.dart';
-import '../system/key_bindings.dart';
-import '../system/line_builder.dart';
-import '../system/prompt_runner.dart';
-import '../system/terminal.dart';
-import '../system/widget_frame.dart';
-import 'tag_selector.dart';
+import 'package:terminice/terminice.dart';
 
 /// TodoDashboard – full task board (with tags and priorities)
 ///
@@ -263,7 +256,8 @@ class TodoDashboard with Themeable {
         final header = StringBuffer();
         header.write('${theme.dim}Task${theme.reset}'.padRight(l.titleWidth));
         header.write('  ');
-        header.write('${theme.dim}Priority${theme.reset}'.padRight(l.prioWidth));
+        header
+            .write('${theme.dim}Priority${theme.reset}'.padRight(l.prioWidth));
         header.write('  ');
         header.write('${theme.dim}Tags${theme.reset}'.padRight(l.tagWidth));
         ctx.gutterLine(header.toString());
@@ -278,7 +272,8 @@ class TodoDashboard with Themeable {
 
           final arrow = lb.arrow(isFocused);
           final cb = checkbox(t.done, highlight: isFocused);
-          final titleTxt = truncate(t.title, l.titleWidth).padRight(l.titleWidth);
+          final titleTxt =
+              truncate(t.title, l.titleWidth).padRight(l.titleWidth);
           final prio = priorityBadge(t.priority).padRight(l.prioWidth);
           final tags = renderTags(t.tags, l.tagWidth);
 

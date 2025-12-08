@@ -1,9 +1,4 @@
-import 'key_events.dart';
-export 'key_events.dart' show KeyEventType, KeyEvent;
-import 'prompt_runner.dart';
-import 'text_input_buffer.dart';
-import '../style/theme.dart';
-import 'hints.dart';
+import 'package:terminice/terminice.dart';
 
 // ============================================================================
 // KEY ACTION RESULT
@@ -1011,7 +1006,8 @@ class KeyBindings {
     while (true) {
       final event = KeyEventReader.read();
       final result = handle(event);
-      if (result != KeyActionResult.ignored && result != KeyActionResult.handled) {
+      if (result != KeyActionResult.ignored &&
+          result != KeyActionResult.handled) {
         break;
       }
       // For simple wait scenarios, also break on 'handled' if there are no 'ignored' results possible

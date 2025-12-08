@@ -1,6 +1,5 @@
 import 'dart:io';
-import '../style/theme.dart';
-import 'search_select.dart';
+import 'package:terminice/terminice.dart';
 
 /// FilePickerPrompt – reuses SearchSelectPrompt for navigation & search.
 /// Fully responsive, instant, zero-delay.

@@ -1,7 +1,4 @@
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Toast — a theme-aware popup message display.
 ///
@@ -93,29 +90,29 @@ class Toast with Themeable {
   }
 
   String _iconForVariant() {
-      switch (variant) {
-        case ToastVariant.success:
-          return '✔';
-        case ToastVariant.warning:
-          return '⚠';
-        case ToastVariant.error:
-          return '✖';
-        case ToastVariant.info:
-          return 'ℹ';
-      }
+    switch (variant) {
+      case ToastVariant.success:
+        return '✔';
+      case ToastVariant.warning:
+        return '⚠';
+      case ToastVariant.error:
+        return '✖';
+      case ToastVariant.info:
+        return 'ℹ';
     }
+  }
 
   String _colorForVariant() {
-      switch (variant) {
-        case ToastVariant.success:
+    switch (variant) {
+      case ToastVariant.success:
         return theme.checkboxOn;
-        case ToastVariant.warning:
+      case ToastVariant.warning:
         return theme.highlight;
-        case ToastVariant.error:
+      case ToastVariant.error:
         return '\x1B[31m';
-        case ToastVariant.info:
+      case ToastVariant.info:
         return theme.accent;
-      }
+    }
   }
 }
 

@@ -1,6 +1,6 @@
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
+
 import '../system/text_utils.dart' as text;
-import '../system/widget_frame.dart';
 
 /// Describes an upcoming cron-style task/event.
 class CronEvent {
@@ -66,7 +66,8 @@ class SystemClockLine with Themeable {
     // Prepare list: future-only, within window, sorted.
     final until = now.add(window);
     final upcoming = events
-        .where((e) => !e.scheduledAt.isBefore(now) && !e.scheduledAt.isAfter(until))
+        .where((e) =>
+            !e.scheduledAt.isBefore(now) && !e.scheduledAt.isAfter(until))
         .toList()
       ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
 
@@ -86,8 +87,10 @@ class SystemClockLine with Themeable {
       }
 
       // Column widths
-      final nameWidth = text.clampInt(text.maxOf(upcoming.map((e) => e.name.length)), 12, 36);
-      final srcWidth = text.clampInt(text.maxOf(upcoming.map((e) => (e.source ?? '').length)), 0, 18);
+      final nameWidth =
+          text.clampInt(text.maxOf(upcoming.map((e) => e.name.length)), 12, 36);
+      final srcWidth = text.clampInt(
+          text.maxOf(upcoming.map((e) => (e.source ?? '').length)), 0, 18);
 
       int printed = 0;
       for (final e in upcoming) {
@@ -116,7 +119,8 @@ class SystemClockLine with Themeable {
         final track = StringBuffer();
         for (var i = 0; i <= trackWidth; i++) {
           if (i == idx) {
-            track.write('${theme.accent}${theme.bold}${theme.style.checkboxOnSymbol}${theme.reset}');
+            track.write(
+                '${theme.accent}${theme.bold}${theme.style.checkboxOnSymbol}${theme.reset}');
           } else {
             track.write('${theme.gray}─${theme.reset}');
           }
@@ -151,7 +155,9 @@ class SystemClockLine with Themeable {
 
   String _timeIcon(Duration until) {
     if (until.inMinutes <= 1) return '${theme.highlight}!${theme.reset}';
-    if (until.inMinutes <= 10) return '${theme.info}${theme.style.arrow}${theme.reset}';
+    if (until.inMinutes <= 10) {
+      return '${theme.info}${theme.style.arrow}${theme.reset}';
+    }
     return '${theme.gray}·${theme.reset}';
   }
 
@@ -161,5 +167,3 @@ class SystemClockLine with Themeable {
     return passed / (total == 0 ? 1 : total);
   }
 }
-
-

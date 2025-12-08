@@ -1,10 +1,4 @@
-import '../style/theme.dart';
-import 'search_select.dart';
-import '../system/focus_navigation.dart';
-import '../system/key_bindings.dart';
-import '../system/hints.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// A simple interactive demo to iterate through themes
 /// and preview how they affect the prompt appearance.

@@ -1,5 +1,4 @@
-import '../style/theme.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// StatCards – big numeric highlights (e.g., "✔ Tests: 98%")
 ///

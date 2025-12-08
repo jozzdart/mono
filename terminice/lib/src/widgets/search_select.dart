@@ -1,6 +1,4 @@
-
-import '../style/theme.dart';
-import '../system/searchable_list_prompt.dart';
+import 'package:terminice/terminice.dart';
 
 /// SearchSelectPrompt – filterable list with optional multi-select.
 ///
@@ -44,7 +42,7 @@ class SearchSelectPrompt with Themeable {
     this.showSearch = false,
     this.maxVisible = 10,
     this.theme = PromptTheme.dark,
-  }) ;
+  });
 
   @override
   SearchSelectPrompt copyWithTheme(PromptTheme theme) {

@@ -1,6 +1,4 @@
-import '../style/theme.dart';
-import '../system/value_prompt.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Star rating prompt (1–5) with theme-aware, colored stars.
 ///
@@ -30,8 +28,8 @@ class RatingPrompt with Themeable {
     this.initial = 3,
     this.labels,
     this.theme = PromptTheme.dark,
-  }) : assert(maxStars > 0),
-       assert(initial >= 0);
+  })  : assert(maxStars > 0),
+        assert(initial >= 0);
 
   @override
   RatingPrompt copyWithTheme(PromptTheme theme) {
@@ -64,7 +62,7 @@ class RatingPrompt with Themeable {
     final effectiveLabels = labels;
     if (effectiveLabels != null && effectiveLabels.length >= max) {
       final label = effectiveLabels[(value - 1).clamp(0, max - 1)];
-        ctx.labeledAccent('Rating', label);
+      ctx.labeledAccent('Rating', label);
     } else {
       ctx.numericScale(value, max);
     }

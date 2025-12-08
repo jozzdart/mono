@@ -1,9 +1,4 @@
-
-import '../style/theme.dart';
-import '../system/key_bindings.dart';
-import '../system/selectable_list_prompt.dart';
-import '../system/terminal.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// CheckboxMenu – vertical multi-select checklist with live summary counter.
 ///
@@ -44,8 +39,7 @@ class CheckboxMenu with Themeable {
     this.maxVisible = 12,
     Set<int>? initialSelected,
     this.theme = PromptTheme.dark,
-  })  :
-        initialSelected = {...(initialSelected ?? const <int>{})};
+  }) : initialSelected = {...(initialSelected ?? const <int>{})};
 
   @override
   CheckboxMenu copyWithTheme(PromptTheme theme) {

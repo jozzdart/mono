@@ -1,6 +1,4 @@
-
-import '../style/theme.dart';
-import '../system/dynamic_list_prompt.dart';
+import 'package:terminice/terminice.dart';
 
 /// A node in the tree.
 class TreeNode {
@@ -53,7 +51,7 @@ class TreeExplorer with Themeable {
     this.allowCollapseAll = true,
     this.maxVisible = 18,
     this.theme = PromptTheme.dark,
-  }) ;
+  });
 
   @override
   TreeExplorer copyWithTheme(PromptTheme theme) {

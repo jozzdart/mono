@@ -1,10 +1,4 @@
-import 'list_navigation.dart';
-import 'key_bindings.dart';
-import 'widget_frame.dart';
-import 'prompt_runner.dart';
-import 'terminal.dart';
-import 'text_input_buffer.dart';
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 /// RankedListPrompt – composable system for searchable lists with custom ranking.
 ///
@@ -125,7 +119,8 @@ class RankedListPrompt<T> {
       bool isFocused,
       String query,
     )? renderItem,
-    void Function(FrameContext ctx, String query, bool useFuzzy, int matchCount)?
+    void Function(
+            FrameContext ctx, String query, bool useFuzzy, int matchCount)?
         beforeItems,
     KeyBindings? extraBindings,
   }) {
@@ -220,7 +215,8 @@ class RankedListPrompt<T> {
             } else {
               // Default rendering with span highlighting
               final label = itemLabel(rankedItem.item);
-              final highlighted = highlightSpans(label, rankedItem.spans, theme);
+              final highlighted =
+                  highlightSpans(label, rankedItem.spans, theme);
               final subtitle = itemSubtitle?.call(rankedItem.item);
               final subtitlePart = subtitle == null
                   ? ''
@@ -365,7 +361,11 @@ RankResult? fuzzyMatch(String text, String pattern) {
 
   // Word boundary bonus
   final before = matched.first > 0 ? text[matched.first - 1] : ' ';
-  if (before == ' ' || before == '-' || before == '_' || before == '/' || before == '.') {
+  if (before == ' ' ||
+      before == '-' ||
+      before == '_' ||
+      before == '/' ||
+      before == '.') {
     score += 2500;
   }
 
@@ -399,4 +399,3 @@ RankResult? substringMatch(String text, String pattern) {
 RankResult? standardMatch(String text, String pattern, bool useFuzzy) {
   return useFuzzy ? fuzzyMatch(text, pattern) : substringMatch(text, pattern);
 }
-

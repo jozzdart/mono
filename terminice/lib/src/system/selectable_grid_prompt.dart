@@ -1,12 +1,6 @@
 import 'dart:math';
 
-import 'grid_navigation.dart';
-import 'selection_controller.dart';
-import 'key_bindings.dart';
-import 'widget_frame.dart';
-import 'prompt_runner.dart';
-import 'terminal.dart';
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 /// SelectableGridPrompt – composable system for grid-based selection prompts.
 ///
@@ -223,7 +217,8 @@ class SelectableGridPrompt<T> {
                 buffer.write(cellContent);
               } else {
                 // Default rendering
-                final label = itemLabel?.call(items[idx]) ?? items[idx].toString();
+                final label =
+                    itemLabel?.call(items[idx]) ?? items[idx].toString();
                 buffer.write(_defaultCellRenderer(
                   label,
                   isFocused,
@@ -374,7 +369,8 @@ class SelectableGridPrompt<T> {
       onDown: () => _grid.moveDown(),
       onLeft: () => _grid.moveLeft(),
       onRight: () => _grid.moveRight(),
-      onToggle: multiSelect ? () => _selection.toggle(_grid.focusedIndex) : null,
+      onToggle:
+          multiSelect ? () => _selection.toggle(_grid.focusedIndex) : null,
       showToggleHint: multiSelect,
       onCancel: () => _cancelled = true,
     );
@@ -383,9 +379,8 @@ class SelectableGridPrompt<T> {
   String _defaultCellRenderer(String label, bool isFocused, bool isSelected) {
     final check = multiSelect ? (isSelected ? '[x] ' : '[ ] ') : '';
     final maxText = _computedCellWidth - (multiSelect ? 4 : 2);
-    final visible = label.length > maxText
-        ? '${label.substring(0, maxText - 1)}…'
-        : label;
+    final visible =
+        label.length > maxText ? '${label.substring(0, maxText - 1)}…' : label;
     final padded = (check + visible).padRight(_computedCellWidth);
 
     if (isFocused) {
@@ -530,4 +525,3 @@ extension SelectableGridPromptCards<T> on SelectableGridPrompt<T> {
     return (top: top, bottom: bottom);
   }
 }
-

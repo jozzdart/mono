@@ -1,13 +1,7 @@
 import 'dart:math';
 
-import '../style/theme.dart';
-import '../system/highlighter.dart';
-import '../system/key_bindings.dart';
-import '../system/list_navigation.dart';
-import '../system/prompt_runner.dart';
-import '../system/text_input_buffer.dart';
 import '../system/text_utils.dart' as text_utils;
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 class ManualOption {
   final String flag; // e.g. "-f, --force"
@@ -123,7 +117,8 @@ class CLIManual with Themeable {
         }
 
         filtered = pages.where(matchPage).toList();
-        filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        filtered.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       }
       nav.itemCount = filtered.length;
       nav.reset();
@@ -191,11 +186,12 @@ class CLIManual with Themeable {
       // OPTIONS
       if (page.options.isNotEmpty) {
         lines.add(header('OPTIONS'));
-        final leftWidth = page.options.fold<int>(0,
-            (w, o) => max(w, text_utils.visibleLength(o.flag)));
+        final leftWidth = page.options
+            .fold<int>(0, (w, o) => max(w, text_utils.visibleLength(o.flag)));
         for (final opt in page.options) {
           final left = opt.flag.padRight(leftWidth + 2);
-          final wrapped = wrap(opt.description, max(10, width - (leftWidth + 2)));
+          final wrapped =
+              wrap(opt.description, max(10, width - (leftWidth + 2)));
           if (wrapped.isEmpty) {
             lines.add(left);
           } else {
@@ -285,18 +281,29 @@ class CLIManual with Themeable {
         ctx.writeConnector();
 
         // Fixed layout budgeting: ensure we do not exceed fixed height
-        final staticBefore = 1 /*title*/ + 1 /*search*/ + (style.showBorder ? 1 : 0) /*top connector*/ + 1 /*results header*/;
-        final staticBetween = (style.showBorder ? 1 : 0) /*separator to preview*/;
+        final staticBefore = 1 /*title*/ +
+            1 /*search*/ +
+            (style.showBorder ? 1 : 0) /*top connector*/ +
+            1 /*results header*/;
+        final staticBetween =
+            (style.showBorder ? 1 : 0) /*separator to preview*/;
         final staticPreviewHeader = 1;
         final staticAfter = (style.showBorder ? 1 : 0) /*bottom*/;
 
         // First allocate rows to list and preview; hints will consume the remainder.
-        int availableRows = max(0, linesCount - (staticBefore + staticBetween + staticPreviewHeader + staticAfter));
+        int availableRows = max(
+            0,
+            linesCount -
+                (staticBefore +
+                    staticBetween +
+                    staticPreviewHeader +
+                    staticAfter));
         int listRows = max(3, min(maxVisibleResults, availableRows ~/ 2));
         int previewRows = max(3, max(0, availableRows - listRows));
 
         // Results header
-        ctx.gutterLine('${theme.dim}Results (${filtered.length})${theme.reset}');
+        ctx.gutterLine(
+            '${theme.dim}Results (${filtered.length})${theme.reset}');
 
         // Result window using ListNavigation
         nav.maxVisible = listRows;
@@ -307,7 +314,8 @@ class CLIManual with Themeable {
           final isSel = nav.isSelected(absoluteIdx);
           final prefix = ctx.lb.arrow(isSel);
           final label = _labelFor(window.items[i]);
-          final line = '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
+          final line =
+              '$prefix ${highlightSubstring(label, queryInput.text, theme)}';
           ctx.highlightedLine(line, highlighted: isSel);
         }
 
@@ -345,14 +353,28 @@ class CLIManual with Themeable {
       });
 
       // Custom hints handling for fixed layout
-      final staticBefore = 1 /*title*/ + 1 /*search*/ + (style.showBorder ? 1 : 0) /*top connector*/ + 1 /*results header*/;
+      final staticBefore = 1 /*title*/ +
+          1 /*search*/ +
+          (style.showBorder ? 1 : 0) /*top connector*/ +
+          1 /*results header*/;
       final staticBetween = (style.showBorder ? 1 : 0) /*separator to preview*/;
       final staticPreviewHeader = 1;
       final staticAfter = (style.showBorder ? 1 : 0) /*bottom*/;
-      int availableRows = max(0, linesCount - (staticBefore + staticBetween + staticPreviewHeader + staticAfter));
+      int availableRows = max(
+          0,
+          linesCount -
+              (staticBefore +
+                  staticBetween +
+                  staticPreviewHeader +
+                  staticAfter));
       int listRows = max(3, min(maxVisibleResults, availableRows ~/ 2));
       int previewRows = max(3, max(0, availableRows - listRows));
-      final consumed = staticBefore + listRows + staticBetween + staticPreviewHeader + previewRows + staticAfter;
+      final consumed = staticBefore +
+          listRows +
+          staticBetween +
+          staticPreviewHeader +
+          previewRows +
+          staticAfter;
       final remaining = max(0, linesCount - consumed);
       if (remaining > 0) {
         final hintsBlock = bindings.toHintsGrid(theme);
@@ -376,9 +398,8 @@ class CLIManual with Themeable {
   }
 
   String _labelFor(ManualPage p) {
-    final sect = (p.section == null || p.section!.isEmpty) ? '' : '(${p.section})';
+    final sect =
+        (p.section == null || p.section!.isEmpty) ? '' : '(${p.section})';
     return '${p.name}$sect';
   }
 }
-
-

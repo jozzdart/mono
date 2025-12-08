@@ -1,4 +1,4 @@
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 /// Helpers to render titles and horizontal border lines consistently.
 class FrameRenderer {

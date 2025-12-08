@@ -1,6 +1,4 @@
-import '../style/theme.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart' as wf;
+import 'package:terminice/terminice.dart';
 
 /// Badge – inline, theme-aware colored label (e.g., "SUCCESS", "FAILED").
 ///
@@ -128,7 +126,7 @@ class Badge with Themeable {
 
   /// Returns the colored badge string (for inline use).
   String render() {
-    final inline = wf.InlineStyle(theme);
+    final inline = InlineStyle(theme);
     return inline.badge(
       text,
       tone: tone,

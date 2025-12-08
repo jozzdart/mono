@@ -1,8 +1,4 @@
-
-import '../style/theme.dart';
-import '../system/key_bindings.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// StepperPrompt – interactive step-by-step wizard with progress display.
 ///
@@ -38,8 +34,7 @@ class StepperPrompt with Themeable {
     this.startIndex = 0,
     this.showStepNumbers = true,
     this.theme = PromptTheme.dark,
-  })  :
-        assert(steps.isNotEmpty),
+  })  : assert(steps.isNotEmpty),
         assert(startIndex >= 0);
 
   @override

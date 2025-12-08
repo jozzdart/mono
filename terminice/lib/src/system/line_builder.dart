@@ -1,5 +1,4 @@
-import '../style/theme.dart';
-import 'prompt_runner.dart';
+import 'package:terminice/terminice.dart';
 
 /// LineBuilder – Centralized line-level styling utilities for widgets.
 ///

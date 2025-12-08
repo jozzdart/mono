@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import '../style/theme.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// StatusLine – persistent, theme-aware line rendered at the bottom
 /// of the terminal for live status updates.

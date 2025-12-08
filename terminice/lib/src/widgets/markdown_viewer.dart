@@ -1,8 +1,5 @@
-import '../style/theme.dart';
-import '../system/line_builder.dart';
-import '../system/prompt_runner.dart';
 import '../system/text_utils.dart' as text_utils;
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// MarkdownViewer – renders markdown with colors and headers
 ///

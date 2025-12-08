@@ -1,5 +1,4 @@
-import '../style/theme.dart';
-import '../system/simple_prompt.dart';
+import 'package:terminice/terminice.dart';
 
 /// Password input prompt with masking and optional reveal.
 ///

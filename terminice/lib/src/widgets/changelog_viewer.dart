@@ -1,9 +1,6 @@
 import 'dart:io' show File;
 
-import '../style/theme.dart';
-import '../system/frame_renderer.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// ChangeLogViewer – parse and display a Markdown CHANGELOG nicely.
 ///
@@ -245,5 +242,3 @@ class _Section {
 
   _Section({required this.name});
 }
-
-

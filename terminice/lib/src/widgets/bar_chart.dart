@@ -1,6 +1,6 @@
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
+
 import '../system/text_utils.dart' as text;
-import '../system/widget_frame.dart';
 
 /// BarChartWidget – colored horizontal bar chart in the terminal.
 ///

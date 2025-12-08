@@ -1,7 +1,4 @@
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Renders a big ASCII banner.
 ///
@@ -109,7 +106,8 @@ class Banner with Themeable {
     final sb = StringBuffer();
     for (int i = 0; i < mask.length; i++) {
       if (mask[i] == '1') {
-        final color = ((i + rowIndex) % 2 == 0) ? theme.accent : theme.highlight;
+        final color =
+            ((i + rowIndex) % 2 == 0) ? theme.accent : theme.highlight;
         sb.write('$color█${theme.reset}');
       } else {
         sb.write(' ');

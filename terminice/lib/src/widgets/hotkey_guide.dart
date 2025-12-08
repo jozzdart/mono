@@ -1,8 +1,4 @@
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/key_bindings.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// HotkeyGuide – displays available shortcuts in a themed frame.
 ///

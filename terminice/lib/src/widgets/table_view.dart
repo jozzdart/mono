@@ -1,9 +1,4 @@
-
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/prompt_runner.dart';
-import '../system/table_renderer.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Colorful table rendering with alignment and borders, aligned with ThemeDemo styling.
 ///
@@ -36,8 +31,7 @@ class TableView with Themeable {
     this.columnAlignments,
     this.zebraStripes = true,
     this.theme = PromptTheme.dark,
-  })  :
-        assert(columns.isNotEmpty, 'columns must not be empty');
+  }) : assert(columns.isNotEmpty, 'columns must not be empty');
 
   @override
   TableView copyWithTheme(PromptTheme theme) {

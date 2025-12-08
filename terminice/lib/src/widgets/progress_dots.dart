@@ -1,7 +1,4 @@
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// ProgressDots – themed dots indicator for loading states.
 ///
@@ -82,18 +79,18 @@ class ProgressDots with Themeable {
   }
 
   void _render(RenderOutput out, int phase) {
-      final widgetFrame = WidgetFrame(title: label, theme: theme);
-      widgetFrame.showTo(out, (ctx) {
-        final dots = '.' * ((phase % (maxDots + 1)));
-        ctx.gutterLine(
-            '${theme.dim}$message${theme.reset} ${theme.accent}$dots${theme.reset}');
-      });
+    final widgetFrame = WidgetFrame(title: label, theme: theme);
+    widgetFrame.showTo(out, (ctx) {
+      final dots = '.' * ((phase % (maxDots + 1)));
+      ctx.gutterLine(
+          '${theme.dim}$message${theme.reset} ${theme.accent}$dots${theme.reset}');
+    });
 
-      out.writeln(Hints.bullets([
+    out.writeln(Hints.bullets([
       'Dots indicator',
-        'Theme-aligned borders',
-      ], theme, dim: true));
-    }
+      'Theme-aligned borders',
+    ], theme, dim: true));
+  }
 }
 
 /// Convenience function.

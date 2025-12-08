@@ -1,10 +1,4 @@
-import '../style/theme.dart';
-import '../system/focus_navigation.dart';
-import '../system/key_bindings.dart';
-import '../system/line_builder.dart';
-import '../system/prompt_runner.dart';
-import '../system/text_input_buffer.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// SurveyForm – interactive questionnaire builder.
 ///

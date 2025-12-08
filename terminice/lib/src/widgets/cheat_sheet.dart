@@ -1,6 +1,4 @@
-import '../style/theme.dart';
-import '../system/table_renderer.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// CheatSheet – command list with shortcuts and usage.
 ///

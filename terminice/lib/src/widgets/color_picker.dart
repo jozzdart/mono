@@ -1,12 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-
-import '../style/theme.dart';
-import '../system/terminal.dart';
-import '../system/key_bindings.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Interactive color picker with ANSI preview and hex output.
 ///
@@ -45,8 +40,7 @@ class ColorPickerPrompt with Themeable {
     this.cols = 24,
     this.rows = 8,
     this.theme = PromptTheme.dark,
-  })  :
-        assert(cols >= 6 && cols <= 48),
+  })  : assert(cols >= 6 && cols <= 48),
         assert(rows >= 3 && rows <= 24);
 
   @override

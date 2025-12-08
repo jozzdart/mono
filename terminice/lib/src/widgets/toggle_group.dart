@@ -1,9 +1,4 @@
-
-import '../style/theme.dart';
-import '../system/focus_navigation.dart';
-import '../system/key_bindings.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// ToggleGroup – manage multiple on/off toggles with elegant keyboard flipping.
 ///
@@ -48,7 +43,7 @@ class ToggleGroup with Themeable {
     this.items, {
     this.alignContent = true,
     this.theme = PromptTheme.dark,
-  }) ;
+  });
 
   @override
   ToggleGroup copyWithTheme(PromptTheme theme) {

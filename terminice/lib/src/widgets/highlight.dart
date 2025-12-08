@@ -1,5 +1,4 @@
-import '../style/theme.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Pretty-prints text with simple syntax and color rules.
 ///

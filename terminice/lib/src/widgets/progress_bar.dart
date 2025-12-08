@@ -1,7 +1,4 @@
-import '../style/theme.dart';
-import '../system/hints.dart';
-import '../system/prompt_runner.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// Themed progress bar for displaying progress.
 ///
@@ -86,50 +83,50 @@ class ProgressBar with Themeable {
   }
 
   void _render(RenderOutput out, int current, int total, int shimmerPhase) {
-        final widgetFrame = WidgetFrame(title: label, theme: theme);
-        widgetFrame.showTo(out, (ctx) {
+    final widgetFrame = WidgetFrame(title: label, theme: theme);
+    widgetFrame.showTo(out, (ctx) {
       final ratio = total > 0 ? current / total : 0.0;
-          final filled = (ratio * width).clamp(0, width).round();
-          final percent = (ratio * 100).clamp(0, 100).round();
+      final filled = (ratio * width).clamp(0, width).round();
+      final percent = (ratio * 100).clamp(0, 100).round();
 
-          final buffer = StringBuffer();
-          for (int i = 0; i < width; i++) {
-            final isFilled = i < filled;
-            if (!isFilled) {
-              buffer.write('${theme.dim}·${theme.reset}');
-              continue;
-            }
+      final buffer = StringBuffer();
+      for (int i = 0; i < width; i++) {
+        final isFilled = i < filled;
+        if (!isFilled) {
+          buffer.write('${theme.dim}·${theme.reset}');
+          continue;
+        }
 
-            final headPos = filled - 1;
-            final distance = (i - headPos).abs();
+        final headPos = filled - 1;
+        final distance = (i - headPos).abs();
         final headGlow = (3 - distance).clamp(0, 3);
 
-            final cycle = ((i + shimmerPhase) % 6);
-            final baseColor = (cycle < 3) ? theme.accent : theme.highlight;
+        final cycle = ((i + shimmerPhase) % 6);
+        final baseColor = (cycle < 3) ? theme.accent : theme.highlight;
 
-            const shades = ['░', '▒', '▓', '█'];
+        const shades = ['░', '▒', '▓', '█'];
         final ch = shades[headGlow.clamp(0, 3)];
 
-            if (i == headPos) {
-              buffer.write('${theme.inverse}$baseColor$ch${theme.reset}');
-            } else if (headGlow > 0) {
-              buffer.write('${theme.bold}$baseColor$ch${theme.reset}');
-            } else {
-              buffer.write('$baseColor$ch${theme.reset}');
-            }
-          }
-
-          ctx.gutterLine(buffer.toString());
-          ctx.gutterLine(
-              '${theme.dim}Progress:${theme.reset} ${theme.accent}$percent%${theme.reset}   '
-          '${theme.dim}($current/$total)${theme.reset}');
-        });
-
-        out.writeln(Hints.bullets([
-      'Progress bar',
-          'Theme-aware accents',
-        ], theme, dim: true));
+        if (i == headPos) {
+          buffer.write('${theme.inverse}$baseColor$ch${theme.reset}');
+        } else if (headGlow > 0) {
+          buffer.write('${theme.bold}$baseColor$ch${theme.reset}');
+        } else {
+          buffer.write('$baseColor$ch${theme.reset}');
+        }
       }
+
+      ctx.gutterLine(buffer.toString());
+      ctx.gutterLine(
+          '${theme.dim}Progress:${theme.reset} ${theme.accent}$percent%${theme.reset}   '
+          '${theme.dim}($current/$total)${theme.reset}');
+    });
+
+    out.writeln(Hints.bullets([
+      'Progress bar',
+      'Theme-aware accents',
+    ], theme, dim: true));
+  }
 }
 
 /// Simple progress indicator that updates inline.

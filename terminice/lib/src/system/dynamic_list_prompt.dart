@@ -1,8 +1,4 @@
-import 'list_navigation.dart';
-import 'key_bindings.dart';
-import 'widget_frame.dart';
-import 'prompt_runner.dart';
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 /// DynamicListPrompt – composable system for lists with dynamic items.
 ///
@@ -325,7 +321,8 @@ mixin TreeNavigationHelper<T> {
     required List<T> roots,
     required bool Function(T node) isExpanded,
     required List<T> Function(T node) getChildren,
-    required E Function(T node, int depth, bool isLast, List<bool> ancestorLines)
+    required E Function(
+            T node, int depth, bool isLast, List<bool> ancestorLines)
         createEntry,
   }) {
     final result = <E>[];
@@ -371,4 +368,3 @@ mixin PathNavigationHelper {
     return parts.isEmpty ? path : parts.last;
   }
 }
-

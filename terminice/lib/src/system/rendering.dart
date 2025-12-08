@@ -1,4 +1,4 @@
-import '../style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 /// Returns a line prefixed with the themed gutter.
 /// If [content] is empty/whitespace, only the gutter is returned.

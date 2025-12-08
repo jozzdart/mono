@@ -1,5 +1,4 @@
-import '../style/theme.dart';
-import '../system/widget_frame.dart';
+import 'package:terminice/terminice.dart';
 
 /// MiniAnalytics – compact trend with growth percent and arrow.
 ///
