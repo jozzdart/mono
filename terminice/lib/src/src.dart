@@ -4,20 +4,6 @@
 
 export 'core/core.dart';
 
-// Rendering Infrastructure
-export 'system/prompt_runner.dart';
-export 'system/framed_layout.dart';
-export 'system/frame_renderer.dart';
-export 'system/widget_frame.dart';
-export 'system/line_builder.dart';
-export 'system/hints.dart';
-export 'system/table_renderer.dart';
-export 'system/text_utils.dart';
-export 'system/highlighter.dart';
-export 'system/rendering.dart';
-export 'system/inline_style.dart';
-export 'system/syntax_highlight.dart';
-
 // Navigation & Selection
 export 'system/list_navigation.dart';
 export 'system/grid_navigation.dart';

@@ -1,6 +1,6 @@
 import 'package:terminice/terminice.dart';
 
-import '../system/text_utils.dart' as text;
+import '../core/rendering/text_utils.dart' as text;
 
 /// Represents a command in the palette.
 class CommandEntry {

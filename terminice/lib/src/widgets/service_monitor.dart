@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 
-import '../system/text_utils.dart' as text;
+import '../core/rendering/text_utils.dart' as text;
 import 'package:terminice/terminice.dart';
 
 class ServiceEndpoint {

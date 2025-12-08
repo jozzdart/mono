@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import '../system/text_utils.dart' as text;
+import '../core/rendering/text_utils.dart' as text;
 import 'package:terminice/terminice.dart';
 
 /// LaunchPad – grid of big icons/buttons for actions.

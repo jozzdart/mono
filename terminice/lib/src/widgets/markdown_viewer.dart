@@ -1,4 +1,4 @@
-import '../system/text_utils.dart' as text_utils;
+import '../core/rendering/text_utils.dart' as text_utils;
 import 'package:terminice/terminice.dart';
 
 /// MarkdownViewer – renders markdown with colors and headers

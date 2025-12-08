@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import '../system/text_utils.dart' as text;
+import '../core/rendering/text_utils.dart' as text;
 import 'package:terminice/terminice.dart';
 
 /// ResourceGrid – tabular boxes with CPU/Memory/IO graphs.
