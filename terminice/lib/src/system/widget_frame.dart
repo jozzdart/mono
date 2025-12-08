@@ -7,7 +7,6 @@ import 'list_navigation.dart';
 import 'prompt_runner.dart';
 
 // Re-export from split modules for backward compatibility
-export 'animation.dart';
 export 'inline_style.dart';
 export 'syntax_highlight.dart';
 
