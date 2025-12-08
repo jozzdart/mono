@@ -5,7 +5,6 @@ import '../system/focus_navigation.dart';
 import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_bindings.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/widget_frame.dart';
 
@@ -157,8 +156,8 @@ class QuizWidget with Themeable {
   void _renderFeedback(int qi, bool isCorrect, QuizQuestion q, int selected) {
     final style = theme.style;
     final title = _title(qi);
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
+    final frame = FramedLayout(title, theme: theme);
+    final gutter = frame.gutter();
 
     final verdict = isCorrect
         ? '${theme.info}${theme.bold}Correct!${theme.reset}'
@@ -167,16 +166,14 @@ class QuizWidget with Themeable {
     final correctAns = q.options[q.correctIndex];
     final chosen = q.options[selected];
 
-    stdout.writeln('${lb.gutter()}$verdict');
+    stdout.writeln('$gutter$verdict');
     if (!isCorrect) {
+      stdout.writeln('$gutter${theme.dim}Your answer:${theme.reset} $chosen');
       stdout.writeln(
-          '${lb.gutter()}${theme.dim}Your answer:${theme.reset} $chosen');
-      stdout.writeln(
-          '${lb.gutter()}${theme.dim}Correct answer:${theme.reset} ${theme.info}$correctAns${theme.reset}');
+          '$gutter${theme.dim}Correct answer:${theme.reset} ${theme.info}$correctAns${theme.reset}');
     }
 
     if (style.showBorder) {
-      final frame = FramedLayout(title, theme: theme);
       stdout.writeln(frame.bottom());
     }
 
@@ -196,15 +193,14 @@ class QuizWidget with Themeable {
   void _renderSummary(int correct) {
     final style = theme.style;
     final t = 'Quiz Summary';
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
     final frame = FramedLayout(t, theme: theme);
+    final gutter = frame.gutter();
     stdout.writeln('${theme.bold}${frame.top()}${theme.reset}');
 
     final total = questions.length;
     final percent = ((correct / total) * 100).clamp(0, 100).toStringAsFixed(0);
     stdout.writeln(
-        '${lb.gutter()}Score: ${theme.accent}$correct${theme.reset}/${theme.bold}$total${theme.reset} (${theme.highlight}$percent%${theme.reset})');
+        '${gutter}Score: ${theme.accent}$correct${theme.reset}/${theme.bold}$total${theme.reset} (${theme.highlight}$percent%${theme.reset})');
 
     if (style.showBorder) {
       stdout.writeln(frame.bottom());

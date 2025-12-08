@@ -1,9 +1,5 @@
-import 'dart:io';
-
 import '../style/theme.dart';
-import '../system/framed_layout.dart';
 import '../system/key_bindings.dart';
-import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
 import '../system/text_input_buffer.dart';
 import '../system/widget_frame.dart';
@@ -56,55 +52,45 @@ class UnitConverter with Themeable {
 
   /// Render the converter panel.
   void show() {
-    // Use centralized line builder for consistent styling
-    final lb = LineBuilder(theme);
-    final style = theme.style;
+    final frame = WidgetFrame(title: title, theme: theme);
+    frame.show((ctx) {
+      // Length section
+      ctx.gutterLine(_sectionHeader('Length · cm ↔ in'));
+      final pairLen = _resolveLengthPair();
+      ctx.gutterLine(_equation(
+        leftLabel: 'cm',
+        leftValue: pairLen.cm,
+        rightLabel: 'in',
+        rightValue: pairLen.in_,
+        direction: '→',
+      ));
+      ctx.gutterLine(_equation(
+        leftLabel: 'in',
+        leftValue: pairLen.in_,
+        rightLabel: 'cm',
+        rightValue: pairLen.cm,
+        direction: '→',
+      ));
 
-    final frame = FramedLayout(title, theme: theme);
-    final top = frame.top();
-    stdout.writeln('${theme.bold}$top${theme.reset}');
-
-    // Length section
-    stdout.writeln('${lb.gutter()}${_sectionHeader('Length · cm ↔ in')}');
-    final pairLen = _resolveLengthPair();
-    stdout.writeln('${lb.gutter()}${_equation(
-      leftLabel: 'cm',
-      leftValue: pairLen.cm,
-      rightLabel: 'in',
-      rightValue: pairLen.in_,
-      direction: '→',
-    )}');
-    stdout.writeln('${lb.gutter()}${_equation(
-      leftLabel: 'in',
-      leftValue: pairLen.in_,
-      rightLabel: 'cm',
-      rightValue: pairLen.cm,
-      direction: '→',
-    )}');
-
-    // Currency section
-    stdout.writeln(
-        '${lb.gutter()}${_sectionHeader('Currency · USD ↔ EUR')}');
-    final pairCur = _resolveCurrencyPair();
-    stdout.writeln('${lb.gutter()}${_rateLine()}');
-    stdout.writeln('${lb.gutter()}${_equation(
-      leftLabel: 'USD',
-      leftValue: pairCur.usd,
-      rightLabel: 'EUR',
-      rightValue: pairCur.eur,
-      direction: '→',
-    )}');
-    stdout.writeln('${lb.gutter()}${_equation(
-      leftLabel: 'EUR',
-      leftValue: pairCur.eur,
-      rightLabel: 'USD',
-      rightValue: pairCur.usd,
-      direction: '→',
-    )}');
-
-    if (style.showBorder) {
-      stdout.writeln(frame.bottom());
-    }
+      // Currency section
+      ctx.gutterLine(_sectionHeader('Currency · USD ↔ EUR'));
+      final pairCur = _resolveCurrencyPair();
+      ctx.gutterLine(_rateLine());
+      ctx.gutterLine(_equation(
+        leftLabel: 'USD',
+        leftValue: pairCur.usd,
+        rightLabel: 'EUR',
+        rightValue: pairCur.eur,
+        direction: '→',
+      ));
+      ctx.gutterLine(_equation(
+        leftLabel: 'EUR',
+        leftValue: pairCur.eur,
+        rightLabel: 'USD',
+        rightValue: pairCur.usd,
+        direction: '→',
+      ));
+    });
   }
 
   /// Interactive mode: live input with toggles.
