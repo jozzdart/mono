@@ -1,5 +1,3 @@
-import 'prompt_config.dart';
-
 /// Defines a complete styling system for the terminal prompt:
 /// - Colors
 /// - Box drawing characters
@@ -266,12 +264,6 @@ class PromptStyle {
 /// Implementing this mixin provides automatic builder methods via the
 /// [ThemeableBuilder] extension, eliminating repetitive copyWith patterns.
 ///
-/// **Why use this pattern?**
-/// - **DRY**: Define theme property once, get all builder methods free
-/// - **Consistency**: All themeable widgets have the same fluent API
-/// - **Discoverability**: IDE autocomplete shows available themes
-/// - **Type-safe**: Builder methods return the correct concrete type
-///
 /// **Implementation:**
 ///
 /// 1. Add `with Themeable` to your widget class
@@ -298,50 +290,17 @@ class PromptStyle {
 ///   .withDarkTheme()                // Dark preset
 ///   .withMatrixTheme()              // Matrix preset
 ///   .withFireTheme()                // Fire preset
-///   .withPastelTheme()              // Pastel preset
-///   .withConfig(myConfig);          // Apply from PromptConfig
+///   .withPastelTheme();             // Pastel preset
 /// ```
 mixin Themeable {
   /// The current theme for styling.
   PromptTheme get theme;
 
   /// Creates a copy with a different theme.
-  ///
-  /// Implementers should copy all fields and apply the new theme.
   Themeable copyWithTheme(PromptTheme theme);
 }
 
 /// Builder extensions for [Themeable] widgets.
-///
-/// Provides a fluent API for configuring themes on any widget
-/// that implements [Themeable]. All methods return the same concrete
-/// type as the receiver, enabling type-safe chaining.
-///
-/// **Available methods:**
-/// - [withTheme] - Apply any custom theme
-/// - [withDarkTheme] - Apply the dark theme (default)
-/// - [withMatrixTheme] - Apply the matrix/green theme
-/// - [withFireTheme] - Apply the fire/red theme
-/// - [withPastelTheme] - Apply the pastel/soft theme
-/// - [withOceanTheme] - Apply the ocean/blue theme
-/// - [withMonochromeTheme] - Apply the monochrome/ASCII theme
-/// - [withNeonTheme] - Apply the neon/synthwave theme
-/// - [withArcaneTheme] - Apply the arcane/mystical theme
-/// - [withPhantomTheme] - Apply the phantom/ghostly theme
-/// - [withConfig] - Apply theme from a [PromptConfig] object
-///
-/// **Example:**
-/// ```dart
-/// // Direct theme methods
-/// final prompt = Banner('Title')
-///   .withMatrixTheme()
-///   .show();
-///
-/// // Using PromptConfig (shared config)
-/// final config = PromptConfig.matrix;
-/// final banner = Banner('Title').withConfig(config);
-/// final box = InfoBox('Content').withConfig(config);
-/// ```
 extension ThemeableBuilder<T extends Themeable> on T {
   /// Creates a copy with a custom theme.
   T withTheme(PromptTheme theme) {
@@ -374,23 +333,4 @@ extension ThemeableBuilder<T extends Themeable> on T {
 
   /// Creates a copy with the phantom theme (ghostly apparition).
   T withPhantomTheme() => withTheme(PromptTheme.phantom);
-
-  /// Creates a copy with the theme from a [PromptConfig].
-  ///
-  /// This enables using shared [PromptConfig] objects with any
-  /// [Themeable] widget, even those that don't support animations.
-  ///
-  /// **Example:**
-  /// ```dart
-  /// // Create a shared config
-  /// final teamConfig = PromptConfig.matrix;
-  ///
-  /// // Use with ANY Themeable widget (all 60+ widgets!)
-  /// final banner = Banner('Title').withConfig(teamConfig);
-  /// final box = InfoBox('Info').withConfig(teamConfig);
-  /// final table = TableView(data).withConfig(teamConfig);
-  /// ```
-  T withConfig(PromptConfig config) {
-    return copyWithTheme(config.theme) as T;
-  }
 }

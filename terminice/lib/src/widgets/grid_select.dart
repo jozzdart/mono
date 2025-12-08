@@ -1,4 +1,4 @@
-import '../style/prompt_config.dart';
+
 import '../style/theme.dart';
 import '../system/selectable_grid_prompt.dart';
 
@@ -13,7 +13,6 @@ import '../system/selectable_grid_prompt.dart';
 /// **Implementation:** Uses [SelectableGridPrompt] for core functionality,
 /// demonstrating composition over inheritance.
 ///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
 /// // Fluent API
 /// final selected = GridSelectPrompt(options)
@@ -21,8 +20,7 @@ import '../system/selectable_grid_prompt.dart';
 ///   .run();
 ///
 /// // With shared config
-/// final config = PromptConfig.fire;
-/// final selected = GridSelectPrompt(options, config: config).run();
+/// final selected = GridSelectPrompt(options).run();
 /// ```
 class GridSelectPrompt with Themeable {
   final List<String> options;
@@ -37,7 +35,6 @@ class GridSelectPrompt with Themeable {
   /// Creates a grid select prompt.
   ///
   /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
   /// - A direct [theme] parameter (for convenience)
   GridSelectPrompt(
     this.options, {
@@ -46,11 +43,8 @@ class GridSelectPrompt with Themeable {
     this.multiSelect = false,
     this.cellWidth,
     this.maxColumns,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  }) : theme = config?.theme ?? theme;
+    this.theme = PromptTheme.dark,
+  }) ;
 
   @override
   GridSelectPrompt copyWithTheme(PromptTheme theme) {

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'style/prompt_config.dart';
 import 'style/theme.dart';
 import 'widgets/badge.dart';
 import 'widgets/banner.dart';
@@ -51,12 +50,12 @@ import 'widgets/wizard.dart';
 /// Example usage:
 /// ```dart
 /// // Basic usage
-/// final password = await terminice.password(label: 'Enter password');
+/// final password = terminice.password(label: 'Enter password');
 /// final confirmed = terminice.confirm(label: 'Delete', message: 'Are you sure?');
 ///
 /// // With theme
-/// final pwd = await terminice.arcane.password(label: 'Secret');
-/// final name = await terminice.matrix.text(prompt: 'Your name');
+/// final pwd = terminice.arcane.password(label: 'Secret');
+/// final name = terminice.matrix.text(prompt: 'Your name');
 ///
 /// // With custom theme
 /// final result = terminice.themed(PromptTheme.fire).slider('Volume');
@@ -72,33 +71,25 @@ final Terminice terminice = Terminice();
 /// ```dart
 /// import 'package:terminice/terminice.dart';
 ///
-/// void main() async {
+/// void main() {
 ///   // Basic usage
-///   final pwd = await terminice.password(label: 'Password');
+///   final pwd = terminice.password(label: 'Password');
 ///
 ///   // With theme accessor
-///   final name = await terminice.arcane.text(prompt: 'Your name');
+///   final name = terminice.arcane.text(prompt: 'Your name');
 ///   final confirmed = terminice.matrix.confirm(label: 'Save', message: 'Continue?');
 ///
 ///   // With themed() method
 ///   final volume = terminice.themed(PromptTheme.fire).slider('Volume');
-///
-///   // With config
-///   final config = PromptConfig.matrix;
-///   final result = terminice.withConfig(config).rating('Rate this');
 /// }
 /// ```
 class Terminice {
   /// Default theme for all widgets when not specified.
   final PromptTheme defaultTheme;
 
-  /// Default config for all widgets when not specified.
-  final PromptConfig? defaultConfig;
-
-  /// Creates a Terminice instance with optional default theme and config.
+  /// Creates a Terminice instance with optional default theme.
   const Terminice({
     this.defaultTheme = PromptTheme.dark,
-    this.defaultConfig,
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -109,7 +100,7 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final pwd = await terminice.dark.password(label: 'Password');
+  /// final pwd = terminice.dark.password(label: 'Password');
   /// ```
   Terminice get dark => themed(PromptTheme.dark);
 
@@ -117,7 +108,7 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final pwd = await terminice.matrix.password(label: 'Password');
+  /// final pwd = terminice.matrix.password(label: 'Password');
   /// ```
   Terminice get matrix => themed(PromptTheme.matrix);
 
@@ -125,7 +116,7 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final pwd = await terminice.fire.password(label: 'Password');
+  /// final pwd = terminice.fire.password(label: 'Password');
   /// ```
   Terminice get fire => themed(PromptTheme.fire);
 
@@ -133,7 +124,7 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final pwd = await terminice.pastel.password(label: 'Password');
+  /// final pwd = terminice.pastel.password(label: 'Password');
   /// ```
   Terminice get pastel => themed(PromptTheme.pastel);
 
@@ -141,7 +132,7 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final pwd = await terminice.ocean.password(label: 'Password');
+  /// final pwd = terminice.ocean.password(label: 'Password');
   /// ```
   Terminice get ocean => themed(PromptTheme.ocean);
 
@@ -149,7 +140,7 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final pwd = await terminice.monochrome.password(label: 'Password');
+  /// final pwd = terminice.monochrome.password(label: 'Password');
   /// ```
   Terminice get monochrome => themed(PromptTheme.monochrome);
 
@@ -157,7 +148,7 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final pwd = await terminice.neon.password(label: 'Password');
+  /// final pwd = terminice.neon.password(label: 'Password');
   /// ```
   Terminice get neon => themed(PromptTheme.neon);
 
@@ -165,7 +156,7 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final pwd = await terminice.arcane.password(label: 'Password');
+  /// final pwd = terminice.arcane.password(label: 'Password');
   /// ```
   Terminice get arcane => themed(PromptTheme.arcane);
 
@@ -173,7 +164,7 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final pwd = await terminice.phantom.password(label: 'Password');
+  /// final pwd = terminice.phantom.password(label: 'Password');
   /// ```
   Terminice get phantom => themed(PromptTheme.phantom);
 
@@ -186,47 +177,10 @@ class Terminice {
   /// **Example:**
   /// ```dart
   /// final fire = terminice.themed(PromptTheme.fire);
-  /// final pwd = await fire.password(label: 'Password');
+  /// final pwd = fire.password(label: 'Password');
   /// ```
   Terminice themed(PromptTheme theme) {
-    return Terminice(
-      defaultTheme: theme,
-      defaultConfig: defaultConfig,
-    );
-  }
-
-  /// Creates a new Terminice instance with the specified config.
-  ///
-  /// **Example:**
-  /// ```dart
-  /// final config = PromptConfig.matrix;
-  /// final api = terminice.withConfig(config);
-  /// final pwd = await api.password(label: 'Password');
-  /// ```
-  Terminice withConfig(PromptConfig config) {
-    return Terminice(
-      defaultTheme: config.theme,
-      defaultConfig: config,
-    );
-  }
-
-  /// Creates a new Terminice instance with both theme and config.
-  ///
-  /// **Example:**
-  /// ```dart
-  /// final api = terminice.configure(
-  ///   theme: PromptTheme.arcane,
-  ///   config: PromptConfig.animated,
-  /// );
-  /// ```
-  Terminice configure({
-    PromptTheme? theme,
-    PromptConfig? config,
-  }) {
-    return Terminice(
-      defaultTheme: theme ?? config?.theme ?? defaultTheme,
-      defaultConfig: config ?? defaultConfig,
-    );
+    return Terminice(defaultTheme: theme);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -239,21 +193,21 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final pwd = await terminice.password(label: 'Password');
-  /// final secret = await terminice.arcane.password(label: 'Secret');
+  /// final pwd = terminice.password(label: 'Password');
+  /// final secret = terminice.arcane.password(label: 'Secret');
   /// ```
-  Future<String> password({
+  String? password({
     required String label,
-    bool allowEmpty = false,
+    bool required = true,
     String maskChar = '•',
-    PromptConfig? config,
+    bool allowReveal = true,
     PromptTheme? theme,
   }) {
     return PasswordPrompt(
-      label: label,
-      allowEmpty: allowEmpty,
+      prompt: label,
+      required: required,
       maskChar: maskChar,
-      config: config ?? defaultConfig,
+      allowReveal: allowReveal,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -264,14 +218,13 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final name = await terminice.text(prompt: 'Your name');
+  /// final name = terminice.text(prompt: 'Your name');
   /// ```
-  Future<String?> text({
+  String? text({
     required String prompt,
     String? placeholder,
     String Function(String)? validator,
     bool required = true,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return TextPrompt(
@@ -279,7 +232,6 @@ class Terminice {
       placeholder: placeholder,
       validator: validator,
       required: required,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -328,7 +280,6 @@ class Terminice {
     String yesLabel = 'Yes',
     String noLabel = 'No',
     bool defaultYes = true,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return ConfirmPrompt(
@@ -337,7 +288,6 @@ class Terminice {
       yesLabel: yesLabel,
       noLabel: noLabel,
       defaultYes: defaultYes,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -359,7 +309,6 @@ class Terminice {
     bool multiSelect = false,
     bool showSearch = false,
     int maxVisible = 10,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return SearchSelectPrompt(
@@ -368,7 +317,6 @@ class Terminice {
       multiSelect: multiSelect,
       showSearch: showSearch,
       maxVisible: maxVisible,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -389,7 +337,6 @@ class Terminice {
     required List<String> options,
     int maxVisible = 12,
     Set<int>? initialSelected,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return CheckboxMenu(
@@ -397,7 +344,6 @@ class Terminice {
       options: options,
       maxVisible: maxVisible,
       initialSelected: initialSelected,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -420,7 +366,6 @@ class Terminice {
     bool multiSelect = false,
     int? cellWidth,
     int? maxColumns,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return GridSelectPrompt(
@@ -430,7 +375,6 @@ class Terminice {
       multiSelect: multiSelect,
       cellWidth: cellWidth,
       maxColumns: maxColumns,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -484,13 +428,11 @@ class Terminice {
   List<String> tags(
     List<String> tags, {
     String prompt = 'Select tags',
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return TagSelector(
       tags,
       prompt: prompt,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -513,13 +455,11 @@ class Terminice {
   Map<String, bool> toggles(
     String title,
     List<ToggleItem> items, {
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return ToggleGroup(
       title,
       items,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -541,14 +481,12 @@ class Terminice {
     required List<CommandEntry> commands,
     String label = 'Command Palette',
     int maxVisible = 12,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return CommandPalette(
       commands: commands,
       label: label,
       maxVisible: maxVisible,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -573,9 +511,7 @@ class Terminice {
     num step = 1,
     int width = 28,
     String unit = '%',
-    PromptConfig? config,
     PromptTheme? theme,
-    bool animated = true,
   }) {
     return SliderPrompt(
       label,
@@ -585,9 +521,7 @@ class Terminice {
       step: step,
       width: width,
       unit: unit,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
-      animated: animated,
     ).run();
   }
 
@@ -604,18 +538,14 @@ class Terminice {
     int maxStars = 5,
     int initial = 3,
     List<String>? labels,
-    PromptConfig? config,
     PromptTheme? theme,
-    bool animated = false,
   }) {
     return RatingPrompt(
       prompt,
       maxStars: maxStars,
       initial: initial,
       labels: labels,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
-      animated: animated,
     ).run();
   }
 
@@ -636,9 +566,7 @@ class Terminice {
     num step = 1,
     int width = 28,
     String unit = '%',
-    PromptConfig? config,
     PromptTheme? theme,
-    bool animated = false,
   }) {
     return RangePrompt(
       label,
@@ -649,9 +577,7 @@ class Terminice {
       step: step,
       width: width,
       unit: unit,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
-      animated: animated,
     ).run();
   }
 
@@ -679,13 +605,11 @@ class Terminice {
   FormResult? form({
     required String title,
     required List<FormFieldSpec> fields,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return Form(
       title: title,
       fields: fields,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -696,31 +620,27 @@ class Terminice {
   ///
   /// **Example:**
   /// ```dart
-  /// final result = await terminice.wizard(
+  /// final result = terminice.wizard(
   ///   title: 'Setup',
   ///   steps: [
   ///     WizardStep(
   ///       id: 'name',
   ///       label: 'Your Name',
-  ///       run: (state, theme) async {
-  ///         return await terminice.text(prompt: 'Name');
-  ///       },
+  ///       run: (state, theme) => terminice.text(prompt: 'Name'),
   ///     ),
   ///   ],
   /// );
   /// ```
-  Future<Map<String, dynamic>?> wizard({
+  Map<String, dynamic>? wizard({
     required String title,
     required List<WizardStep> steps,
     bool showProgress = true,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return Wizard(
       title: title,
       steps: steps,
       showProgress: showProgress,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -741,7 +661,6 @@ class Terminice {
     required List<String> steps,
     int startIndex = 0,
     bool showStepNumbers = true,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return StepperPrompt(
@@ -749,7 +668,6 @@ class Terminice {
       steps: steps,
       startIndex: startIndex,
       showStepNumbers: showStepNumbers,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -856,7 +774,6 @@ class Terminice {
     required List<TreeNode> roots,
     bool allowCollapseAll = true,
     int maxVisible = 18,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return TreeExplorer(
@@ -864,7 +781,6 @@ class Terminice {
       roots: roots,
       allowCollapseAll: allowCollapseAll,
       maxVisible: maxVisible,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -882,7 +798,6 @@ class Terminice {
     String? initialHex,
     int cols = 24,
     int rows = 8,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     return ColorPickerPrompt(
@@ -890,7 +805,6 @@ class Terminice {
       initialHex: initialHex,
       cols: cols,
       rows: rows,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -944,7 +858,6 @@ class Terminice {
     required List<List<String>> rows,
     List<TableAlign>? columnAlignments,
     bool zebraStripes = true,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     TableView(
@@ -953,7 +866,6 @@ class Terminice {
       rows: rows,
       columnAlignments: columnAlignments,
       zebraStripes: zebraStripes,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
@@ -1001,14 +913,12 @@ class Terminice {
     String message, {
     InfoBoxType type = InfoBoxType.info,
     String? title,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     InfoBox(
       message,
       type: type,
       title: title,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).show();
   }
@@ -1023,68 +933,66 @@ class Terminice {
     List<String> messages, {
     InfoBoxType type = InfoBoxType.info,
     String? title,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     InfoBox.multi(
       messages,
       type: type,
       title: title,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).show();
   }
 
   /// Animated progress bar.
   ///
-  /// **Example:**
-  /// ```dart
-  /// terminice.progress('Downloading');
-  /// ```
-  void progress(
-    String label, {
-    int total = 100,
-    int width = 36,
-    Duration? totalDuration,
-    PromptConfig? config,
-    PromptTheme? theme,
-  }) {
-    ProgressBar(
-      label,
-      total: total,
-      width: width,
-      totalDuration: totalDuration,
-      config: config ?? defaultConfig,
-      theme: theme ?? defaultTheme,
-    ).run();
-  }
-
-  /// Toast notification that fades away.
+  /// Creates a progress bar for manual updates.
+  ///
+  /// Returns a [ProgressBar] instance. Call `.show(current:, total:)` to update,
+  /// and `.clear()` when done.
   ///
   /// **Example:**
   /// ```dart
-  /// terminice.toast('Saved!', variant: ToastVariant.success);
+  /// final bar = terminice.progress('Downloading');
+  /// bar.show(current: 0, total: 100);
+  /// // ... do work ...
+  /// bar.show(current: 50, total: 100);
+  /// bar.clear();
   /// ```
-  void toast(
+  ProgressBar progress(
+    String label, {
+    int width = 36,
+    PromptTheme? theme,
+  }) {
+    return ProgressBar(
+      label,
+      width: width,
+      theme: theme ?? defaultTheme,
+    );
+  }
+
+  /// Creates a toast notification for manual display.
+  ///
+  /// Returns a [Toast] instance. Call `.show()` to display, `.clear()` to remove.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final t = terminice.toast('Saved!', variant: ToastVariant.success);
+  /// t.show();
+  /// // ... do something ...
+  /// t.clear();
+  /// ```
+  Toast toast(
     String message, {
     String label = 'Toast',
     ToastVariant variant = ToastVariant.info,
-    Duration duration = const Duration(milliseconds: 1200),
-    Duration fadeOut = const Duration(milliseconds: 600),
-    int fps = 18,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
-    Toast(
+    return Toast(
       message,
       label: label,
       variant: variant,
-      duration: duration,
-      fadeOut: fadeOut,
-      fps: fps,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
-    ).run();
+    );
   }
 
   /// ASCII art banner.
@@ -1099,7 +1007,6 @@ class Terminice {
     bool showShadow = true,
     int hScale = 1,
     int letterSpacing = 1,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
     Banner(
@@ -1108,59 +1015,55 @@ class Terminice {
       showShadow: showShadow,
       hScale: hScale,
       letterSpacing: letterSpacing,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
     ).run();
   }
 
-  /// Loading spinner animation.
+  /// Creates a loading spinner for manual updates.
+  ///
+  /// Returns a [LoadingSpinner] instance. Call `.show(frame:)` to update,
+  /// and `.clear()` when done.
   ///
   /// **Example:**
   /// ```dart
-  /// terminice.spinner('Loading', duration: Duration(seconds: 2));
+  /// final spinner = terminice.spinner('Loading');
+  /// spinner.show(frame: 0);
+  /// // ... do work ...
+  /// spinner.show(frame: 1);
+  /// spinner.clear();
   /// ```
-  void spinner(
+  LoadingSpinner spinner(
     String label, {
     String message = 'Loading',
     SpinnerStyle style = SpinnerStyle.dots,
-    Duration duration = const Duration(seconds: 2),
-    int fps = 12,
-    PromptConfig? config,
     PromptTheme? theme,
   }) {
-    LoadingSpinner(
+    return LoadingSpinner(
       label,
       message: message,
       style: style,
-      duration: duration,
-      fps: fps,
-      config: config ?? defaultConfig,
       theme: theme ?? defaultTheme,
-    ).run();
+    );
   }
 
   /// Animated progress dots (ellipsis).
   ///
   /// **Example:**
   /// ```dart
-  /// terminice.progressDots('Working');
+  /// terminice.progressDots('Working').show(phase: 0);
   /// ```
-  void progressDots(
+  ProgressDots progressDots(
     String label, {
     String message = 'Working',
     int maxDots = 3,
-    Duration duration = const Duration(seconds: 2),
-    Duration interval = const Duration(milliseconds: 250),
     PromptTheme? theme,
   }) {
-    ProgressDots(
+    return ProgressDots(
       label,
       message: message,
       maxDots: maxDots,
-      duration: duration,
-      interval: interval,
       theme: theme ?? defaultTheme,
-    ).run();
+    );
   }
 
   /// Syntax-highlighted code display.
@@ -1502,22 +1405,16 @@ class Terminice {
   /// **Example:**
   /// ```dart
   /// final status = terminice.statusLine(label: 'Building');
-  /// status.start();
-  /// status.update('Compiling...');
+  /// status.show('Compiling...');
   /// // ... work ...
   /// status.success('Done!');
-  /// status.stop();
   /// ```
   StatusLine statusLine({
     required String label,
-    bool showSpinner = true,
-    Duration spinnerInterval = const Duration(milliseconds: 120),
     PromptTheme? theme,
   }) {
     return StatusLine(
       label: label,
-      showSpinner: showSpinner,
-      spinnerInterval: spinnerInterval,
       theme: theme ?? defaultTheme,
     );
   }

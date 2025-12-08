@@ -1,85 +1,97 @@
-import 'dart:io' show sleep;
-import 'dart:math' as math;
-
-import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/hints.dart';
-import '../system/prompt_animations.dart';
 import '../system/prompt_runner.dart';
 import '../system/widget_frame.dart';
 
-/// Animated, colorful progress bar aligned with ThemeDemo styling.
+/// Themed progress bar for displaying progress.
 ///
-/// Features:
-/// - Title with themed borders
-/// - Smooth auto-advance animation
-/// - Shimmering head and subtle gradient fill
-/// - Percent, elapsed and ETA
+/// **Usage:**
 ///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
+/// 1. **Static display** (caller controls updates):
 /// ```dart
-/// // Fluent API
-/// ProgressBar('Downloading').withMatrixTheme().run();
+/// final bar = ProgressBar('Downloading');
+/// bar.show(current: 0, total: 100);
+/// // ... do work ...
+/// bar.show(current: 50, total: 100);
+/// bar.clear();
+/// ```
 ///
-/// // With shared config
-/// final config = PromptConfig.matrix;
-/// ProgressBar('Downloading', config: config).run();
+/// 2. **With callback** (caller provides progress):
+/// ```dart
+/// ProgressBar('Processing').runWith((update) {
+///   for (int i = 0; i <= 100; i++) {
+///     update(i, 100);
+///   }
+/// });
 /// ```
 class ProgressBar with Themeable {
   final String label;
-  final int total; // logical steps to complete
-  final int width; // visual bar width
-  final Duration? totalDuration; // optional target duration for full progress
+  final int width;
   @override
   final PromptTheme theme;
 
+  RenderOutput? _output;
+  bool _started = false;
+
   /// Creates a progress bar.
-  ///
-  /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
-  /// - A direct [theme] parameter (for convenience)
   ProgressBar(
     this.label, {
-    this.total = 100,
     this.width = 36,
-    this.totalDuration,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  })  : theme = config?.theme ?? theme,
-        assert(total > 0),
-        assert(width > 4);
+    this.theme = PromptTheme.dark,
+  }) : assert(width > 4);
 
   @override
   ProgressBar copyWithTheme(PromptTheme theme) {
     return ProgressBar(
       label,
-      total: total,
       width: width,
-      totalDuration: totalDuration,
       theme: theme,
     );
   }
 
-  void run() {
-    final Duration target = totalDuration ?? const Duration(milliseconds: 2200);
+  /// Shows the progress bar at the given progress.
+  void show({
+    required int current,
+    required int total,
+    int shimmerPhase = 0,
+  }) {
+    _output ??= RenderOutput();
+    final out = _output!;
 
-    // Use TerminalSession for cursor hiding + RenderOutput for partial clearing
-    TerminalSession(hideCursor: true).runWithOutput((out) {
-      // Timing model
-      final stopwatch = Stopwatch()..start();
+    if (_started) {
+      out.clear();
+    }
+    _started = true;
 
-      // Render a single frame for a given progress [0..total]
-      void render(int current, {int shimmerPhase = 0}) {
+    _render(out, current, total, shimmerPhase);
+  }
+
+  /// Clears the progress bar from the terminal.
+  void clear() {
+    _output?.clear();
+    _output = null;
+    _started = false;
+  }
+
+  /// Runs the progress bar with a callback that provides updates.
+  void runWith(
+      void Function(void Function(int current, int total) update) callback) {
+    TerminalSession(hideCursor: true).run(() {
+      int phase = 0;
+      callback((current, total) {
+        show(current: current, total: total, shimmerPhase: phase++);
+      });
+      clear();
+    });
+  }
+
+  void _render(RenderOutput out, int current, int total, int shimmerPhase) {
         final widgetFrame = WidgetFrame(title: label, theme: theme);
         widgetFrame.showTo(out, (ctx) {
-          // Compute
-          final ratio = current / total;
+      final ratio = total > 0 ? current / total : 0.0;
           final filled = (ratio * width).clamp(0, width).round();
           final percent = (ratio * 100).clamp(0, 100).round();
 
-          // Build gradient fill with a moving shimmer head
           final buffer = StringBuffer();
           for (int i = 0; i < width; i++) {
             final isFilled = i < filled;
@@ -88,21 +100,16 @@ class ProgressBar with Themeable {
               continue;
             }
 
-            // Shimmer: bright head traversing the filled segment
-            // Move the head across with a triangular pulse around (filled-1)
             final headPos = filled - 1;
             final distance = (i - headPos).abs();
-            final headGlow = (3 - distance).clamp(0, 3); // 0..3
+        final headGlow = (3 - distance).clamp(0, 3);
 
-            // Color cycling between accent and highlight with a subtle phase shift
             final cycle = ((i + shimmerPhase) % 6);
             final baseColor = (cycle < 3) ? theme.accent : theme.highlight;
 
-            // Shade set for density illusion
             const shades = ['░', '▒', '▓', '█'];
-            final ch = shades[(headGlow).clamp(0, 3)];
+        final ch = shades[headGlow.clamp(0, 3)];
 
-            // Head gets bold/inverse to pop
             if (i == headPos) {
               buffer.write('${theme.inverse}$baseColor$ch${theme.reset}');
             } else if (headGlow > 0) {
@@ -113,64 +120,43 @@ class ProgressBar with Themeable {
           }
 
           ctx.gutterLine(buffer.toString());
-
-          // Second line with metrics: percent, elapsed, ETA
-          final elapsed = stopwatch.elapsed;
-          final estEta = _eta(elapsed, ratio, target);
           ctx.gutterLine(
               '${theme.dim}Progress:${theme.reset} ${theme.accent}$percent%${theme.reset}   '
-              '${theme.dim}Elapsed:${theme.reset} ${_fmt(elapsed)}   ${theme.dim}ETA:${theme.reset} ${_fmt(estEta)}');
+          '${theme.dim}($current/$total)${theme.reset}');
         });
 
-        // Hints (non-interactive, just informational)
         out.writeln(Hints.bullets([
-          'Animated progress bar',
+      'Progress bar',
           'Theme-aware accents',
         ], theme, dim: true));
       }
+}
 
-      // Entry animation: quick grow from 0 to a small head-start
-      for (int i = 0; i <= math.min(6, width ~/ 6); i++) {
-        out.clear();
-        render((total * (i / math.max(1, width))).round(), shimmerPhase: i);
-        sleep(const Duration(milliseconds: 10));
-      }
+/// Simple progress indicator that updates inline.
+class SimpleProgress {
+  final String label;
+  final PromptTheme theme;
 
-      // Main advance loop — ties steps to the target duration
-      int current = 0;
-      while (current < total) {
-        final t = stopwatch.elapsed.inMilliseconds / target.inMilliseconds;
-        final eased = Easing.easeInOutCubic(t.clamp(0.0, 1.0));
-        final next = (eased * total).clamp(0, total.toDouble()).round();
-        if (next > current) current = next;
+  RenderOutput? _output;
+  bool _started = false;
 
-        final phase = (stopwatch.elapsedMilliseconds ~/ 50) % 1000;
-        out.clear();
-        render(current, shimmerPhase: phase);
+  SimpleProgress(this.label, {this.theme = PromptTheme.dark});
 
-        // Small frame delay; high-ish FPS for smooth shimmer
-        sleep(const Duration(milliseconds: 24));
-      }
+  void show({required int current, required int total}) {
+    _output ??= RenderOutput();
+    final out = _output!;
 
-      // Completion flourish — a few shimmering frames
-      for (int i = 0; i < 4; i++) {
-        out.clear();
-        render(total, shimmerPhase: i * 2);
-        sleep(const Duration(milliseconds: 30));
-      }
-    }, clearOnEnd: true);
+    if (_started) out.clear();
+    _started = true;
+
+    final percent = total > 0 ? (current / total * 100).round() : 0;
+    out.writeln(
+        '${theme.accent}$label${theme.reset} ${theme.dim}$percent%${theme.reset}');
   }
-}
 
-Duration _eta(Duration elapsed, double ratio, Duration target) {
-  if (ratio <= 0) return target;
-  final remaining = (target * (1 - ratio));
-  // Clamp: never negative
-  return remaining.isNegative ? Duration.zero : remaining;
-}
-
-String _fmt(Duration d) {
-  final m = d.inMinutes.remainder(600).toString().padLeft(2, '0');
-  final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return '$m:$s';
+  void clear() {
+    _output?.clear();
+    _output = null;
+    _started = false;
+  }
 }

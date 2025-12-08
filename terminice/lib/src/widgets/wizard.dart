@@ -1,7 +1,5 @@
-import 'dart:async';
 import 'dart:io';
 
-import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/line_builder.dart';
@@ -9,22 +7,15 @@ import '../system/widget_frame.dart';
 
 /// Wizard – orchestrates a sequence of prompts with auto state passing.
 ///
-/// Design goals:
-/// - Theme-aware, aligned with ThemeDemo borders, accents and layout
-/// - Class-based API with clear, composable steps
-/// - Auto state passing between steps (mutable state map)
-/// - Flexible step result handling
-///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
+/// **Example:**
 /// ```dart
-/// // Fluent API
-/// final result = await Wizard(title: 'Setup', steps: steps)
-///   .withPastelTheme()
-///   .run();
-///
-/// // With shared config
-/// final config = PromptConfig.pastel;
-/// final result = await Wizard(title: 'Setup', steps: steps, config: config).run();
+/// final result = Wizard(title: 'Setup', steps: [
+///   WizardStep(
+///     id: 'name',
+///     label: 'Enter name',
+///     run: (state, theme) => TextPrompt(prompt: 'Name', theme: theme).run(),
+///   ),
+/// ]).run();
 /// ```
 class Wizard with Themeable {
   final String title;
@@ -34,20 +25,12 @@ class Wizard with Themeable {
   final bool showProgress;
 
   /// Creates a wizard.
-  ///
-  /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
-  /// - A direct [theme] parameter (for convenience)
   Wizard({
     required this.title,
     required this.steps,
     this.showProgress = true,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  })  : theme = config?.theme ?? theme,
-        assert(steps.isNotEmpty, 'Wizard requires at least one step');
+    this.theme = PromptTheme.dark,
+  }) : assert(steps.isNotEmpty, 'Wizard requires at least one step');
 
   @override
   Wizard copyWithTheme(PromptTheme theme) {
@@ -60,7 +43,7 @@ class Wizard with Themeable {
   }
 
   /// Runs all steps in order. Returns a state map or null if cancelled.
-  Future<Map<String, dynamic>?> run() async {
+  Map<String, dynamic>? run() {
     final Map<String, dynamic> state = <String, dynamic>{};
 
     int index = 0;
@@ -68,7 +51,7 @@ class Wizard with Themeable {
       if (showProgress) _renderProgress(index, state);
 
       final step = steps[index];
-      final result = await step.run(state, theme);
+      final result = step.run(state, theme);
 
       // Interpret result
       if (result is WizardResult) {
@@ -79,7 +62,7 @@ class Wizard with Themeable {
             index = (index - 1).clamp(0, steps.length - 1);
             continue;
           case WizardFlow.repeat:
-            continue; // rerun current step
+            continue;
           case WizardFlow.continueNext:
             state.addAll(result.updates);
             index++;
@@ -87,7 +70,7 @@ class Wizard with Themeable {
         }
       }
 
-      // Convenience: plain value → store under step id and continue
+      // Plain value → store under step id and continue
       state[step.id] = result;
       index++;
     }
@@ -100,18 +83,16 @@ class Wizard with Themeable {
     final frame = WidgetFrame(
       title: title,
       theme: theme,
-      hintStyle: HintStyle.none, // Manual hints below
+      hintStyle: HintStyle.none,
     );
 
     frame.show((ctx) {
-      // Step header
       final stepNum = '${index + 1}/${steps.length}';
       ctx.gutterLine(
           '${theme.dim}Step${theme.reset} ${theme.accent}$stepNum${theme.reset}');
 
       ctx.writeConnector();
 
-      // Steps listing
       for (int i = 0; i < steps.length; i++) {
         final isDone = i < index;
         final isCurrent = i == index;
@@ -135,7 +116,6 @@ class Wizard with Themeable {
       }
     });
 
-    // External hints (outside the frame)
     stdout.writeln(Hints.bullets([
       'Auto state passing',
       'Back: provide WizardResult.back()',
@@ -154,8 +134,7 @@ class Wizard with Themeable {
 class WizardStep {
   final String id;
   final String label;
-  final FutureOr<dynamic> Function(
-      Map<String, dynamic> state, PromptTheme theme) run;
+  final dynamic Function(Map<String, dynamic> state, PromptTheme theme) run;
 
   WizardStep({
     required this.id,

@@ -1,32 +1,42 @@
+import 'dart:io';
 import '../lib/src/src.dart';
 
 void main() {
-  LoadingSpinner(
+  // Example 1: Manual frame control
+  print('Example 1: Manual spinner updates\n');
+  final spinner = LoadingSpinner(
     'Initializing',
     message: 'Preparing workspace',
     style: SpinnerStyle.dots,
-    duration: const Duration(seconds: 2),
-    fps: 14,
     theme: PromptTheme.pastel,
-  ).run();
+  );
+  for (int i = 0; i < 20; i++) {
+    spinner.show(frame: i);
+    sleep(const Duration(milliseconds: 80));
+  }
+  spinner.clear();
 
+  // Example 2: Using runWith callback
+  print('\nExample 2: Using runWith callback\n');
   LoadingSpinner(
     'Processing',
     message: 'Compiling assets',
     style: SpinnerStyle.bars,
-    duration: const Duration(seconds: 2),
-    fps: 16,
     theme: PromptTheme.fire,
-  ).run();
+  ).runWith((tick) {
+    for (int i = 0; i < 15; i++) {
+      sleep(const Duration(milliseconds: 100));
+      tick();
+    }
+  });
 
-  LoadingSpinner(
-    'Finalizing',
-    message: 'Almost there',
-    style: SpinnerStyle.arcs,
-    duration: const Duration(seconds: 2),
-    fps: 12,
-    theme: PromptTheme.matrix,
-  ).run();
+  // Example 3: Simple spinner
+  print('\nExample 3: Simple inline spinner\n');
+  final simple = SimpleSpinner('Working...', style: SpinnerStyle.arcs, theme: PromptTheme.matrix);
+  for (int i = 0; i < 12; i++) {
+    simple.show(frame: i);
+    sleep(const Duration(milliseconds: 150));
+  }
+  simple.clear();
+  print('Done!');
 }
-
-

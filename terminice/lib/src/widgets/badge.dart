@@ -3,10 +3,7 @@ import '../system/widget_frame.dart' as wf;
 
 /// Badge – inline, theme-aware colored label (e.g., "SUCCESS", "FAILED").
 ///
-/// Designed to align with ThemeDemo styling and the shared PromptTheme system.
 /// Use it to decorate logs or inline outputs with compact, readable labels.
-///
-/// Uses the centralized [InlineStyle] system for consistent theming.
 ///
 /// **Fluent API:** Use [withTheme], [withDarkTheme], [withMatrixTheme],
 /// [withFireTheme], [withPastelTheme] for easy theme switching:
@@ -138,7 +135,6 @@ class Badge with Themeable {
   String toString() => render();
 
   static wf.BadgeTone _toInlineTone(BadgeTone t) {
-    // Map local BadgeTone to InlineStyle's BadgeTone
     switch (t) {
       case BadgeTone.neutral:
         return wf.BadgeTone.neutral;

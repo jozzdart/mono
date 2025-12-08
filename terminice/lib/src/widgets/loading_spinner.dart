@@ -1,6 +1,3 @@
-import 'dart:io' show sleep;
-
-import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/prompt_runner.dart';
@@ -9,43 +6,44 @@ import '../system/widget_frame.dart';
 /// Theme-aware loading spinner with multiple visual styles.
 ///
 /// Styles: dots (braille), bars (rising/falling), arcs (quarter/half circles).
-/// Aligned with ThemeDemo borders, accents, and layout.
 ///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
+/// **Usage:**
+///
+/// 1. **Static display** (caller controls updates):
 /// ```dart
-/// // Fluent API
-/// LoadingSpinner('Loading').withPastelTheme().run();
+/// final spinner = LoadingSpinner('Loading');
+/// spinner.show(frame: 0);
+/// // ... do work ...
+/// spinner.show(frame: 1);
+/// spinner.clear();
+/// ```
 ///
-/// // With shared config
-/// final config = PromptConfig.pastel;
-/// LoadingSpinner('Loading', config: config).run();
+/// 2. **With callback** (caller drives progress):
+/// ```dart
+/// LoadingSpinner('Processing').runWith((tick) {
+///   for (int i = 0; i < 10; i++) {
+///     doWork();
+///     tick();
+///   }
+/// });
 /// ```
 class LoadingSpinner with Themeable {
   final String label;
   final String message;
   final SpinnerStyle style;
-  final Duration duration;
-  final int fps;
   @override
   final PromptTheme theme;
 
+  RenderOutput? _output;
+  bool _started = false;
+
   /// Creates a loading spinner.
-  ///
-  /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
-  /// - A direct [theme] parameter (for convenience)
   LoadingSpinner(
     this.label, {
     this.message = 'Loading',
     this.style = SpinnerStyle.dots,
-    this.duration = const Duration(seconds: 2),
-    this.fps = 12,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  })  : theme = config?.theme ?? theme,
-        assert(fps > 0);
+    this.theme = PromptTheme.dark,
+  });
 
   @override
   LoadingSpinner copyWithTheme(PromptTheme theme) {
@@ -53,26 +51,47 @@ class LoadingSpinner with Themeable {
       label,
       message: message,
       style: style,
-      duration: duration,
-      fps: fps,
       theme: theme,
     );
   }
 
-  void run() {
+  /// Shows the spinner at the given frame.
+  void show({required int frame}) {
+    _output ??= RenderOutput();
+    final out = _output!;
+
+    if (_started) out.clear();
+    _started = true;
+
+    _render(out, frame);
+  }
+
+  /// Clears the spinner from the terminal.
+  void clear() {
+    _output?.clear();
+    _output = null;
+    _started = false;
+  }
+
+  /// Runs the spinner with a callback that provides tick updates.
+  void runWith(void Function(void Function() tick) callback) {
+    TerminalSession(hideCursor: true).run(() {
+      int frame = 0;
+      callback(() {
+        show(frame: frame++);
+      });
+      clear();
+    });
+  }
+
+  void _render(RenderOutput out, int frameIndex) {
     final frames = _framesForStyle(style);
-    final int frameMs = (1000 / fps).clamp(12, 200).round();
-
-    String colorForPhase(int i) {
-      // Alternate between accent and highlight for gentle pulse
-      return (i % 2 == 0) ? theme.accent : theme.highlight;
-    }
-
-    void render(RenderOutput out, int frameIndex) {
       final widgetFrame = WidgetFrame(title: label, theme: theme);
+
+    final color = (frameIndex % 2 == 0) ? theme.accent : theme.highlight;
+
       widgetFrame.showTo(out, (ctx) {
         final spin = frames[frameIndex % frames.length];
-        final color = colorForPhase(frameIndex);
         ctx.gutterLine(
             '${theme.dim}$message${theme.reset}  ${theme.bold}$color$spin${theme.reset}');
       });
@@ -81,44 +100,13 @@ class LoadingSpinner with Themeable {
         'Theme-aware spinner',
         'Style: ${style.name}',
       ], theme, dim: true));
-    }
-
-    // Use TerminalSession for cursor hiding + RenderOutput for partial clearing
-    TerminalSession(hideCursor: true).runWithOutput((out) {
-      final sw = Stopwatch()..start();
-      int frame = 0;
-
-      // Initial render
-      render(out, frame);
-      frame++;
-
-      while (sw.elapsed < duration) {
-        sleep(Duration(milliseconds: frameMs));
-        out.clear();
-        render(out, frame);
-        frame++;
-      }
-    }, clearOnEnd: true);
   }
 
   List<String> _framesForStyle(SpinnerStyle s) {
     switch (s) {
       case SpinnerStyle.dots:
-        // Braille spinner frames – smooth, compact
-        return const [
-          '⠋',
-          '⠙',
-          '⠹',
-          '⠸',
-          '⠼',
-          '⠴',
-          '⠦',
-          '⠧',
-          '⠇',
-          '⠏',
-        ];
+        return const ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
       case SpinnerStyle.bars:
-        // Rising/Falling bar heights
         return const [
           '▁',
           '▂',
@@ -133,13 +121,70 @@ class LoadingSpinner with Themeable {
           '▅',
           '▄',
           '▃',
-          '▂',
+          '▂'
         ];
       case SpinnerStyle.arcs:
-        // Quarter and half arcs
         return const ['◜', '◠', '◝', '◞', '◡', '◟'];
     }
   }
 }
 
 enum SpinnerStyle { dots, bars, arcs }
+
+/// Simple inline spinner for minimal display.
+class SimpleSpinner {
+  final String message;
+  final SpinnerStyle style;
+  final PromptTheme theme;
+
+  RenderOutput? _output;
+  bool _started = false;
+
+  SimpleSpinner(this.message,
+      {this.style = SpinnerStyle.dots, this.theme = PromptTheme.dark});
+
+  void show({required int frame}) {
+    _output ??= RenderOutput();
+    final out = _output!;
+
+    if (_started) out.clear();
+    _started = true;
+
+    final frames = _framesForStyle(style);
+    final spin = frames[frame % frames.length];
+    out.writeln(
+        '${theme.accent}$spin${theme.reset} ${theme.dim}$message${theme.reset}');
+  }
+
+  void clear() {
+    _output?.clear();
+    _output = null;
+    _started = false;
+  }
+
+  List<String> _framesForStyle(SpinnerStyle s) {
+    switch (s) {
+      case SpinnerStyle.dots:
+        return const ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+      case SpinnerStyle.bars:
+        return const [
+          '▁',
+          '▂',
+          '▃',
+          '▄',
+          '▅',
+          '▆',
+          '▇',
+          '█',
+          '▇',
+          '▆',
+          '▅',
+          '▄',
+          '▃',
+          '▂'
+        ];
+      case SpinnerStyle.arcs:
+        return const ['◜', '◠', '◝', '◞', '◡', '◟'];
+    }
+  }
+}

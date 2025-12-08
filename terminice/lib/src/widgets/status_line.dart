@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import '../style/theme.dart';
@@ -7,37 +6,26 @@ import '../system/widget_frame.dart';
 /// StatusLine – persistent, theme-aware line rendered at the bottom
 /// of the terminal for live status updates.
 ///
-/// Uses the centralized [InlineStyle] system for consistent theming.
-///
-/// **Mixins:** Implements [Themeable] for fluent theme configuration:
+/// **Usage:**
 /// ```dart
-/// StatusLine(label: 'Build').withPastelTheme()..start();
+/// final status = StatusLine(label: 'Build');
+/// status.show('Compiling...');
+/// // ... work ...
+/// status.show('Linking...');
+/// status.success('Done');
 /// ```
-///
-/// Usage:
-///   final s = StatusLine(label: 'Build').withPastelTheme()..start();
-///   s.update('Compiling sources');
-///   // ... work ...
-///   s.success('Done');
-///   s.stop();
 class StatusLine with Themeable {
   final String label;
   @override
   final PromptTheme theme;
-  final bool showSpinner;
-  final Duration spinnerInterval;
 
   late final InlineStyle _inline;
-  Timer? _spinnerTimer;
-  int _spinnerPhase = 0;
   String _message = '';
-  bool _running = false;
+  int _spinnerPhase = 0;
 
   StatusLine({
     required this.label,
     this.theme = PromptTheme.dark,
-    this.showSpinner = true,
-    this.spinnerInterval = const Duration(milliseconds: 120),
   }) {
     _inline = InlineStyle(theme);
   }
@@ -47,70 +35,46 @@ class StatusLine with Themeable {
     return StatusLine(
       label: label,
       theme: theme,
-      showSpinner: showSpinner,
-      spinnerInterval: spinnerInterval,
     );
   }
 
-  /// Begin rendering the persistent status line.
-  void start() {
-    if (_running) return;
-    _running = true;
-    _render();
-    if (showSpinner) {
-      _spinnerTimer = Timer.periodic(spinnerInterval, (_) {
-        _spinnerPhase++;
-        _render();
-      });
-    }
-  }
-
-  /// Update the message on the status line.
-  void update(String message) {
+  /// Show or update the status line message.
+  void show(String message, {int? spinnerPhase}) {
     _message = message;
+    if (spinnerPhase != null) _spinnerPhase = spinnerPhase;
     _render();
   }
 
-  /// Show a success state and freeze the spinner.
+  /// Show a success state.
   void success(String message) {
     _message = message;
     _render(icon: _inline.successIcon());
-    _stopSpinner();
   }
 
-  /// Show an error state and freeze the spinner.
+  /// Show an error state.
   void error(String message) {
     _message = message;
     _render(icon: _inline.errorIcon());
-    _stopSpinner();
   }
 
   /// Show a warning state.
   void warning(String message) {
     _message = message;
     _render(icon: _inline.warnIcon());
-    _stopSpinner();
   }
 
-  /// Stop rendering (does not clear the last line).
-  void stop() {
-    _stopSpinner();
-    _running = false;
-  }
-
-  void _stopSpinner() {
-    _spinnerTimer?.cancel();
-    _spinnerTimer = null;
+  /// Advance the spinner phase.
+  void tick() {
+    _spinnerPhase++;
+    _render();
   }
 
   void _render({String? icon}) {
-    if (!_running) return;
     final s = theme.style;
 
-    // Build content line using InlineStyle for consistent theming
     final prefix = _inline.gray(s.borderBottom);
     final title = _inline.selection(' $label ');
-    final spin = icon ?? (showSpinner ? _inline.spinner(_spinnerPhase) : ' ');
+    final spin = icon ?? _inline.spinner(_spinnerPhase);
     final msg = _message.isEmpty ? '' : _inline.gray(_message);
 
     final line = StringBuffer()
@@ -126,15 +90,11 @@ class StatusLine with Themeable {
   }
 
   void _writeBottom(String text) {
-    // Save cursor position
-    stdout.write('\x1B7');
-    // Move to last row, column 1 (clamped by terminal)
-    stdout.write('\x1B[999;1H');
-    // Clear the line and write content
+    stdout.write('\x1B7'); // Save cursor
+    stdout.write('\x1B[999;1H'); // Move to bottom
     stdout
-      ..write('\x1B[2K')
+      ..write('\x1B[2K') // Clear line
       ..writeln(text);
-    // Restore cursor position
-    stdout.write('\x1B8');
+    stdout.write('\x1B8'); // Restore cursor
   }
 }

@@ -1,4 +1,4 @@
-import '../style/prompt_config.dart';
+
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/prompt_runner.dart';
@@ -13,14 +13,12 @@ import '../system/widget_frame.dart';
 /// - Subtle zebra-striping for readability
 /// - Uses Theme borderVertical as column separators
 ///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
 /// // Fluent API
 /// TableView('Data', columns: cols, rows: data).withMatrixTheme().run();
 ///
 /// // With shared config
-/// final config = PromptConfig.matrix;
-/// TableView('Data', columns: cols, rows: data, config: config).run();
+/// TableView('Data', columns: cols, rows: data).run();
 /// ```
 class TableView with Themeable {
   final String title;
@@ -34,7 +32,6 @@ class TableView with Themeable {
   /// Creates a table view.
   ///
   /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
   /// - A direct [theme] parameter (for convenience)
   TableView(
     this.title, {
@@ -42,11 +39,8 @@ class TableView with Themeable {
     required this.rows,
     this.columnAlignments,
     this.zebraStripes = true,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  })  : theme = config?.theme ?? theme,
+    this.theme = PromptTheme.dark,
+  })  :
         assert(columns.isNotEmpty, 'columns must not be empty');
 
   @override

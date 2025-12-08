@@ -1,15 +1,7 @@
-import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/simple_prompt.dart';
 
-/// A text input prompt with blinking cursor, placeholder, and validation.
-///
-/// Features:
-/// - Animated cursor (blinking)
-/// - Theme-aware styling
-/// - Placeholder text
-/// - Live validation feedback
-/// - Optional required input
+/// A text input prompt with static cursor, placeholder, and validation.
 ///
 /// Controls:
 /// - Type to enter text
@@ -17,19 +9,11 @@ import '../system/simple_prompt.dart';
 /// - Enter to confirm
 /// - Esc to cancel
 ///
-/// **Implementation:** Uses [AsyncTextPrompt] for core functionality,
-/// demonstrating composition over inheritance.
-///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
+/// **Example:**
 /// ```dart
-/// // Fluent API
-/// final name = await TextPrompt(prompt: 'Name')
+/// final name = TextPrompt(prompt: 'Name')
 ///   .withPastelTheme()
 ///   .run();
-///
-/// // With shared config
-/// final config = PromptConfig.matrix;
-/// final name = await TextPrompt(prompt: 'Name', config: config).run();
 /// ```
 class TextPrompt with Themeable {
   final String prompt;
@@ -40,20 +24,13 @@ class TextPrompt with Themeable {
   final bool required;
 
   /// Creates a text input prompt.
-  ///
-  /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
-  /// - A direct [theme] parameter (for convenience)
   TextPrompt({
     required this.prompt,
     this.placeholder,
     this.validator,
     this.required = true,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  }) : theme = config?.theme ?? theme;
+    this.theme = PromptTheme.dark,
+  });
 
   @override
   TextPrompt copyWithTheme(PromptTheme theme) {
@@ -69,8 +46,8 @@ class TextPrompt with Themeable {
   /// Runs the prompt and returns the entered text.
   ///
   /// Returns null if cancelled or validation fails.
-  Future<String?> run() async {
-    return AsyncTextPrompt(
+  String? run() {
+    return TextPromptSync(
       title: prompt,
       theme: theme,
       placeholder: placeholder,

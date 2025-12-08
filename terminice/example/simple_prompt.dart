@@ -7,7 +7,7 @@ import 'package:terminice/terminice.dart';
 /// - Handle cancellation automatically
 /// - Return initial value on cancel
 /// - Reduce boilerplate compared to manual PromptRunner usage
-void main() async {
+void main() {
   print('=== SimplePrompt Examples ===\n');
 
   // Example 1: Using SimplePrompts.confirm (preset factory)
@@ -110,9 +110,9 @@ void main() async {
   print('   Proceed: $shouldProceed');
   print('');
 
-  // Example 6: Async text prompt with validation
-  print('6. Async Text Prompt (with validation):');
-  final name = await AsyncSimplePrompts.text(
+  // Example 6: Text prompt with validation (sync)
+  print('6. Text Prompt (with validation):');
+  final name = SyncPrompts.text(
     title: 'Enter Name',
     placeholder: 'Your name...',
     required: true,
@@ -121,9 +121,9 @@ void main() async {
   print('   Name: ${name ?? "(cancelled)"}');
   print('');
 
-  // Example 7: Password prompt with reveal toggle
+  // Example 7: Password prompt with reveal toggle (sync)
   print('7. Password Prompt (Ctrl+R to reveal):');
-  final password = await AsyncSimplePrompts.password(
+  final password = SyncPrompts.password(
     title: 'Enter Password',
     required: true,
   ).run();
@@ -133,7 +133,7 @@ void main() async {
 
   // Example 8: Validated input (email example)
   print('8. Validated Input (email):');
-  final email = await AsyncSimplePrompts.validated(
+  final email = SyncPrompts.validated(
     title: 'Enter Email',
     placeholder: 'user@example.com',
     validator: (text) {
@@ -147,8 +147,8 @@ void main() async {
   print('');
 
   // Example 9: Using TextPrompt widget (backward compatible)
-  print('9. TextPrompt Widget (backward compatible):');
-  final input = await TextPrompt(
+  print('9. TextPrompt Widget (sync):');
+  final input = TextPrompt(
     prompt: 'Enter anything',
     placeholder: 'Type here...',
     required: false,
@@ -157,16 +157,15 @@ void main() async {
   print('   Input: ${input ?? "(cancelled)"}');
   print('');
 
-  // Example 10: Using PasswordPrompt widget (backward compatible)
-  print('10. PasswordPrompt Widget (backward compatible):');
-  final secret = await PasswordPrompt(
-    label: 'Secret Key',
-    allowEmpty: true,
+  // Example 10: Using PasswordPrompt widget (sync)
+  print('10. PasswordPrompt Widget (sync):');
+  final secret = PasswordPrompt(
+    prompt: 'Secret Key',
+    required: false,
   ).run();
 
-  print('   Secret: ${secret.isEmpty ? "(empty)" : "***"}');
+  print('   Secret: ${secret == null || secret.isEmpty ? "(empty)" : "***"}');
   print('');
 
   print('=== Done ===');
 }
-

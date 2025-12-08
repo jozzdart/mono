@@ -1,50 +1,43 @@
-import 'dart:io' show sleep;
-
-import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/prompt_runner.dart';
 import '../system/widget_frame.dart';
 
-/// Toast — a transient, theme-aware popup message that gently fades away.
+/// Toast — a theme-aware popup message display.
 ///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
+/// **Usage:**
+///
+/// 1. **Static display** (caller controls lifetime):
 /// ```dart
-/// // Fluent API
-/// Toast('Saved!', variant: ToastVariant.success).withMatrixTheme().run();
+/// final toast = Toast('Saved!', variant: ToastVariant.success);
+/// toast.show();
+/// // ... do something ...
+/// toast.clear();
+/// ```
 ///
-/// // With shared config
-/// final config = PromptConfig.matrix;
-/// Toast('Saved!', variant: ToastVariant.success, config: config).run();
+/// 2. **With callback** (shows during callback execution):
+/// ```dart
+/// Toast('Processing...', variant: ToastVariant.info).showWhile(() {
+///   doWork();
+/// });
 /// ```
 class Toast with Themeable {
   final String message;
   final String label;
   final ToastVariant variant;
-  final Duration duration;
-  final Duration fadeOut;
-  final int fps;
   @override
   final PromptTheme theme;
 
+  RenderOutput? _output;
+  bool _started = false;
+
   /// Creates a toast notification.
-  ///
-  /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
-  /// - A direct [theme] parameter (for convenience)
   Toast(
     this.message, {
     this.label = 'Toast',
     this.variant = ToastVariant.info,
-    this.duration = const Duration(milliseconds: 1200),
-    this.fadeOut = const Duration(milliseconds: 600),
-    this.fps = 18,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  })  : theme = config?.theme ?? theme,
-        assert(fps > 0);
+    this.theme = PromptTheme.dark,
+  });
 
   @override
   Toast copyWithTheme(PromptTheme theme) {
@@ -52,17 +45,54 @@ class Toast with Themeable {
       message,
       label: label,
       variant: variant,
-      duration: duration,
-      fadeOut: fadeOut,
-      fps: fps,
       theme: theme,
     );
   }
 
-  void run() {
-    int frameMs = (1000 / fps).clamp(12, 200).round();
+  /// Shows the toast.
+  void show() {
+    _output ??= RenderOutput();
+    final out = _output!;
 
-    String iconForVariant() {
+    if (_started) out.clear();
+    _started = true;
+
+    _render(out);
+  }
+
+  /// Clears the toast from the terminal.
+  void clear() {
+    _output?.clear();
+    _output = null;
+    _started = false;
+  }
+
+  /// Shows the toast while executing a callback, then clears it.
+  T showWhile<T>(T Function() callback) {
+    show();
+    try {
+      return callback();
+    } finally {
+      clear();
+    }
+  }
+
+  void _render(RenderOutput out) {
+    final color = _colorForVariant();
+    final icon = _iconForVariant();
+
+    final widgetFrame = WidgetFrame(title: label, theme: theme);
+    widgetFrame.showTo(out, (ctx) {
+      final iconPart = '${theme.bold}$color$icon${theme.reset}';
+      ctx.gutterLine('$iconPart $message');
+    });
+
+    out.writeln(Hints.bullets([
+      'Toast notification',
+    ], theme, dim: true));
+  }
+
+  String _iconForVariant() {
       switch (variant) {
         case ToastVariant.success:
           return '✔';
@@ -75,74 +105,75 @@ class Toast with Themeable {
       }
     }
 
-    String colorForVariant() {
+  String _colorForVariant() {
       switch (variant) {
         case ToastVariant.success:
-          return theme.checkboxOn; // green-ish
+        return theme.checkboxOn;
         case ToastVariant.warning:
-          return theme.highlight; // yellow-ish
+        return theme.highlight;
         case ToastVariant.error:
-          return '\x1B[31m'; // red
+        return '\x1B[31m';
         case ToastVariant.info:
-          return theme.accent; // cyan/pastel
+        return theme.accent;
       }
-    }
-
-    void render(RenderOutput out, double opacity) {
-      // Fade styling: blend dim/gray as opacity decreases.
-      final bool dimPhase = opacity < 0.85;
-      final bool grayPhase = opacity < 0.55;
-      final color = colorForVariant();
-      final icon = iconForVariant();
-
-      String applyFade(String s) {
-        if (grayPhase) return '${theme.gray}$s${theme.reset}';
-        if (dimPhase) return '${theme.dim}$s${theme.reset}';
-        return s;
-      }
-
-      final widgetFrame = WidgetFrame(title: label, theme: theme);
-      widgetFrame.showTo(out, (ctx) {
-        final iconPart = applyFade('${theme.bold}$color$icon${theme.reset}');
-        final msgPart = applyFade(message);
-        ctx.gutterLine('$iconPart $msgPart');
-      });
-
-      out.writeln(Hints.bullets([
-        'Fades automatically',
-      ], theme, dim: true));
-    }
-
-    // Use TerminalSession for cursor hiding + RenderOutput for partial clearing
-    TerminalSession(hideCursor: true).runWithOutput((out) {
-      // Initial render
-      render(out, 1.0);
-
-      // Hold phase
-      final holdEnd = DateTime.now().add(duration);
-      while (DateTime.now().isBefore(holdEnd)) {
-        sleep(Duration(milliseconds: frameMs));
-        out.clear();
-        render(out, 1.0);
-      }
-
-      // Fade-out phase
-      final totalFrames =
-          (fadeOut.inMilliseconds / frameMs).clamp(1, 240).round();
-      for (int i = 0; i <= totalFrames; i++) {
-        final t = i / totalFrames; // 0..1
-        final eased = _easeOutCubic(1 - t); // 1..0
-        out.clear();
-        render(out, eased);
-        sleep(Duration(milliseconds: frameMs));
-      }
-    }, clearOnEnd: true);
   }
 }
 
 enum ToastVariant { info, success, warning, error }
 
-double _easeOutCubic(double t) {
-  final f = t - 1;
-  return f * f * f + 1;
+/// Simple inline toast message.
+class SimpleToast {
+  final String message;
+  final ToastVariant variant;
+  final PromptTheme theme;
+
+  RenderOutput? _output;
+  bool _started = false;
+
+  SimpleToast(this.message,
+      {this.variant = ToastVariant.info, this.theme = PromptTheme.dark});
+
+  void show() {
+    _output ??= RenderOutput();
+    final out = _output!;
+
+    if (_started) out.clear();
+    _started = true;
+
+    final color = _colorForVariant();
+    final icon = _iconForVariant();
+    out.writeln('$color$icon${theme.reset} $message');
+  }
+
+  void clear() {
+    _output?.clear();
+    _output = null;
+    _started = false;
+  }
+
+  String _iconForVariant() {
+    switch (variant) {
+      case ToastVariant.success:
+        return '✔';
+      case ToastVariant.warning:
+        return '⚠';
+      case ToastVariant.error:
+        return '✖';
+      case ToastVariant.info:
+        return 'ℹ';
+    }
+  }
+
+  String _colorForVariant() {
+    switch (variant) {
+      case ToastVariant.success:
+        return theme.checkboxOn;
+      case ToastVariant.warning:
+        return theme.highlight;
+      case ToastVariant.error:
+        return '\x1B[31m';
+      case ToastVariant.info:
+        return theme.accent;
+    }
+  }
 }

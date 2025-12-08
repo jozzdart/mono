@@ -1,7 +1,7 @@
 import 'package:terminice/src/widgets/text_prompt.dart';
 import 'package:terminice/src/style/theme.dart';
 
-void main() async {
+void main() {
   final prompt = TextPrompt(
     prompt: 'Enter your username',
     placeholder: 'Type something...',
@@ -12,7 +12,7 @@ void main() async {
     },
   );
 
-  final result = await prompt.run();
+  final result = prompt.run();
 
   if (result == null) {
     print('❌ Cancelled');

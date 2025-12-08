@@ -1,4 +1,4 @@
-import '../style/prompt_config.dart';
+
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/selectable_grid_prompt.dart';
@@ -15,7 +15,6 @@ import '../system/terminal.dart';
 /// **Implementation:** Uses [SelectableGridPrompt] for core functionality,
 /// demonstrating composition over inheritance.
 ///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
 /// // Fluent API
 /// final selected = TagSelector(tags)
@@ -23,8 +22,7 @@ import '../system/terminal.dart';
 ///   .run();
 ///
 /// // With shared config
-/// final config = PromptConfig.pastel;
-/// final selected = TagSelector(tags, config: config).run();
+/// final selected = TagSelector(tags).run();
 /// ```
 class TagSelector with Themeable {
   final List<String> tags;
@@ -40,7 +38,6 @@ class TagSelector with Themeable {
   /// Creates a tag selector.
   ///
   /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
   /// - A direct [theme] parameter (for convenience)
   TagSelector(
     this.tags, {
@@ -50,11 +47,8 @@ class TagSelector with Themeable {
     this.minColumnWidth = 8,
     this.maxColumnWidth = 24,
     this.useTerminalWidth = true,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  }) : theme = config?.theme ?? theme;
+    this.theme = PromptTheme.dark,
+  }) ;
 
   @override
   TagSelector copyWithTheme(PromptTheme theme) {

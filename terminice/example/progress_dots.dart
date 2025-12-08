@@ -1,11 +1,30 @@
+import 'dart:io';
+
 import '../lib/src/src.dart';
 
 void main() {
-  ProgressDots(
+  // Method 1: Using show() with manual control
+  final dots = ProgressDots(
     'Loading',
     message: 'Please wait',
     theme: PromptTheme.pastel,
-    duration: const Duration(seconds: 3),
-    interval: const Duration(milliseconds: 240),
-  ).run();
+  );
+
+  for (int i = 0; i < 12; i++) {
+    dots.show(phase: i);
+    sleep(const Duration(milliseconds: 250));
+  }
+  dots.clear();
+
+  // Method 2: Using runWith callback
+  ProgressDots(
+    'Processing',
+    message: 'Working',
+    theme: PromptTheme.matrix,
+  ).runWith((tick) {
+    for (int i = 0; i < 10; i++) {
+      tick();
+      sleep(const Duration(milliseconds: 200));
+    }
+  });
 }

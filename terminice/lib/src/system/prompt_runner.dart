@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'terminal.dart';
@@ -27,14 +26,13 @@ enum PromptResult { confirmed, cancelled }
 /// // Content stays visible, terminal history preserved
 /// ```
 ///
-/// **With updates** (for animated displays):
+/// **With updates** (for updating displays):
 /// ```dart
 /// final out = RenderOutput();
-/// for (int i = 0; i < 5; i++) {
-///   out.clear();  // Clears only our lines
-///   out.writeln('Frame $i');
-///   sleep(Duration(milliseconds: 100));
-/// }
+/// out.writeln('Step 1');
+/// // ... do work ...
+/// out.clear();
+/// out.writeln('Step 2');
 /// ```
 class RenderOutput {
   int _lineCount = 0;
@@ -82,21 +80,9 @@ class RenderOutput {
 ///
 /// session.run(() {
 ///   out.writeln('Loading...');
-///   sleep(Duration(seconds: 1));
+///   // ... do work ...
 ///   out.clear();
 ///   out.writeln('Done!');
-/// });
-/// ```
-///
-/// **For animations**:
-/// ```dart
-/// TerminalSession(hideCursor: true).run(() {
-///   final out = RenderOutput();
-///   for (int i = 0; i < 10; i++) {
-///     out.clear();
-///     out.writeln('Progress: ${'█' * i}${'░' * (10 - i)}');
-///     sleep(Duration(milliseconds: 100));
-///   }
 /// });
 /// ```
 class TerminalSession {
@@ -208,7 +194,7 @@ class PromptRunner {
   /// Controls what happens when the prompt ends.
   final EndBehavior endBehavior;
 
-  /// Optional callback invoked before cleanup (e.g., for final animations).
+  /// Optional callback invoked before cleanup (e.g., for final styling).
   final void Function()? onBeforeCleanup;
 
   /// Optional callback invoked after cleanup completes.
@@ -283,20 +269,15 @@ class PromptRunner {
   /// for partial clearing.
   ///
   /// Use this for widgets that need:
-  /// - Entry/exit animations
+  /// - Entry/exit styling
   /// - Custom render timing
   /// - Non-standard input loops
   ///
-  /// Example (slider with animations):
+  /// Example:
   /// ```dart
   /// final runner = PromptRunner();
   /// final value = runner.runCustom((out) {
-  ///   // Entry animation
-  ///   for (int i = 0; i <= 10; i++) {
-  ///     out.clear();
-  ///     renderSlider(out, progress: i / 10);
-  ///     sleep(Duration(milliseconds: 16));
-  ///   }
+  ///   // Render with entry styling
   ///
   ///   // Main input loop
   ///   while (true) {
@@ -307,12 +288,8 @@ class PromptRunner {
   ///     renderSlider(out);
   ///   }
   ///
-  ///   // Exit animation
-  ///   for (int i = 0; i < 3; i++) {
-  ///     out.clear();
-  ///     renderSlider(out, flash: i.isEven);
-  ///     sleep(Duration(milliseconds: 20));
-  ///   }
+  ///   // Render with exit styling
+  ///   out.clear();
   ///
   ///   return finalValue;
   /// });
@@ -365,123 +342,16 @@ class PromptRunner {
       },
     );
   }
-
-  /// Runs the prompt loop asynchronously with optional blinking cursor support.
-  ///
-  /// [render] is called with a [RenderOutput] to write content.
-  /// [onKey] handles key events.
-  /// [cursorBlink] when provided, manages blinking cursor state.
-  Future<PromptResult> runAsync({
-    required void Function(RenderOutput out) render,
-    required PromptResult? Function(KeyEvent event) onKey,
-    CursorBlink? cursorBlink,
-  }) async {
-    final session = _createSession();
-    final output = RenderOutput();
-    Timer? blinkTimer;
-
-    void doRender() {
-      output.clear();
-      render(output);
-    }
-
-    session.start();
-
-    // Setup cursor blink timer if configured
-    if (cursorBlink != null) {
-      blinkTimer = Timer.periodic(cursorBlink.interval, (_) {
-        cursorBlink.toggle();
-        doRender();
-      });
-    }
-
-    // Initial render
-    render(output);
-
-    PromptResult result = PromptResult.cancelled;
-
-    try {
-      while (true) {
-        final event = KeyEventReader.read();
-
-        // Reset cursor visibility on key input
-        cursorBlink?.resetOnInput();
-
-        // Restart blink timer on input
-        if (cursorBlink != null) {
-          blinkTimer?.cancel();
-          blinkTimer = Timer.periodic(cursorBlink.interval, (_) {
-            cursorBlink.toggle();
-            doRender();
-          });
-        }
-
-        final action = onKey(event);
-
-        if (action != null) {
-          result = action;
-          break;
-        }
-
-        doRender();
-      }
-    } finally {
-      blinkTimer?.cancel();
-      onBeforeCleanup?.call();
-      session.end();
-      onAfterCleanup?.call();
-    }
-
-    // Optionally clear our final output
-    if (endBehavior.clearOnEnd) {
-      output.clear();
-    }
-
-    return result;
-  }
-
-  /// Runs the prompt loop asynchronously using a [KeyBindings] instance.
-  ///
-  /// This is the async version of [runWithBindings] with optional cursor blinking.
-  Future<PromptResult> runAsyncWithBindings({
-    required void Function(RenderOutput out) render,
-    required KeyBindings bindings,
-    CursorBlink? cursorBlink,
-  }) {
-    return runAsync(
-      render: render,
-      cursorBlink: cursorBlink,
-      onKey: (event) {
-        final result = bindings.handle(event);
-        return KeyBindings.toPromptResult(result);
-      },
-    );
-  }
 }
 
-/// Configuration for cursor blinking in async prompts.
-class CursorBlink {
-  /// Interval between blink toggles.
-  final Duration interval;
+/// Cursor state for text input prompts.
+///
+/// In sync mode, the cursor is always visible (no blinking).
+/// This class is kept for API compatibility.
+class CursorState {
+  /// Whether the cursor should be visible (always true in sync mode).
+  bool get isVisible => true;
 
-  /// Current visibility state.
-  bool _visible = true;
-
-  /// Whether the cursor should be visible.
-  bool get isVisible => _visible;
-
-  /// Creates a cursor blink configuration.
-  CursorBlink({
-    this.interval = const Duration(milliseconds: 500),
-  });
-
-  /// Toggles the cursor visibility.
-  void toggle() {
-    _visible = !_visible;
-  }
-
-  /// Resets cursor to visible (called on user input).
-  void resetOnInput() {
-    _visible = true;
-  }
+  /// Creates a cursor state.
+  CursorState();
 }

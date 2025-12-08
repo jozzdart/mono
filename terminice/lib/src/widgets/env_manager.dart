@@ -40,7 +40,7 @@ class EnvManager with Themeable {
     );
   }
 
-  Future<void> run() async {
+  void run() {
     final label = title ?? 'Env Manager';
 
     // Working set (in-memory)
@@ -50,7 +50,7 @@ class EnvManager with Themeable {
     while (!quit) {
       // If no variables, offer to create one first
       if (entries.isEmpty) {
-        await _add(entries);
+        _add(entries);
         if (entries.isEmpty) break; // user cancelled
       }
 
@@ -68,7 +68,7 @@ class EnvManager with Themeable {
       final selectedName = selection.first;
 
       // Actions screen for the selected variable
-      final action = await _actionsLoop(selectedName, () => entries);
+      final action = _actionsLoop(selectedName, () => entries);
       if (action == _PostAction.quit) {
         quit = true;
       } else if (action == _PostAction.reload) {
@@ -79,8 +79,7 @@ class EnvManager with Themeable {
     // Note: No full terminal clear - PromptRunner handles cleanup and preserves terminal history
   }
 
-  Future<_PostAction> _actionsLoop(
-      String name, List<_EnvEntry> Function() getEntries) async {
+  _PostAction _actionsLoop(String name, List<_EnvEntry> Function() getEntries) {
     String currentName = name;
     var entries = getEntries();
     _PostAction result = _PostAction.back;
@@ -199,7 +198,7 @@ class EnvManager with Themeable {
             (e) => e.name == currentName,
             orElse: () => _EnvEntry(currentName, ''),
           );
-          final newVal = await TextPrompt(
+          final newVal = TextPrompt(
             prompt: 'Edit ${entry.name}',
             placeholder: entry.value,
             theme: theme,
@@ -228,7 +227,7 @@ class EnvManager with Themeable {
         }
 
         if (nestedPromptType == 'new') {
-          await _add(entries);
+          _add(entries);
           continue; // Loop back to show actions again
         }
       }
@@ -238,8 +237,8 @@ class EnvManager with Themeable {
     }
   }
 
-  Future<void> _add(List<_EnvEntry> entries) async {
-    final name = await TextPrompt(
+  void _add(List<_EnvEntry> entries) {
+    final name = TextPrompt(
       prompt: 'New variable name',
       placeholder: 'NAME',
       theme: theme,
@@ -269,7 +268,7 @@ class EnvManager with Themeable {
       if (!ok) return;
     }
 
-    final value = await TextPrompt(
+    final value = TextPrompt(
       prompt: 'Value for $name',
       placeholder: '',
       theme: theme,
@@ -307,10 +306,10 @@ class _EnvEntry {
 enum _PostAction { back, reload, quit }
 
 /// Convenience function mirroring the requested API name.
-Future<void> envManager({
+void envManager({
   PromptTheme theme = const PromptTheme(),
   String? title,
   Map<String, String>? initialEnv,
-}) async {
-  await EnvManager(theme: theme, title: title, initialEnv: initialEnv).run();
+}) {
+  EnvManager(theme: theme, title: title, initialEnv: initialEnv).run();
 }

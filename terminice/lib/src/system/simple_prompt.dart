@@ -58,7 +58,6 @@ import '../style/theme.dart';
 ///
 /// **When NOT to use:**
 /// - Complex prompts – use SelectableListPrompt, ValuePrompt, etc.
-/// - Async prompts with blinking cursors – use PromptRunner directly
 /// - Display-only widgets – use WidgetFrame.show()
 class SimplePrompt<T> {
   /// Title displayed in the frame header.
@@ -351,88 +350,6 @@ class SimplePrompts {
 }
 
 // ============================================================================
-// ASYNC SIMPLE PROMPT – For prompts needing cursor blink
-// ============================================================================
-
-/// `AsyncSimplePrompt<T>` – Async variant with cursor blink support.
-///
-/// Use this for text-input style prompts that need a blinking cursor.
-/// For simpler prompts without cursor, use [SimplePrompt].
-class AsyncSimplePrompt<T> {
-  /// Title displayed in the frame header.
-  final String title;
-
-  /// Theme for styling.
-  final PromptTheme theme;
-
-  /// Initial value (returned on cancel).
-  final T initialValue;
-
-  /// Builds key bindings given the prompt state.
-  final KeyBindings Function(PromptState<T> state) buildBindings;
-
-  /// Renders the prompt content.
-  ///
-  /// Receives the FrameContext, current state, and cursor blink state.
-  final void Function(
-      FrameContext ctx, PromptState<T> state, CursorBlink cursor) render;
-
-  /// Whether to hide the cursor during the prompt.
-  final bool hideCursor;
-
-  /// Hint style for displaying key bindings.
-  final HintStyle hintStyle;
-
-  /// Whether to show connector line after header.
-  final bool showConnector;
-
-  const AsyncSimplePrompt({
-    required this.title,
-    required this.initialValue,
-    required this.buildBindings,
-    required this.render,
-    this.theme = PromptTheme.dark,
-    this.hideCursor = true,
-    this.hintStyle = HintStyle.bullets,
-    this.showConnector = false,
-  });
-
-  /// Runs the prompt asynchronously and returns the result.
-  ///
-  /// Returns [initialValue] if cancelled, otherwise returns the
-  /// final value from the state.
-  Future<T> run() async {
-    final state = PromptState<T>(initialValue);
-    final bindings = buildBindings(state);
-    final cursorBlink = CursorBlink();
-
-    final frame = WidgetFrame(
-      title: title,
-      theme: theme,
-      bindings: bindings,
-      hintStyle: hintStyle,
-      showConnector: showConnector,
-    );
-
-    void renderFrame(RenderOutput out) {
-      frame.render(out, (ctx) => render(ctx, state, cursorBlink));
-    }
-
-    final runner = PromptRunner(hideCursor: hideCursor);
-    final result = await runner.runAsyncWithBindings(
-      render: renderFrame,
-      bindings: bindings,
-      cursorBlink: cursorBlink,
-    );
-
-    if (state.isCancelled || result == PromptResult.cancelled) {
-      return initialValue;
-    }
-    return state.value;
-  }
-}
-
-// ============================================================================
 // TEXT INPUT STATE – Extended state for text input prompts
 // ============================================================================
 
@@ -503,26 +420,26 @@ class TextInputState {
 }
 
 // ============================================================================
-// ASYNC TEXT PROMPT – Specialized async prompt for text input
+// SYNC TEXT PROMPT – Text input with static cursor
 // ============================================================================
 
-/// `AsyncTextPrompt` – Specialized async prompt for text input with validation.
+/// `TextPromptSync` – Sync text input prompt with validation.
 ///
-/// Built on [AsyncSimplePrompt] pattern with text-specific features:
+/// Features:
+/// - Static cursor (always visible, no blink)
 /// - TextInputBuffer management
 /// - Validation with error messages
-/// - Cursor blink
 /// - Optional password masking
 ///
 /// **Usage:**
 /// ```dart
-/// final result = await AsyncTextPrompt(
+/// final result = TextPromptSync(
 ///   title: 'Enter name',
 ///   placeholder: 'Your name...',
 ///   validator: (text) => text.length < 2 ? 'Too short' : '',
 /// ).run();
 /// ```
-class AsyncTextPrompt {
+class TextPromptSync {
   /// Title displayed in the frame header.
   final String title;
 
@@ -547,7 +464,7 @@ class AsyncTextPrompt {
   /// Whether to allow Ctrl+R to toggle visibility in password mode.
   final bool allowReveal;
 
-  const AsyncTextPrompt({
+  const TextPromptSync({
     required this.title,
     this.theme = PromptTheme.dark,
     this.placeholder,
@@ -561,9 +478,8 @@ class AsyncTextPrompt {
   /// Runs the prompt and returns the result.
   ///
   /// Returns null if cancelled, otherwise returns the trimmed text.
-  Future<String?> run() async {
+  String? run() {
     final state = TextInputState();
-    final cursorBlink = CursorBlink();
 
     // Build bindings
     var bindings = KeyBindings.textInput(
@@ -627,9 +543,8 @@ class AsyncTextPrompt {
           displayText = state.text;
         }
 
-        // Cursor
-        final cursor =
-            cursorBlink.isVisible ? '${theme.accent}▌${theme.reset}' : ' ';
+        // Static cursor (always visible)
+        final cursor = '${theme.accent}▌${theme.reset}';
 
         // Color based on validation
         final color = state.valid ? theme.accent : theme.error;
@@ -648,10 +563,9 @@ class AsyncTextPrompt {
     }
 
     final runner = PromptRunner(hideCursor: true);
-    await runner.runAsyncWithBindings(
+    runner.runWithBindings(
       render: renderFrame,
       bindings: bindings,
-      cursorBlink: cursorBlink,
     );
 
     if (state.isCancelled) return null;
@@ -660,30 +574,30 @@ class AsyncTextPrompt {
 }
 
 // ============================================================================
-// ASYNC SIMPLE PROMPTS – Factory methods for async prompts
+// SYNC SIMPLE PROMPTS – Factory methods for sync prompts
 // ============================================================================
 
-/// Factory methods for common async prompt patterns.
-class AsyncSimplePrompts {
-  AsyncSimplePrompts._();
+/// Factory methods for common sync prompt patterns.
+class SyncPrompts {
+  SyncPrompts._();
 
   /// Creates a text input prompt with optional validation.
   ///
   /// ```dart
-  /// final name = await AsyncSimplePrompts.text(
+  /// final name = SyncPrompts.text(
   ///   title: 'Enter name',
   ///   placeholder: 'Your name...',
   ///   required: true,
   /// ).run();
   /// ```
-  static AsyncTextPrompt text({
+  static TextPromptSync text({
     required String title,
     String? placeholder,
     String Function(String)? validator,
     bool required = false,
     PromptTheme theme = PromptTheme.dark,
   }) {
-    return AsyncTextPrompt(
+    return TextPromptSync(
       title: title,
       theme: theme,
       placeholder: placeholder,
@@ -695,19 +609,19 @@ class AsyncSimplePrompts {
   /// Creates a password input prompt with masking.
   ///
   /// ```dart
-  /// final password = await AsyncSimplePrompts.password(
+  /// final password = SyncPrompts.password(
   ///   title: 'Enter password',
   ///   required: true,
   /// ).run();
   /// ```
-  static AsyncTextPrompt password({
+  static TextPromptSync password({
     required String title,
     bool required = true,
     bool allowReveal = true,
     String maskChar = '•',
     PromptTheme theme = PromptTheme.dark,
   }) {
-    return AsyncTextPrompt(
+    return TextPromptSync(
       title: title,
       theme: theme,
       masked: true,
@@ -720,18 +634,18 @@ class AsyncSimplePrompts {
   /// Creates a text input with custom validation message.
   ///
   /// ```dart
-  /// final email = await AsyncSimplePrompts.validated(
+  /// final email = SyncPrompts.validated(
   ///   title: 'Enter email',
   ///   validator: (t) => t.contains('@') ? '' : 'Invalid email',
   /// ).run();
   /// ```
-  static AsyncTextPrompt validated({
+  static TextPromptSync validated({
     required String title,
     required String Function(String) validator,
     String? placeholder,
     PromptTheme theme = PromptTheme.dark,
   }) {
-    return AsyncTextPrompt(
+    return TextPromptSync(
       title: title,
       theme: theme,
       placeholder: placeholder,

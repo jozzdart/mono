@@ -1,13 +1,11 @@
 import 'package:terminice/terminice.dart';
 
-Future<void> main() async {
+void main() {
   // Try other themes: PromptTheme.dark, .matrix, .fire, .pastel
   final manager = EnvManager(
     theme: PromptTheme.pastel,
     title: 'Environment Variables',
   );
 
-  await manager.run();
+  manager.run();
 }
-
-

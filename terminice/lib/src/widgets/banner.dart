@@ -1,19 +1,13 @@
-import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/hints.dart';
 import '../system/prompt_runner.dart';
 import '../system/widget_frame.dart';
 
-/// Renders a big ASCII banner aligned with ThemeDemo styling.
+/// Renders a big ASCII banner.
 ///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
+/// **Example:**
 /// ```dart
-/// // Fluent API
 /// Banner('MONO').withMatrixTheme().run();
-///
-/// // With shared config
-/// final config = PromptConfig.matrix;
-/// Banner('MONO', config: config).run();
 /// ```
 class Banner with Themeable {
   final String text;
@@ -29,22 +23,14 @@ class Banner with Themeable {
   final int letterSpacing;
 
   /// Creates an ASCII banner.
-  ///
-  /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
-  /// - A direct [theme] parameter (for convenience)
   Banner(
     this.text, {
     this.showFrame = true,
     this.showShadow = true,
     this.hScale = 1,
     this.letterSpacing = 1,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  })  : theme = config?.theme ?? theme,
-        assert(hScale >= 1),
+    this.theme = PromptTheme.dark,
+  })  : assert(hScale >= 1),
         assert(letterSpacing >= 0);
 
   @override

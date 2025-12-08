@@ -1,6 +1,6 @@
 import 'package:terminice/terminice.dart';
 
-Future<void> main() async {
+void main() {
   final wizard = Wizard(
     title: 'Project Wizard',
     theme: PromptTheme.pastel,
@@ -8,8 +8,8 @@ Future<void> main() async {
       WizardStep(
         id: 'name',
         label: 'Project Name',
-        run: (state, theme) async {
-          return await TextPrompt(
+        run: (state, theme) {
+          return TextPrompt(
             prompt: 'Enter project name',
             placeholder: 'my_app',
             theme: theme,
@@ -44,7 +44,7 @@ Future<void> main() async {
     ],
   );
 
-  final result = await wizard.run();
+  final result = wizard.run();
   if (result == null) {
     InfoBox('Wizard cancelled',
             type: InfoBoxType.warn, theme: PromptTheme.pastel)

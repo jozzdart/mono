@@ -1,4 +1,4 @@
-import '../style/prompt_config.dart';
+
 import '../style/theme.dart';
 import '../system/widget_frame.dart';
 
@@ -9,14 +9,12 @@ enum InfoBoxType { info, warn, error }
 /// Aligns with ThemeDemo styling: uses themed title borders and
 /// left gutter with the theme's vertical border glyph.
 ///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
 /// // Fluent API
 /// InfoBox('Message').withFireTheme().show();
 ///
 /// // With shared config
-/// final config = PromptConfig.fire;
-/// InfoBox('Message', config: config).show();
+/// InfoBox('Message').show();
 /// ```
 class InfoBox with Themeable {
   final List<String> lines;
@@ -28,34 +26,21 @@ class InfoBox with Themeable {
   /// Creates an info box with a single message.
   ///
   /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
   /// - A direct [theme] parameter (for convenience)
   InfoBox(
     String message, {
     this.type = InfoBoxType.info,
     this.title,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  })  : lines = [message],
-        theme = config?.theme ?? theme;
+    this.theme = PromptTheme.dark,
+  }) : lines = [message];
 
   /// Creates an info box with multiple messages.
-  ///
-  /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
-  /// - A direct [theme] parameter (for convenience)
   InfoBox.multi(
     List<String> messages, {
     this.type = InfoBoxType.info,
     this.title,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  })  : lines = messages,
-        theme = config?.theme ?? theme;
+    this.theme = PromptTheme.dark,
+  }) : lines = messages;
 
   InfoBox._internal({
     required this.lines,
@@ -90,20 +75,16 @@ class InfoBox with Themeable {
 
 /// Convenience function mirroring the requested API name.
 ///
-/// Supports [PromptConfig] for shared configuration:
 /// ```dart
-/// final config = PromptConfig.matrix;
-/// infoBox('Message', config: config);
+/// infoBox('Message');
 /// ```
 void infoBox(
   String message, {
   InfoBoxType type = InfoBoxType.info,
   String? title,
-  PromptConfig? config,
   PromptTheme theme = PromptTheme.dark,
 }) {
-  InfoBox(message, type: type, title: title, config: config, theme: theme)
-      .show();
+  InfoBox(message, type: type, title: title, theme: theme).show();
 }
 
 String _defaultTitle(InfoBoxType t) {

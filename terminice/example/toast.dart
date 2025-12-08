@@ -1,33 +1,31 @@
+import 'dart:io';
 import '../lib/src/src.dart';
 
 void main() {
-  // Basic info toast
-  Toast('Hello from Terminice Toast', theme: PromptTheme.pastel).run();
+  // Example 1: Show toast while doing work
+  print('Example 1: Toast during work\n');
+  Toast('Processing...', variant: ToastVariant.info, theme: PromptTheme.pastel)
+      .showWhile(() {
+    sleep(const Duration(seconds: 1));
+  });
 
-  // Success variant
-  Toast(
+  // Example 2: Manual show/clear
+  print('\nExample 2: Manual toast control\n');
+  final successToast = Toast(
     'Saved successfully',
     variant: ToastVariant.success,
     theme: PromptTheme.matrix,
-  ).run();
+  );
+  successToast.show();
+  sleep(const Duration(milliseconds: 800));
+  successToast.clear();
 
-  // Warning with longer hold and slower fade
-  Toast(
-    'Low disk space',
-    label: 'Warning',
-    variant: ToastVariant.warning,
-    duration: const Duration(milliseconds: 1600),
-    fadeOut: const Duration(milliseconds: 900),
-    theme: PromptTheme.fire,
-  ).run();
+  // Example 3: Simple toast
+  print('\nExample 3: Simple inline toast\n');
+  final simple = SimpleToast('Operation complete', variant: ToastVariant.success);
+  simple.show();
+  sleep(const Duration(milliseconds: 600));
+  simple.clear();
 
-  // Error, short and sharp
-  Toast(
-    'Operation failed',
-    label: 'Error',
-    variant: ToastVariant.error,
-    duration: const Duration(milliseconds: 900),
-  ).run();
+  print('\nAll examples complete!');
 }
-
-

@@ -1,4 +1,3 @@
-import '../style/prompt_config.dart';
 import '../style/theme.dart';
 import '../system/focus_navigation.dart';
 import '../system/key_bindings.dart';
@@ -18,7 +17,6 @@ import '../system/widget_frame.dart';
 /// - Enter submit (validates all fields)
 /// - Esc cancel (returns null)
 ///
-/// **Configuration:** Supports both direct theme and [PromptConfig]:
 /// ```dart
 /// // Fluent API
 /// final result = Form(title: 'Login', fields: fields)
@@ -26,8 +24,7 @@ import '../system/widget_frame.dart';
 ///   .run();
 ///
 /// // With shared config
-/// final config = PromptConfig.matrix;
-/// final result = Form(title: 'Login', fields: fields, config: config).run();
+/// final result = Form(title: 'Login', fields: fields).run();
 /// ```
 class FormFieldSpec {
   final String name; // key in the result map
@@ -63,17 +60,12 @@ class Form with Themeable {
   /// Creates a form.
   ///
   /// Accepts either:
-  /// - A [PromptConfig] object (theme extracted automatically)
   /// - A direct [theme] parameter (for convenience)
   Form({
     required this.title,
     required this.fields,
-    // Config object (preferred for shared configuration)
-    PromptConfig? config,
-    // Direct theme (for convenience)
-    PromptTheme theme = PromptTheme.dark,
-  })  : theme = config?.theme ?? theme,
-        assert(fields.isNotEmpty, 'Form requires at least one field');
+    this.theme = PromptTheme.dark,
+  }) : assert(fields.isNotEmpty, 'Form requires at least one field');
 
   @override
   Form copyWithTheme(PromptTheme theme) {
@@ -228,15 +220,12 @@ class Form with Themeable {
 
 /// Convenience function mirroring the requested API name.
 ///
-/// Supports [PromptConfig] for shared configuration:
 /// ```dart
-/// final config = PromptConfig.matrix;
-/// final result = form('Login', fields, config: config);
+/// final result = form('Login', fields);
 /// ```
 FormResult? form(
   String title,
   List<FormFieldSpec> fields, {
-  PromptConfig? config,
   PromptTheme theme = PromptTheme.dark,
 }) =>
-    Form(title: title, fields: fields, config: config, theme: theme).run();
+    Form(title: title, fields: fields, theme: theme).run();
