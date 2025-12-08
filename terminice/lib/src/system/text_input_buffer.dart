@@ -1,4 +1,4 @@
-import 'key_events.dart';
+import 'package:terminice/terminice.dart';
 
 /// Manages text input state with cursor positioning.
 ///
@@ -382,8 +382,9 @@ class TextInputBuffer {
   ({String before, String cursor, String after}) textWithBlockCursor() {
     final before = textBeforeCursor;
     final cursorChar = charAtCursor ?? ' ';
-    final after =
-        _cursorPosition < _buffer.length ? text.substring(_cursorPosition + 1) : '';
+    final after = _cursorPosition < _buffer.length
+        ? text.substring(_cursorPosition + 1)
+        : '';
 
     return (before: before, cursor: cursorChar, after: after);
   }
@@ -408,4 +409,3 @@ extension SimpleTextInput on TextInputBuffer {
     return backspace();
   }
 }
-

@@ -4,11 +4,6 @@
 
 export 'core/core.dart';
 
-// Terminal & I/O
-export 'system/terminal.dart';
-export 'system/key_events.dart';
-export 'system/key_bindings.dart';
-
 // Rendering Infrastructure
 export 'system/prompt_runner.dart';
 export 'system/framed_layout.dart';

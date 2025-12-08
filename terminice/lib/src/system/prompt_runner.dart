@@ -1,8 +1,6 @@
 import 'dart:io';
 
-import 'terminal.dart';
-import 'key_events.dart';
-import 'key_bindings.dart';
+import 'package:terminice/terminice.dart';
 
 /// Result from a prompt indicating whether it was confirmed or cancelled.
 enum PromptResult { confirmed, cancelled }

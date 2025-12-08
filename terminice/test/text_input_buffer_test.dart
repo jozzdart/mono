@@ -1,5 +1,4 @@
-import 'package:terminice/src/system/text_input_buffer.dart';
-import 'package:terminice/src/system/key_events.dart';
+import 'package:terminice/terminice.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -350,4 +349,3 @@ void main() {
     });
   });
 }
-
