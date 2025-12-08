@@ -1,5 +1,4 @@
-import 'package:terminice/src/widgets/range_prompt.dart';
-import 'package:terminice/src/style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final range = RangePrompt(

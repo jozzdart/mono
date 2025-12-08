@@ -5,7 +5,6 @@ import '../system/framed_layout.dart';
 import '../system/key_bindings.dart';
 import '../system/line_builder.dart';
 import '../system/prompt_runner.dart';
-import '../system/rendering.dart';
 import '../system/text_input_buffer.dart';
 import '../system/widget_frame.dart';
 
@@ -66,7 +65,7 @@ class UnitConverter with Themeable {
     stdout.writeln('${theme.bold}$top${theme.reset}');
 
     // Length section
-    stdout.writeln('${lb.gutter()}${sectionHeader(theme, 'Length · cm ↔ in')}');
+    stdout.writeln('${lb.gutter()}${_sectionHeader('Length · cm ↔ in')}');
     final pairLen = _resolveLengthPair();
     stdout.writeln('${lb.gutter()}${_equation(
       leftLabel: 'cm',
@@ -85,7 +84,7 @@ class UnitConverter with Themeable {
 
     // Currency section
     stdout.writeln(
-        '${lb.gutter()}${sectionHeader(theme, 'Currency · USD ↔ EUR')}');
+        '${lb.gutter()}${_sectionHeader('Currency · USD ↔ EUR')}');
     final pairCur = _resolveCurrencyPair();
     stdout.writeln('${lb.gutter()}${_rateLine()}');
     stdout.writeln('${lb.gutter()}${_equation(
@@ -216,7 +215,7 @@ class UnitConverter with Themeable {
 
       widgetFrame.render(out, (ctx) {
         // Section
-        ctx.gutterLine(sectionHeader(theme, conv.name));
+        ctx.gutterLine(_sectionHeader(conv.name));
         if (conv.details.isNotEmpty) {
           ctx.gutterLine('${theme.gray}${conv.details}${theme.reset}');
         }
@@ -261,6 +260,10 @@ class UnitConverter with Themeable {
   }
 
   // --- Rendering helpers -------------------------------------------------
+
+  String _sectionHeader(String name) {
+    return '${theme.bold}${theme.accent}$name${theme.reset}';
+  }
 
   String _equation({
     required String leftLabel,

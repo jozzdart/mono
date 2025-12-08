@@ -27,13 +27,17 @@ class Demo {
 
   final result = editor.run();
 
-  stdout.writeln('\nResult:');
-  Highlight(
-    result,
-    theme: PromptTheme.pastel,
-    language: 'dart',
-    title: 'Your Snippet',
-    color: false,
-    guides: true,
-  ).show();
+  if (result == null) {
+    stdout.writeln('\nCancelled.');
+  } else {
+    stdout.writeln('\nResult:');
+    Highlight(
+      result,
+      theme: PromptTheme.pastel,
+      language: 'dart',
+      title: 'Your Snippet',
+      color: false,
+      guides: true,
+    ).show();
+  }
 }

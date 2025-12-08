@@ -1,5 +1,4 @@
-import 'package:terminice/src/widgets/date_picker.dart';
-import 'package:terminice/src/style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final date = DatePickerPrompt(

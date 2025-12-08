@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final rnd = Random();
@@ -8,7 +8,9 @@ void main() {
 
   double nextValue() {
     t += 0.2;
-    return 0.9 * sin(t) + 0.35 * sin(2.4 * t + 0.6) + 0.12 * (rnd.nextDouble() - 0.5);
+    return 0.9 * sin(t) +
+        0.35 * sin(2.4 * t + 0.6) +
+        0.12 * (rnd.nextDouble() - 0.5);
   }
 
   LineChartWidget(
@@ -23,5 +25,3 @@ void main() {
     generator: nextValue,
   ).run();
 }
-
-

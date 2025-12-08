@@ -1,5 +1,5 @@
 import 'dart:io';
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   // Example 1: Manual frame control
@@ -32,7 +32,8 @@ void main() {
 
   // Example 3: Simple spinner
   print('\nExample 3: Simple inline spinner\n');
-  final simple = SimpleSpinner('Working...', style: SpinnerStyle.arcs, theme: PromptTheme.matrix);
+  final simple = SimpleSpinner('Working...',
+      style: SpinnerStyle.arcs, theme: PromptTheme.matrix);
   for (int i = 0; i < 12; i++) {
     simple.show(frame: i);
     sleep(const Duration(milliseconds: 150));

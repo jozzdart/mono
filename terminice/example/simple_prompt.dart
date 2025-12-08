@@ -3,7 +3,7 @@ import 'package:terminice/terminice.dart';
 
 /// Demonstrates the SimplePrompt system for creating reusable prompt patterns.
 ///
-/// SimplePrompt<T> provides a composable way to build prompts that:
+/// SimplePrompt\<T> provides a composable way to build prompts that:
 /// - Handle cancellation automatically
 /// - Return initial value on cancel
 /// - Reduce boilerplate compared to manual PromptRunner usage
@@ -128,7 +128,8 @@ void main() {
     required: true,
   ).run();
 
-  print('   Password: ${password != null ? "***${password.length} chars***" : "(cancelled)"}');
+  print(
+      '   Password: ${password != null ? "***${password.length} chars***" : "(cancelled)"}');
   print('');
 
   // Example 8: Validated input (email example)

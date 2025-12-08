@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import 'package:terminice/src/style/theme.dart';
-import 'package:terminice/src/widgets/badge.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final theme = PromptTheme.pastel;
@@ -30,5 +29,3 @@ void main() {
       '${Badge.warning('WARNINGS', inverted: false).withPastelTheme().render()} '
       '${Badge.danger('FAILED').withPastelTheme().render()}');
 }
-
-

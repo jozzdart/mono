@@ -1,5 +1,5 @@
 import '../style/theme.dart';
-import '../system/rendering.dart';
+import '../system/text_utils.dart' as text_utils;
 import '../system/widget_frame.dart';
 
 /// Breadcrumbs – file path navigation line.
@@ -138,7 +138,7 @@ class Breadcrumbs with Themeable {
     return out;
   }
 
-  int _visibleLength(String s) => stripAnsi(s).length;
+  int _visibleLength(String s) => text_utils.visibleLength(s);
 }
 
 /// Convenience function mirroring the class API.

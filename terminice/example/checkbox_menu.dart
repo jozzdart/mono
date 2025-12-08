@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final items = <String>[
@@ -27,6 +27,6 @@ void main() {
   if (selection.isEmpty) {
     print('No selection or cancelled.');
   } else {
-    print('Selected: ' + selection.join(', '));
+    print('Selected: ${selection.join(', ')}');
   }
 }

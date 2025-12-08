@@ -32,6 +32,6 @@ void main() {
   ];
 
   Flashcards(
-      cards: cards, theme: PromptTheme.pastel, title: 'Flashcards – Demo')
-    ..run();
+          cards: cards, theme: PromptTheme.pastel, title: 'Flashcards – Demo')
+      .run();
 }

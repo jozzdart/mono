@@ -48,7 +48,8 @@ class MultiLineInputPrompt with Themeable {
     );
   }
 
-  String run() {
+  /// Runs the prompt. Returns entered text, or `null` if cancelled.
+  String? run() {
     final lines = <String>[''];
     int cursorLine = 0;
     int cursorColumn = 0;
@@ -221,7 +222,7 @@ class MultiLineInputPrompt with Themeable {
       bindings: bindings,
     );
 
-    if (cancelled || !confirmed) return '';
+    if (cancelled || !confirmed) return null;
     return lines.join('\n');
   }
 }

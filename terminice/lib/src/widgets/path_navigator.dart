@@ -51,8 +51,8 @@ class PathNavigator with Themeable {
     );
   }
 
-  /// Returns a selected path, or empty string if cancelled.
-  String run() {
+  /// Returns a selected path, or `null` if cancelled.
+  String? run() {
     Directory current = startDir;
     String? selectedPath;
 
@@ -104,8 +104,8 @@ class PathNavigator with Themeable {
       },
     );
 
-    if (result == null) return '';
-    return selectedPath ?? '';
+    if (result == null) return null;
+    return selectedPath;
   }
 }
 

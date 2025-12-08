@@ -956,9 +956,6 @@ class InlineStyle {
   }
 }
 
-/// Badge tones for inline styling.
-enum BadgeTone { neutral, info, success, warning, danger }
-
 /// Spinner frame styles.
 enum SpinnerFrames { dots, bars, arcs }
 

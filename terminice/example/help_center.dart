@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final docs = <HelpDoc>[
@@ -51,8 +51,6 @@ void main() {
   if (selected == null) {
     print('Cancelled.');
   } else {
-    print('Selected: ' + selected.id + ' (' + selected.title + ')');
+    print('Selected: ${selected.id} (${selected.title})');
   }
 }
-
-

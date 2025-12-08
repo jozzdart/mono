@@ -16,13 +16,13 @@ void main() {
 
   // Dark theme
   StatCards(items: items, theme: PromptTheme.dark, title: 'Stat Cards · Dark')
-    ..show();
+      .show();
   stdout.writeln();
 
   // Pastel theme
   StatCards(
-      items: items, theme: PromptTheme.pastel, title: 'Stat Cards · Pastel')
-    ..show();
+          items: items, theme: PromptTheme.pastel, title: 'Stat Cards · Pastel')
+      .show();
   stdout.writeln();
 
   // Fire theme

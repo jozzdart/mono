@@ -1,7 +1,7 @@
 import '../style/theme.dart';
 import '../system/line_builder.dart';
-import '../system/rendering.dart';
 import '../system/prompt_runner.dart';
+import '../system/text_utils.dart' as text_utils;
 import '../system/widget_frame.dart';
 
 /// MarkdownViewer – renders markdown with colors and headers
@@ -174,7 +174,7 @@ class MarkdownViewer with Themeable {
   }
 
   void _gutter(String content) {
-    final text = color ? content : stripAnsi(content);
+    final text = color ? content : text_utils.stripAnsi(content);
     if (text.trim().isEmpty) {
       _ctx.gutterEmpty();
     } else {
@@ -347,13 +347,13 @@ class MarkdownViewer with Themeable {
     for (final r in contentRows) {
       for (var i = 0; i < colCount; i++) {
         final cell = i < r.length ? _inline(r[i]) : '';
-        final w = visibleLength(cell);
+        final w = text_utils.visibleLength(cell);
         if (w > widths[i]) widths[i] = w;
       }
     }
 
     String pad(String txt, int w, String a) {
-      final visible = visibleLength(txt);
+      final visible = text_utils.visibleLength(txt);
       final needed = (w - visible).clamp(0, 1000);
       if (a == 'right') return '${' ' * needed}$txt';
       if (a == 'center') {

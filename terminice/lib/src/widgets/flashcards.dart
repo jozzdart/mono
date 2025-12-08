@@ -6,7 +6,6 @@ import '../system/framed_layout.dart';
 import '../system/hints.dart';
 import '../system/key_bindings.dart';
 import '../system/prompt_runner.dart';
-import '../system/rendering.dart';
 import '../system/widget_frame.dart';
 
 /// Flashcards – spaced repetition deck in terminal.
@@ -202,13 +201,13 @@ class Flashcards with Themeable {
     final face = flipped ? card.back : card.front;
     final label = flipped ? 'Answer' : 'Question';
     final color = flipped ? theme.accent : theme.highlight;
-    ctx.gutterLine(sectionHeader(theme, label));
+    ctx.sectionHeader(label);
     for (final line in face.split('\n')) {
       ctx.gutterLine('$color$line${theme.reset}');
     }
 
     if (!flipped && card.hint != null && card.hint!.isNotEmpty) {
-      ctx.gutterLine(sectionHeader(theme, 'Hint'));
+      ctx.sectionHeader('Hint');
       ctx.gutterLine('${theme.gray}${card.hint}${theme.reset}');
     }
   }

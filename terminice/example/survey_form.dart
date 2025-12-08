@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final questions = <SurveyQuestionSpec>[
@@ -61,5 +61,3 @@ void main() {
   print('Survey results:');
   result.values.forEach((k, v) => print('  $k: $v'));
 }
-
-

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final total = 1000;

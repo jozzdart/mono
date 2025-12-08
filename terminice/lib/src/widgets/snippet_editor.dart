@@ -53,8 +53,8 @@ class SnippetEditor with Themeable {
   }
 
   /// Runs the editor and returns the final snippet.
-  /// Returns an empty string when cancelled.
-  String run() {
+  /// Returns `null` when cancelled.
+  String? run() {
     final lines = initialText.isEmpty ? <String>[''] : initialText.split('\n');
     int cursorLine = 0;
     int cursorColumn = 0;
@@ -250,7 +250,7 @@ class SnippetEditor with Themeable {
       bindings: bindings,
     );
 
-    if (cancelled) return '';
+    if (cancelled) return null;
     return lines.join('\n');
   }
 

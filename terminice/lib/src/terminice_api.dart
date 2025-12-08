@@ -246,13 +246,13 @@ class Terminice {
 
   /// Multi-line text input with cursor navigation.
   ///
-  /// Returns the entered text, or empty string if cancelled.
+  /// Returns the entered text, or `null` if cancelled.
   ///
   /// **Example:**
   /// ```dart
   /// final notes = terminice.multiLine(label: 'Notes');
   /// ```
-  String multiLine({
+  String? multiLine({
     required String label,
     int maxLines = 200,
     int visibleLines = 10,
@@ -739,13 +739,13 @@ class Terminice {
 
   /// File picker for selecting files or folders.
   ///
-  /// Returns the selected path, or empty string if cancelled.
+  /// Returns the selected path, or `null` if cancelled.
   ///
   /// **Example:**
   /// ```dart
   /// final path = terminice.filePicker(label: 'Select a file');
   /// ```
-  String filePicker({
+  String? filePicker({
     required String label,
     Directory? startDir,
     bool showHidden = false,
@@ -819,13 +819,13 @@ class Terminice {
 
   /// Interactive path/directory navigator.
   ///
-  /// Returns selected path, or empty string if cancelled.
+  /// Returns selected path, or `null` if cancelled.
   ///
   /// **Example:**
   /// ```dart
   /// final path = terminice.pathNavigator(label: 'Select folder');
   /// ```
-  String pathNavigator({
+  String? pathNavigator({
     String label = 'Path Navigator',
     Directory? startDir,
     bool showHidden = false,
@@ -1314,13 +1314,13 @@ class Terminice {
 
   /// Small code snippet editor with syntax highlighting.
   ///
-  /// Returns the edited code, or empty string if cancelled.
+  /// Returns the edited code, or `null` if cancelled.
   ///
   /// **Example:**
   /// ```dart
   /// final code = terminice.snippetEditor(title: 'Edit Code');
   /// ```
-  String snippetEditor({
+  String? snippetEditor({
     required String title,
     String language = 'auto',
     int maxLines = 200,

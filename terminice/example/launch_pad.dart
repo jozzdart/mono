@@ -1,39 +1,48 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 import 'dart:io';
 
 void main() {
   final actions = <LaunchAction>[
-    LaunchAction('Build', icon: '>>', description: 'Compile project', onActivate: () {
+    LaunchAction('Build', icon: '>>', description: 'Compile project',
+        onActivate: () {
       stdout.writeln('Building...');
       sleep(const Duration(milliseconds: 500));
       stdout.writeln('Done.');
     }),
-    LaunchAction('Test', icon: 'OK', description: 'Run unit tests', onActivate: () {
+    LaunchAction('Test', icon: 'OK', description: 'Run unit tests',
+        onActivate: () {
       stdout.writeln('Running tests...');
       sleep(const Duration(milliseconds: 500));
       stdout.writeln('All tests passed.');
     }),
-    LaunchAction('Docs', icon: 'DOC', description: 'Open documentation', onActivate: () {
+    LaunchAction('Docs', icon: 'DOC', description: 'Open documentation',
+        onActivate: () {
       stdout.writeln('Opening docs...');
     }),
-    LaunchAction('Lint', icon: 'LINT', description: 'Static analysis', onActivate: () {
+    LaunchAction('Lint', icon: 'LINT', description: 'Static analysis',
+        onActivate: () {
       stdout.writeln('Linting...');
       sleep(const Duration(milliseconds: 400));
       stdout.writeln('No issues found.');
     }),
-    LaunchAction('Format', icon: 'FMT', description: 'Format code', onActivate: () {
+    LaunchAction('Format', icon: 'FMT', description: 'Format code',
+        onActivate: () {
       stdout.writeln('Formatting...');
     }),
-    LaunchAction('Publish', icon: 'PUB', description: 'Release package', onActivate: () {
+    LaunchAction('Publish', icon: 'PUB', description: 'Release package',
+        onActivate: () {
       stdout.writeln('Publishing...');
     }),
-    LaunchAction('Clean', icon: 'RM', description: 'Remove build outputs', onActivate: () {
+    LaunchAction('Clean', icon: 'RM', description: 'Remove build outputs',
+        onActivate: () {
       stdout.writeln('Cleaning...');
     }),
-    LaunchAction('Serve', icon: 'SRV', description: 'Run dev server', onActivate: () {
+    LaunchAction('Serve', icon: 'SRV', description: 'Run dev server',
+        onActivate: () {
       stdout.writeln('Starting dev server...');
     }),
-    LaunchAction('Settings', icon: 'CFG', description: 'Configure tools', onActivate: () {
+    LaunchAction('Settings', icon: 'CFG', description: 'Configure tools',
+        onActivate: () {
       stdout.writeln('Opening settings...');
     }),
   ];
@@ -52,5 +61,3 @@ void main() {
     stdout.writeln('Selected: ${chosen.label}');
   }
 }
-
-

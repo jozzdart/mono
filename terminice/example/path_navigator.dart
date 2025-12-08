@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final nav = PathNavigator(
@@ -9,10 +9,10 @@ void main() {
   );
 
   final result = nav.run();
-  if (result.isEmpty) {
+  if (result == null || result.isEmpty) {
     print('Navigation cancelled.');
   } else {
-    print('Selected path: ' + result);
+    print('Selected path: $result');
   }
 }
 

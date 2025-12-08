@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() async {
   final monitor = ServiceMonitor([

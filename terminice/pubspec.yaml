@@ -1,13 +1,15 @@
 name: terminice
-description: "Beautiful CLI menus"
+description: "Beautiful, interactive CLI widgets and prompts for terminal apps"
 version: 0.0.1
-homepage: https://github.com/jozzdart/terminice
-repository: https://github.com/jozzdart/terminice/tree/main/terminice
-issue_tracker: https://github.com/jozzdart/terminice/issues
+homepage: https://github.com/jozzdart/mono
+repository: https://github.com/jozzdart/mono/tree/main/terminice
+issue_tracker: https://github.com/jozzdart/mono/issues
 topics:
-  - terminice
   - cli
-  - tool
+  - terminal
+  - prompt
+  - menu
+  - interactive
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

@@ -8,7 +8,7 @@ enum KeyEventType {
   ctrlC,
   ctrlR,
   ctrlD,
-  cnrlE,
+  ctrlE,
   ctrlGeneric,
   tab,
   arrowUp,
@@ -45,7 +45,7 @@ class KeyEventReader {
     if (byte == 4) return const KeyEvent(KeyEventType.ctrlD);
 
     // Ctrl+E
-    if (byte == 5) return const KeyEvent(KeyEventType.cnrlE);
+    if (byte == 5) return const KeyEvent(KeyEventType.ctrlE);
 
     // Tab
     if (byte == 9) return const KeyEvent(KeyEventType.tab);

@@ -1,5 +1,4 @@
-import 'package:terminice/src/widgets/date_field.dart';
-import 'package:terminice/src/style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final date = DateFieldsPrompt(

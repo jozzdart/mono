@@ -1,5 +1,5 @@
 import 'dart:io';
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   // Example 1: Show toast while doing work
@@ -22,7 +22,8 @@ void main() {
 
   // Example 3: Simple toast
   print('\nExample 3: Simple inline toast\n');
-  final simple = SimpleToast('Operation complete', variant: ToastVariant.success);
+  final simple =
+      SimpleToast('Operation complete', variant: ToastVariant.success);
   simple.show();
   sleep(const Duration(milliseconds: 600));
   simple.clear();

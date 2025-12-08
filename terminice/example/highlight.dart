@@ -29,34 +29,34 @@ class Greeter {
 
   final shellSample = '''
 # sample shell
-curl -X POST https://api.example.com/v1/items \
-  -H "Authorization: Bearer TOKEN" \
+curl -X POST https://api.example.com/v1/items 
+  -H "Authorization: Bearer TOKEN" 
   -d '{"name":"demo","count":3}'
 ''';
 
   Highlight(dartSample,
-      theme: PromptTheme.dark,
-      language: 'dart',
-      title: 'Dart',
-      color: false,
-      guides: true)
-    ..show();
+          theme: PromptTheme.dark,
+          language: 'dart',
+          title: 'Dart',
+          color: false,
+          guides: true)
+      .show();
   stdout.writeln();
 
   Highlight(jsonSample,
-      theme: PromptTheme.pastel,
-      language: 'json',
-      title: 'JSON',
-      color: false,
-      guides: true)
-    ..show();
+          theme: PromptTheme.pastel,
+          language: 'json',
+          title: 'JSON',
+          color: false,
+          guides: true)
+      .show();
   stdout.writeln();
 
   Highlight(shellSample,
-      theme: PromptTheme.matrix,
-      language: 'shell',
-      title: 'Shell',
-      color: false,
-      guides: true)
-    ..show();
+          theme: PromptTheme.matrix,
+          language: 'shell',
+          title: 'Shell',
+          color: false,
+          guides: true)
+      .show();
 }

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   // Method 1: Using show() with manual control

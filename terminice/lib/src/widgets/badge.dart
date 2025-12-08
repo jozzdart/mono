@@ -131,7 +131,7 @@ class Badge with Themeable {
     final inline = wf.InlineStyle(theme);
     return inline.badge(
       text,
-      tone: _toInlineTone(tone),
+      tone: tone,
       inverted: inverted,
       bracketed: bracketed,
       bold: bold,
@@ -140,22 +140,4 @@ class Badge with Themeable {
 
   @override
   String toString() => render();
-
-  static wf.BadgeTone _toInlineTone(BadgeTone t) {
-    switch (t) {
-      case BadgeTone.neutral:
-        return wf.BadgeTone.neutral;
-      case BadgeTone.info:
-        return wf.BadgeTone.info;
-      case BadgeTone.success:
-        return wf.BadgeTone.success;
-      case BadgeTone.warning:
-        return wf.BadgeTone.warning;
-      case BadgeTone.danger:
-        return wf.BadgeTone.danger;
-    }
-  }
 }
-
-/// Tone for badges: influences the color.
-enum BadgeTone { neutral, info, success, warning, danger }

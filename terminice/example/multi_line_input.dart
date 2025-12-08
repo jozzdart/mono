@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import 'package:terminice/src/widgets/multi_line_input.dart';
-import 'package:terminice/src/style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final input = MultiLineInputPrompt(
@@ -9,7 +8,7 @@ void main() {
     theme: PromptTheme.pastel,
   ).run();
 
-  if (input.isEmpty) {
+  if (input == null || input.isEmpty) {
     stdout.writeln(
         '${PromptTheme.pastel.dim}Cancelled.${PromptTheme.pastel.reset}');
   } else {

@@ -38,7 +38,8 @@ class FilePickerPrompt with Themeable {
     );
   }
 
-  String run() {
+  /// Runs the file picker. Returns the selected path, or `null` if cancelled.
+  String? run() {
     Directory current = startDir;
 
     while (true) {
@@ -67,7 +68,7 @@ class FilePickerPrompt with Themeable {
       );
 
       final result = select.run();
-      if (result.isEmpty) return '';
+      if (result.isEmpty) return null;
 
       final choice = result.first;
 

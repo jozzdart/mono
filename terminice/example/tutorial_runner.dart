@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final runner = TutorialRunner(
@@ -7,11 +7,13 @@ void main() {
     steps: const [
       TutorialStep(
         title: 'Install dependencies',
-        description: 'Run: dart pub get\nEnsures all packages are downloaded and ready.',
+        description:
+            'Run: dart pub get\nEnsures all packages are downloaded and ready.',
       ),
       TutorialStep(
         title: 'Run the tests',
-        description: 'Execute: dart test\nAll tests should pass before proceeding.',
+        description:
+            'Execute: dart test\nAll tests should pass before proceeding.',
       ),
       TutorialStep(
         title: 'Launch the demo',
@@ -37,5 +39,3 @@ void main() {
   final total = result.length;
   print('Tutorial completed steps: $done/$total');
 }
-
-

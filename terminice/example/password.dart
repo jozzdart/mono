@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import 'package:terminice/src/widgets/password.dart';
-import 'package:terminice/src/style/theme.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   _runWithTheme(PromptTheme.pastel);

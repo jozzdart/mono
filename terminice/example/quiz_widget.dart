@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final quiz = QuizWidget(
@@ -38,5 +38,3 @@ void main() {
   // Optional: additional app-level handling
   print('Final score: ${result.correct}/${result.total}');
 }
-
-

@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   UnitConverter(
@@ -9,5 +9,3 @@ void main() {
     usdToEurRate: 0.92,
   ).run();
 }
-
-

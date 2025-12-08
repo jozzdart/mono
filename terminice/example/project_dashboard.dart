@@ -38,7 +38,7 @@ void main() {
     committedAgo: '2h ago',
     sdk: 'Dart 3.5.0',
     os: 'macOS 15',
-  )..show();
+  ).show();
   stdout.writeln();
 
   // Pastel theme
@@ -63,7 +63,7 @@ void main() {
     committedAgo: '36m ago',
     sdk: 'Dart 3.5.0',
     os: 'macOS 15',
-  )..show();
+  ).show();
   stdout.writeln();
 
   // Matrix theme
@@ -100,5 +100,5 @@ void main() {
     committedAgo: '12m ago',
     sdk: 'Dart 3.5.0',
     os: 'macOS 15',
-  )..show();
+  ).show();
 }

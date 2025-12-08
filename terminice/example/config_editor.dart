@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:terminice/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final theme = PromptTheme.pastel;
@@ -27,5 +27,3 @@ void main() {
     stdout.writeln('\n${theme.info}Result:${theme.reset}\n$result');
   }
 }
-
-

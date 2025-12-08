@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   CodePlayground(
@@ -8,5 +8,3 @@ void main() {
     outputVisibleLines: 10,
   ).run();
 }
-
-

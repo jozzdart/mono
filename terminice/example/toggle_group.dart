@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 import 'dart:io';
 
 void main() {
@@ -22,5 +22,3 @@ void main() {
     stdout.writeln('  ${entry.key}: ${entry.value ? 'ON' : 'OFF'}');
   }
 }
-
-

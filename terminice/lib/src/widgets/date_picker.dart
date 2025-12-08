@@ -124,7 +124,7 @@ class DatePickerPrompt with Themeable {
           ),
           // Ctrl+E → today
           KeyBinding.single(
-            KeyEventType.cnrlE,
+            KeyEventType.ctrlE,
             (event) {
               selected = DateTime.now();
               viewMonth = DateTime(selected.year, selected.month);

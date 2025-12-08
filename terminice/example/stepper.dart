@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 import 'dart:io';
 
 void main() {
@@ -26,5 +26,3 @@ void main() {
     stdout.writeln('Stopped on step ${result + 1}: ${steps[result]}');
   }
 }
-
-

@@ -1,4 +1,4 @@
-import '../lib/src/src.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   final picker = ColorPickerPrompt(
@@ -8,5 +8,5 @@ void main() {
   );
 
   final hex = picker.run();
-  print('Selected: ' + (hex ?? 'cancelled'));
+  print('Selected: ${hex ?? 'cancelled'}');
 }
