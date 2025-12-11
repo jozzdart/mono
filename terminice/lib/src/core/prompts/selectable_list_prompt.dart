@@ -13,12 +13,12 @@ import 'package:terminice/terminice.dart';
 /// - Composition over inheritance
 /// - Separation of concerns (each component remains independent)
 /// - Builder pattern for flexible configuration
-/// - DRY: Centralizes common widget patterns
+/// - DRY: Centralizes common prompt/view patterns
 /// - Backward compatible: Individual components still work standalone
 ///
 /// **Before SelectableListPrompt:**
 /// ```dart
-/// final nav = ListNavigation(itemCount: items.length, maxVisible: 10);
+/// final nav = ListNavigator(itemCount: items.length, maxVisible: 10);
 /// final selection = SelectionController.multi();
 /// bool cancelled = false;
 ///
@@ -29,7 +29,7 @@ import 'package:terminice/terminice.dart';
 ///   onToggle: () => selection.toggle(nav.selectedIndex),
 /// ) + KeyBindings.prompt(onCancel: () => cancelled = true);
 ///
-/// final frame = WidgetFrame(title: title, theme: theme, bindings: bindings);
+/// final frame = FrameView(title: title, theme: theme, bindings: bindings);
 ///
 /// void render(RenderOutput out) {
 ///   frame.render(out, (ctx) {

@@ -2,7 +2,7 @@ import 'dart:math';
 
 /// Manages 2D grid navigation state with wrapping.
 ///
-/// A companion to [ListNavigation] for grid-based widgets where items
+/// A companion to [ListNavigator] for grid-based views where items
 /// are arranged in rows and columns. Handles:
 /// - 2D movement (up/down/left/right) with edge wrapping
 /// - Dynamic column/row calculation
@@ -15,7 +15,7 @@ import 'dart:math';
 ///
 /// **Usage with fixed columns:**
 /// ```dart
-/// final grid = GridNavigation(itemCount: 12, columns: 4);
+/// final grid = GridNavigator(itemCount: 12, columns: 4);
 /// // 12 items in 4 columns = 3 rows
 ///
 /// grid.moveRight(); // wraps to next row at edge
@@ -26,7 +26,7 @@ import 'dart:math';
 ///
 /// **Usage with dynamic columns:**
 /// ```dart
-/// final grid = GridNavigation.responsive(
+/// final grid = GridNavigator.responsive(
 ///   itemCount: items.length,
 ///   cellWidth: 20,
 ///   availableWidth: terminalWidth,
@@ -35,7 +35,7 @@ import 'dart:math';
 ///
 /// **Integration with SelectionController:**
 /// ```dart
-/// final grid = GridNavigation(itemCount: 9, columns: 3);
+/// final grid = GridNavigator(itemCount: 9, columns: 3);
 /// final sel = SelectionController.multi();
 ///
 /// // In key handler:

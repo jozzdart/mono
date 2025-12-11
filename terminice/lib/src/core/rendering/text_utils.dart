@@ -1,11 +1,11 @@
-/// Centralized text utilities for terminal widget rendering.
+/// Centralized text utilities for terminal view/prompt rendering.
 ///
 /// This module provides reusable functions for common text operations:
 /// - Padding and truncating strings
 /// - ANSI escape code handling
 /// - Value clamping and collection utilities
 ///
-/// Import and use these instead of duplicating private helpers in widgets.
+/// Import and use these instead of duplicating private helpers in views.
 library;
 
 // ============================================================================

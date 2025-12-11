@@ -42,7 +42,7 @@ class ColumnConfig {
 
 /// Centralized table rendering utility.
 ///
-/// Provides consistent table layout across widgets:
+/// Provides consistent table layout across views/prompts:
 /// - Column width computation (ANSI-aware)
 /// - Styled header row
 /// - Connector lines
@@ -257,7 +257,7 @@ class TableRenderer {
 
   /// Builds a row with selection highlighting.
   ///
-  /// Used for interactive table widgets where one cell is selected.
+  /// Used for interactive table views where one cell is selected.
   String selectableRowLine(
     List<String> cells, {
     required int index,

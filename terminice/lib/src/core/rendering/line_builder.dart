@@ -1,9 +1,9 @@
 import 'package:terminice/terminice.dart';
 
-/// LineBuilder – Centralized line-level styling utilities for widgets.
+/// LineBuilder – Centralized line-level styling utilities for terminal views.
 ///
 /// Provides reusable, theme-aware methods for common UI patterns found
-/// across terminal widgets. Eliminates duplication and ensures consistency.
+/// across terminal views and prompts. Eliminates duplication and ensures consistency.
 ///
 /// **Key patterns centralized:**
 /// - Frame prefix (left gutter with border vertical)
@@ -36,9 +36,9 @@ import 'package:terminice/terminice.dart';
 ///
 /// **Benefits:**
 /// - Single source of truth for styling patterns
-/// - Consistent appearance across all widgets
+/// - Consistent appearance across all views
 /// - Easier theming customization
-/// - Reduced boilerplate in widget code
+/// - Reduced boilerplate in view code
 /// - Better testability
 class LineBuilder {
   /// The theme providing colors and style symbols.
@@ -57,7 +57,7 @@ class LineBuilder {
   /// Returns the standard left gutter/frame prefix.
   ///
   /// This is the `│ ` pattern used at the start of content lines
-  /// within a framed widget.
+  /// within a framed view.
   String gutter() => '${theme.gray}${style.borderVertical}${theme.reset} ';
 
   /// Returns a gutter-only line (no trailing space, just the border).
@@ -208,7 +208,7 @@ class LineBuilder {
 
   /// Builds a standard selectable item line.
   ///
-  /// Combines arrow indicator with content. Common in list widgets.
+  /// Combines arrow indicator with content. Common in list views.
   ///
   /// Example output: `▶ Selected item` or `  Unselected item`
   String selectableLine(String content, {required bool focused}) {
@@ -217,7 +217,7 @@ class LineBuilder {
 
   /// Builds a checkbox item line.
   ///
-  /// Combines arrow, checkbox, and content. Common in multi-select widgets.
+  /// Combines arrow, checkbox, and content. Common in multi-select views.
   ///
   /// Example output: `▶ ■ Checked item` or `  □ Unchecked item`
   String checkboxLine(

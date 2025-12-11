@@ -2,7 +2,7 @@ import 'dart:io';
 
 /// Provides safe, cached access to terminal dimensions with sensible defaults.
 ///
-/// Instead of duplicating terminal size queries across widgets, use this
+/// Instead of duplicating terminal size queries across components, use this
 /// centralized utility:
 ///
 /// ```dart
@@ -15,7 +15,7 @@ import 'dart:io';
 /// - Consistent fallback defaults (80×24)
 /// - Single point for error handling
 /// - Easy to test/mock
-/// - Reduces boilerplate in widgets
+/// - Reduces boilerplate in views and prompts
 class TerminalInfo {
   /// Default fallback width when terminal is unavailable.
   static const int defaultColumns = 80;
@@ -65,7 +65,7 @@ class TerminalInfo {
   }
 }
 
-/// Terminal utilities used across widgets to manage raw mode and input.
+/// Terminal utilities used across components and prompts to manage raw mode and input.
 class TerminalControl {
   /// Puts stdin into raw mode (no echo, no line buffering) and returns
   /// a [TerminalModeState] that can be used to restore the original settings.

@@ -1,36 +1,36 @@
 import 'prompt_theme.dart';
 
 // ============================================================================
-// THEMEABLE MIXIN – DRY builder pattern for theme-aware widgets
+// THEMEABLE MIXIN – DRY builder pattern for theme-aware components
 // ============================================================================
 
-/// Mixin for widgets that support theme configuration.
+/// Mixin for views/prompts that support theme configuration.
 ///
 /// Implementing this mixin provides automatic builder methods via the
 /// [ThemeableBuilder] extension, eliminating repetitive copyWith patterns.
 ///
 /// **Implementation:**
 ///
-/// 1. Add `with Themeable` to your widget class
+/// 1. Add `with Themeable` to your component class
 /// 2. Add `theme` field (usually with `PromptTheme.dark` default)
 /// 3. Implement `copyWithTheme` to create a copy with a new theme
 ///
 /// ```dart
-/// class MyWidget with Themeable {
+/// class MyView with Themeable {
 ///   final String label;
 ///   @override
 ///   final PromptTheme theme;
 ///
-///   MyWidget(this.label, {this.theme = PromptTheme.dark});
+///   MyView(this.label, {this.theme = PromptTheme.dark});
 ///
 ///   @override
-///   MyWidget copyWithTheme(PromptTheme theme) {
-///     return MyWidget(label, theme: theme);
+///   MyView copyWithTheme(PromptTheme theme) {
+///     return MyView(label, theme: theme);
 ///   }
 /// }
 ///
 /// // Now you get all these methods automatically:
-/// final widget = MyWidget('Test')
+/// final view = MyView('Test')
 ///   .withTheme(PromptTheme.matrix)  // Custom theme
 ///   .withDarkTheme()                // Dark preset
 ///   .withMatrixTheme()              // Matrix preset
@@ -45,7 +45,7 @@ mixin Themeable {
   Themeable copyWithTheme(PromptTheme theme);
 }
 
-/// Builder extensions for [Themeable] widgets.
+/// Builder extensions for [Themeable] components.
 extension ThemeableBuilder<T extends Themeable> on T {
   /// Creates a copy with a custom theme.
   T withTheme(PromptTheme theme) {

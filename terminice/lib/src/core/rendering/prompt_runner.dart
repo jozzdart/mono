@@ -14,9 +14,9 @@ enum PromptResult { confirmed, cancelled }
 /// Instead of clearing the entire terminal, this tracks how many lines
 /// were written and uses cursor movement to clear just those lines
 /// before re-rendering. This preserves any terminal content that existed
-/// before the widget started.
+/// before the prompt/view started.
 ///
-/// **Standalone usage** (for simple display widgets):
+/// **Standalone usage** (for simple display views):
 /// ```dart
 /// final out = RenderOutput();
 /// out.writeln('Line 1');
@@ -52,7 +52,7 @@ class RenderOutput {
   }
 
   /// Clears only the lines we wrote by moving cursor up and erasing.
-  /// This preserves terminal content from before the widget started.
+  /// This preserves terminal content from before the prompt/view started.
   /// Call this before re-rendering to update the display.
   void clear() {
     if (_lineCount > 0) {
@@ -68,10 +68,10 @@ class RenderOutput {
 /// Manages terminal session state (cursor visibility, raw mode).
 ///
 /// This is a composable component that can be used:
-/// - Directly for display widgets that need cursor control
+/// - Directly for display views that need cursor control
 /// - As part of [PromptRunner] for interactive prompts
 ///
-/// **For display widgets** (no key input needed):
+/// **For display views** (no key input needed):
 /// ```dart
 /// final session = TerminalSession(hideCursor: true);
 /// final out = RenderOutput();
@@ -145,13 +145,13 @@ class TerminalSession {
 
 /// Configuration for end-of-prompt behavior.
 class EndBehavior {
-  /// Whether to clear the widget's output when the prompt ends.
+  /// Whether to clear the rendered output when the prompt ends.
   /// If false, the final render remains visible.
   final bool clearOnEnd;
 
   const EndBehavior({this.clearOnEnd = true});
 
-  /// Default: clears widget output when done (returns to clean terminal).
+  /// Default: clears prompt output when done (returns to clean terminal).
   static const EndBehavior clear = EndBehavior(clearOnEnd: true);
 
   /// Keeps the final render visible after the prompt ends.
@@ -168,14 +168,14 @@ class EndBehavior {
 /// a complete solution for interactive prompts.
 ///
 /// **Key feature**: Never clears the entire terminal. Only clears lines
-/// written by the widget itself, preserving any existing terminal content.
+/// written by the prompt/view itself, preserving any existing terminal content.
 ///
 /// Usage:
 /// ```dart
 /// final runner = PromptRunner();
 /// final result = runner.run(
 ///   render: (out) {
-///     out.writeln('My widget content');
+///     out.writeln('My prompt content');
 ///     out.writeln('More content');
 ///   },
 ///   onKey: (event) {
@@ -266,7 +266,7 @@ class PromptRunner {
   /// benefiting from centralized terminal management and [RenderOutput]
   /// for partial clearing.
   ///
-  /// Use this for widgets that need:
+  /// Use this for prompts or views that need:
   /// - Entry/exit styling
   /// - Custom render timing
   /// - Non-standard input loops
@@ -324,7 +324,7 @@ class PromptRunner {
   /// );
   ///
   /// final result = runner.runWithBindings(
-  ///   render: (out) => renderMyWidget(out),
+  ///   render: (out) => renderPrompt(out),
   ///   bindings: bindings,
   /// );
   /// ```

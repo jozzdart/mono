@@ -2,7 +2,7 @@ import 'package:terminice/terminice.dart';
 
 /// Manages text input state with cursor positioning.
 ///
-/// Encapsulates the common pattern found in text-based terminal widgets:
+/// Encapsulates the common pattern found in text-based terminal prompts:
 /// - Text buffer with cursor position
 /// - Character insertion at cursor
 /// - Backspace/delete operations
@@ -33,7 +33,7 @@ import 'package:terminice/terminice.dart';
 /// - Efficient StringBuffer-based storage
 /// - Key event handling helper
 /// - Selection support (future-ready)
-/// - Zero boilerplate in widgets
+/// - Zero boilerplate in prompts
 class TextInputBuffer {
   final StringBuffer _buffer = StringBuffer();
 
@@ -300,7 +300,7 @@ class TextInputBuffer {
   /// Returns true if the input was modified (useful for triggering re-render).
   /// Handles: typing, backspace, arrow keys, home/end.
   ///
-  /// Does NOT handle: Enter, Esc, Tab (these are typically handled by widgets).
+  /// Does NOT handle: Enter, Esc, Tab (these are typically handled by the parent prompt).
   bool handleKey(KeyEvent event) {
     switch (event.type) {
       case KeyEventType.char:

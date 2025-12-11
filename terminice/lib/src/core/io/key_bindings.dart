@@ -34,7 +34,7 @@ enum KeyActionResult {
 /// Each binding can:
 /// - Match one or more key types
 /// - Execute an action when matched
-/// - Provide a hint label and description for UI display
+/// - Provide a hint label and description for hint display in views/prompts
 class KeyBinding {
   /// Key types that trigger this binding.
   final Set<KeyEventType> keys;

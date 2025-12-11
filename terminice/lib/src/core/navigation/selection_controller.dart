@@ -1,8 +1,8 @@
-/// Manages selection state for list-based widgets.
+/// Manages selection state for list-based views.
 ///
 /// A composable controller that handles single or multi-selection,
-/// working alongside navigation systems like [ListNavigation] or
-/// [FocusNavigation]. Reduces boilerplate by centralizing:
+/// working alongside navigation systems like [ListNavigator] or
+/// [FocusNavigator]. Reduces boilerplate by centralizing:
 /// - Toggle/select/deselect operations
 /// - Select all / clear all for multi-select
 /// - Result extraction (selected indices or items)
@@ -15,7 +15,7 @@
 ///
 /// **Single-select usage:**
 /// ```dart
-/// final nav = ListNavigation(itemCount: items.length, maxVisible: 10);
+/// final nav = ListNavigator(itemCount: items.length, maxVisible: 10);
 /// final sel = SelectionController.single();
 ///
 /// // Toggle replaces the selection in single mode
@@ -27,7 +27,7 @@
 ///
 /// **Multi-select usage:**
 /// ```dart
-/// final nav = ListNavigation(itemCount: items.length, maxVisible: 10);
+/// final nav = ListNavigator(itemCount: items.length, maxVisible: 10);
 /// final sel = SelectionController.multi();
 ///
 /// // Toggle adds/removes from selection
@@ -192,7 +192,9 @@ class SelectionController {
   /// returns a list with just that item.
   List<T> getSelectedMany<T>(List<T> items, {int? fallbackIndex}) {
     if (_selected.isEmpty) {
-      if (fallbackIndex != null && fallbackIndex >= 0 && fallbackIndex < items.length) {
+      if (fallbackIndex != null &&
+          fallbackIndex >= 0 &&
+          fallbackIndex < items.length) {
         return [items[fallbackIndex]];
       }
       return [];
@@ -214,7 +216,9 @@ class SelectionController {
     if (index != null && index >= 0 && index < items.length) {
       return items[index];
     }
-    if (fallbackIndex != null && fallbackIndex >= 0 && fallbackIndex < items.length) {
+    if (fallbackIndex != null &&
+        fallbackIndex >= 0 &&
+        fallbackIndex < items.length) {
       return items[fallbackIndex];
     }
     return null;
@@ -268,7 +272,7 @@ class SelectionController {
   }
 }
 
-/// Extension to integrate SelectionController with ListNavigation.
+/// Extension to integrate SelectionController with ListNavigator.
 ///
 /// Provides convenient methods that combine navigation and selection.
 extension SelectionControllerExt on SelectionController {
@@ -283,4 +287,3 @@ extension SelectionControllerExt on SelectionController {
   /// Checks if the focused item is selected.
   bool isFocusedSelected(int focusedIndex) => isSelected(focusedIndex);
 }
-

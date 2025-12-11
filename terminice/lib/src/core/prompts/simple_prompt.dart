@@ -9,7 +9,7 @@ import 'package:terminice/terminice.dart';
 /// Centralizes the common boilerplate found in basic prompts:
 /// - State management with cancellation tracking
 /// - Initial value vs confirmed value handling
-/// - PromptRunner + WidgetFrame + KeyBindings wiring
+/// - PromptRunner + FrameView + KeyBindings wiring
 ///
 /// **Problem it solves:**
 /// Many prompts repeat the same pattern:
@@ -18,7 +18,7 @@ import 'package:terminice/terminice.dart';
 /// bool cancelled = false;
 /// var value = initialValue;
 /// final bindings = KeyBindings.somePreset(onCancel: () => cancelled = true);
-/// final frame = WidgetFrame(...);
+/// final frame = FrameView(...);
 /// void render(RenderOutput out) { frame.render(out, (ctx) { ... }); }
 /// final runner = PromptRunner();
 /// final result = runner.runWithBindings(...);
@@ -49,11 +49,11 @@ import 'package:terminice/terminice.dart';
 /// **When to use:**
 /// - Simple prompts with a single return value
 /// - Prompts that don't need list navigation or complex state
-/// - When you want less boilerplate without creating a new widget class
+/// - When you want less boilerplate without creating a new prompt class
 ///
 /// **When NOT to use:**
 /// - Complex prompts – use SelectableListPrompt, ValuePrompt, etc.
-/// - Display-only widgets – use WidgetFrame.show()
+/// - Display-only views – use FrameView.show()
 class SimplePrompt<T> {
   /// Title displayed in the frame header.
   final String title;

@@ -2,7 +2,7 @@ import 'dart:math';
 
 /// Manages list navigation state with viewport scrolling.
 ///
-/// Encapsulates the common pattern found in list-based terminal widgets:
+/// Encapsulates the common pattern found in list-based terminal views:
 /// - Current selection index
 /// - Scroll offset for viewport
 /// - Movement with wrapping
@@ -10,7 +10,7 @@ import 'dart:math';
 ///
 /// **Usage:**
 /// ```dart
-/// final nav = ListNavigation(itemCount: items.length, maxVisible: 10);
+/// final nav = ListNavigator(itemCount: items.length, maxVisible: 10);
 ///
 /// // Move selection
 /// nav.moveBy(-1);  // up
@@ -28,7 +28,7 @@ import 'dart:math';
 /// - Wrapping navigation (going up from first item goes to last)
 /// - Automatic scroll to keep selection visible
 /// - Viewport calculation with overflow indicators
-/// - Zero boilerplate in widgets
+/// - Zero boilerplate in views
 class ListNavigator {
   /// Total number of items in the list.
   int _itemCount;

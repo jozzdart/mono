@@ -2,6 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'terminal.dart';
 
+/// Normalized terminal key event types.
+///
+/// These cover common control keys, arrows, printable characters, and
+/// unknown bytes. Use with `KeyEvent` for prompt and view input handling.
 enum KeyEventType {
   enter,
   esc,
@@ -22,13 +26,25 @@ enum KeyEventType {
   unknown,
 }
 
+/// Normalized key event captured from terminal input.
+///
+/// - [type]: the parsed event category
+/// - [char]: printable character or ctrl letter for `ctrlGeneric` (e.g., 'a')
 class KeyEvent {
   final KeyEventType type;
   final String? char;
   const KeyEvent(this.type, [this.char]);
 }
 
+/// Synchronous key event reader for raw terminal input.
+///
+/// Reads bytes from stdin, interprets control sequences (arrows, ESC),
+/// and returns normalized [KeyEvent] instances for use in prompts/views.
 class KeyEventReader {
+  /// Reads the next key event from stdin.
+  ///
+  /// Expects stdin to be in raw mode. For ESC-based sequences, briefly
+  /// peeks ahead to differentiate lone ESC from arrow keys.
   static KeyEvent read() {
     final byte = stdin.readByteSync();
 

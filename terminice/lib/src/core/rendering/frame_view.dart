@@ -1,15 +1,15 @@
 import 'package:terminice/terminice.dart';
 
-/// WidgetFrame – Composable frame rendering for terminal widgets.
+/// FrameView – Composable frame rendering for terminal views.
 ///
-/// Eliminates the common boilerplate pattern found across widgets:
+/// Eliminates the common boilerplate pattern found across views/prompts:
 /// - Create FramedLayout
 /// - Write top (with conditional bold)
 /// - Write content lines with LineBuilder
 /// - Write bottom border (conditionally)
 /// - Write hints from KeyBindings
 ///
-/// **Before WidgetFrame:**
+/// **Before FrameView:**
 /// ```dart
 /// void render(RenderOutput out) {
 ///   final style = theme.style;
@@ -30,10 +30,10 @@ import 'package:terminice/terminice.dart';
 /// }
 /// ```
 ///
-/// **After WidgetFrame:**
+/// **After FrameView:**
 /// ```dart
 /// void render(RenderOutput out) {
-///   final wf = WidgetFrame(title: title, theme: theme, bindings: bindings);
+///   final wf = FrameView(title: title, theme: theme, bindings: bindings);
 ///   wf.render(out, (ctx) {
 ///     ctx.line('Content line');
 ///     ctx.gutterLine('Indented content');
@@ -46,11 +46,11 @@ import 'package:terminice/terminice.dart';
 /// - `FrameContext` provides `LineBuilder` + convenience methods
 /// - Automatic hints from KeyBindings
 /// - Connector line support
-/// - Consistent styling across all widgets
+/// - Consistent styling across all views
 ///
 /// **Design principles:**
 /// - Composition over inheritance
-/// - Separation of concerns (frame rendering vs widget logic)
+/// - Separation of concerns (frame rendering vs view logic)
 /// - Backward compatible (use alongside existing patterns)
 class FrameView {
   /// Title displayed in the frame header.
@@ -79,7 +79,7 @@ class FrameView {
   /// Shorthand access to the style.
   PromptStyle get style => theme.style;
 
-  /// Renders the complete widget frame with content.
+  /// Renders the complete frame with content.
   ///
   /// [content] receives a [FrameContext] with helper methods for writing
   /// styled lines. The frame handles top, bottom, and hints automatically.
@@ -690,16 +690,16 @@ String _toneColor(StatTone tone, PromptTheme theme) {
 // DISPLAY-ONLY EXTENSIONS
 // ════════════════════════════════════════════════════════════════════════════
 
-/// Extension methods for display-only (non-interactive) widget rendering.
+/// Extension methods for display-only (non-interactive) frame rendering.
 extension FrameViewDisplayExtensions on FrameView {
   /// Renders to stdout and returns immediately.
   ///
-  /// Use for display-only widgets that don't need interactivity.
+  /// Use for display-only views that don't need interactivity.
   /// Creates a RenderOutput internally and renders the frame.
   ///
   /// Example:
   /// ```dart
-  /// final frame = WidgetFrame(title: 'Stats', theme: theme);
+  /// final frame = FrameView(title: 'Stats', theme: theme);
   /// frame.show((ctx) {
   ///   ctx.statItem('Tests', '98%', icon: '✔', tone: StatTone.success);
   ///   ctx.statItem('Coverage', '85%', icon: '◎', tone: StatTone.info);
@@ -729,18 +729,18 @@ extension FrameViewDisplayExtensions on FrameView {
   }
 }
 
-/// Extension to simplify WidgetFrame usage with PromptRunner.
+/// Extension to simplify FrameView usage with PromptRunner.
 extension PromptRunnerFrameExtension on PromptRunner {
-  /// Runs a prompt with WidgetFrame-based rendering.
+  /// Runs a prompt with FrameView-based rendering.
   ///
-  /// Convenience method that combines PromptRunner with WidgetFrame
+  /// Convenience method that combines PromptRunner with FrameView
   /// for the most common use case.
   ///
   /// Example:
   /// ```dart
   /// final runner = PromptRunner();
   /// final result = runner.runWithFrame(
-  ///   frame: WidgetFrame(title: 'My Prompt', theme: theme, bindings: bindings),
+  ///   frame: FrameView(title: 'My Prompt', theme: theme, bindings: bindings),
   ///   content: (ctx) {
   ///     ctx.gutterLine('Content here');
   ///   },

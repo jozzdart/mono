@@ -2,16 +2,16 @@ import 'dart:math';
 
 /// Manages focus navigation with optional per-item error tracking.
 ///
-/// A simpler alternative to [ListNavigation] for cases where all items
+/// A simpler alternative to [ListNavigator] for cases where all items
 /// are visible (no viewport scrolling needed). Commonly used in:
 /// - Forms with focusable fields
 /// - Multi-step wizards
-/// - Survey/questionnaire widgets
-/// - Any widget with selectable/focusable items
+/// - Survey/questionnaire flows
+/// - Any view with selectable/focusable items
 ///
 /// **Usage:**
 /// ```dart
-/// final focus = FocusNavigation(itemCount: fields.length);
+/// final focus = FocusNavigator(itemCount: fields.length);
 ///
 /// // Navigate with wrapping
 /// focus.moveBy(1);   // down/next (wraps at end)
@@ -37,7 +37,7 @@ import 'dart:math';
 /// - Per-item error tracking
 /// - Focus-first-error helper for validation flows
 /// - Dynamic item count updates
-/// - Zero boilerplate in widgets
+/// - Zero boilerplate in views
 class FocusNavigator {
   /// Total number of focusable items.
   int _itemCount;

@@ -13,7 +13,7 @@ enum SpinnerFrames { dots, bars, arcs }
 
 /// InlineStyle – theme-aware inline text styling utilities.
 ///
-/// Use for inline widgets that return styled strings rather than rendering
+/// Use for inline components that return styled strings rather than rendering
 /// to output (badges, labels, status indicators).
 ///
 /// Example:

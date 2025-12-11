@@ -2,7 +2,7 @@
 // SHARED STYLE ENUMS
 // ============================================================================
 
-/// Badge/label tones for consistent color theming across widgets.
+/// Badge/label tones for consistent color theming across terminal views.
 ///
 /// Used by [Badge], [InlineStyle], [FrameContext] and other components
 /// that need semantic color variants.
