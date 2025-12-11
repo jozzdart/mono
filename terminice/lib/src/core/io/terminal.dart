@@ -66,15 +66,15 @@ class TerminalInfo {
 }
 
 /// Terminal utilities used across widgets to manage raw mode and input.
-class Terminal {
+class TerminalControl {
   /// Puts stdin into raw mode (no echo, no line buffering) and returns
-  /// a [TerminalState] that can be used to restore the original settings.
-  static TerminalState enterRaw() {
+  /// a [TerminalModeState] that can be used to restore the original settings.
+  static TerminalModeState enterRaw() {
     final origEcho = stdin.echoMode;
     final origLineMode = stdin.lineMode;
     stdin.echoMode = false;
     stdin.lineMode = false;
-    return TerminalState(origEcho: origEcho, origLineMode: origLineMode);
+    return TerminalModeState(origEcho: origEcho, origLineMode: origLineMode);
   }
 
   /// Attempts to read the next byte for multi-byte escape sequences.
@@ -107,11 +107,11 @@ class Terminal {
 }
 
 /// Captures original terminal state and restores it on [restore].
-class TerminalState {
+class TerminalModeState {
   final bool origEcho;
   final bool origLineMode;
 
-  TerminalState({required this.origEcho, required this.origLineMode});
+  TerminalModeState({required this.origEcho, required this.origLineMode});
 
   void restore() {
     try {

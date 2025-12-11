@@ -46,7 +46,7 @@ class DynamicListPrompt<T> {
   // INTERNAL STATE
   // ──────────────────────────────────────────────────────────────────────────
 
-  late ListNavigation _nav;
+  late ListNavigator _nav;
   late KeyBindings _bindings;
   late List<T> _items;
   bool _cancelled = false;
@@ -65,7 +65,7 @@ class DynamicListPrompt<T> {
   // ──────────────────────────────────────────────────────────────────────────
 
   /// Current navigation state.
-  ListNavigation get nav => _nav;
+  ListNavigator get nav => _nav;
 
   /// Current key bindings.
   KeyBindings get bindings => _bindings;
@@ -280,7 +280,7 @@ class DynamicListPrompt<T> {
     _result = null;
     _items = buildItems();
 
-    _nav = ListNavigation(
+    _nav = ListNavigator(
       itemCount: _items.length,
       maxVisible: maxVisible,
     );

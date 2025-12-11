@@ -47,7 +47,7 @@ class QuizWidget with Themeable {
     for (int qi = 0; qi < questions.length; qi++) {
       final q = questions[qi];
       // Use centralized focus navigation for option selection
-      final focus = FocusNavigation(itemCount: q.options.length);
+      final focus = FocusNavigator(itemCount: q.options.length);
 
       // Use KeyBindings for declarative key handling
       final bindings = KeyBindings.verticalNavigation(
@@ -175,7 +175,7 @@ class QuizWidget with Themeable {
       });
 
       // Hints for continuation
-      out.writeln(Hints.comma(
+      out.writeln(HintFormat.comma(
         continueBindings.toHintEntries().map((e) => e[1]).toList(),
         theme,
       ));

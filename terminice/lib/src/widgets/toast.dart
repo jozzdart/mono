@@ -84,7 +84,7 @@ class Toast with Themeable {
       ctx.gutterLine('$iconPart $message');
     });
 
-    out.writeln(Hints.bullets([
+    out.writeln(HintFormat.bullets([
       'Toast notification',
     ], theme, dim: true));
   }

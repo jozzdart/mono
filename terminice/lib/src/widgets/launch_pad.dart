@@ -72,7 +72,7 @@ class LaunchPad with Themeable {
         ' ${theme.gray}${style.borderVertical}${theme.reset} ';
 
     // Use GridNavigation for 2D navigation
-    final grid = GridNavigation(itemCount: actions.length, columns: cols);
+    final grid = GridNavigator(itemCount: actions.length, columns: cols);
 
     LaunchAction? result;
 

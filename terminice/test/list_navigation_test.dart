@@ -5,7 +5,7 @@ void main() {
   group('ListNavigation', () {
     group('construction', () {
       test('initializes with correct defaults', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 5);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 5);
         expect(nav.selectedIndex, 0);
         expect(nav.scrollOffset, 0);
         expect(nav.itemCount, 10);
@@ -13,7 +13,7 @@ void main() {
       });
 
       test('clamps initial index to valid range', () {
-        final nav = ListNavigation(
+        final nav = ListNavigator(
           itemCount: 5,
           maxVisible: 3,
           initialIndex: 100,
@@ -22,7 +22,7 @@ void main() {
       });
 
       test('handles empty list', () {
-        final nav = ListNavigation(itemCount: 0, maxVisible: 5);
+        final nav = ListNavigator(itemCount: 0, maxVisible: 5);
         expect(nav.isEmpty, true);
         expect(nav.isNotEmpty, false);
         expect(nav.selectedIndex, 0);
@@ -32,39 +32,39 @@ void main() {
 
     group('navigation', () {
       test('moveDown wraps at end', () {
-        final nav = ListNavigation(itemCount: 3, maxVisible: 10);
+        final nav = ListNavigator(itemCount: 3, maxVisible: 10);
         nav.jumpTo(2); // Last item
         nav.moveDown();
         expect(nav.selectedIndex, 0); // Wrapped to first
       });
 
       test('moveUp wraps at start', () {
-        final nav = ListNavigation(itemCount: 3, maxVisible: 10);
+        final nav = ListNavigator(itemCount: 3, maxVisible: 10);
         nav.moveUp(); // From index 0
         expect(nav.selectedIndex, 2); // Wrapped to last
       });
 
       test('moveBy moves multiple positions', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 5);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 5);
         nav.moveBy(5);
         expect(nav.selectedIndex, 5);
       });
 
       test('jumpTo sets exact position', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 5);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 5);
         nav.jumpTo(7);
         expect(nav.selectedIndex, 7);
       });
 
       test('jumpToFirst goes to index 0', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 5);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 5);
         nav.jumpTo(5);
         nav.jumpToFirst();
         expect(nav.selectedIndex, 0);
       });
 
       test('jumpToLast goes to last index', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 5);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 5);
         nav.jumpToLast();
         expect(nav.selectedIndex, 9);
       });
@@ -72,14 +72,14 @@ void main() {
 
     group('scrolling', () {
       test('scroll adjusts when selection moves below viewport', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 3);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 3);
         nav.moveBy(4); // Move beyond viewport
         expect(nav.selectedIndex, 4);
         expect(nav.scrollOffset, 2); // Adjusted to keep selection visible
       });
 
       test('scroll adjusts when selection moves above viewport', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 3);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 3);
         nav.jumpTo(5);
         nav.moveBy(-3); // Move above current viewport
         expect(nav.selectedIndex, 2);
@@ -87,7 +87,7 @@ void main() {
       });
 
       test('hasOverflowAbove and hasOverflowBelow are correct', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 3);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 3);
 
         // At start
         expect(nav.hasOverflowAbove, false);
@@ -107,7 +107,7 @@ void main() {
 
     group('viewport', () {
       test('returns correct viewport boundaries', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 3);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 3);
         nav.jumpTo(5);
 
         final vp = nav.viewport;
@@ -119,7 +119,7 @@ void main() {
       });
 
       test('isSelected returns correct value', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 3);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 3);
         nav.jumpTo(5);
 
         expect(nav.isSelected(5), true);
@@ -131,7 +131,7 @@ void main() {
     group('visibleWindow', () {
       test('returns correct window of items', () {
         final items = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
-        final nav = ListNavigation(itemCount: items.length, maxVisible: 3);
+        final nav = ListNavigator(itemCount: items.length, maxVisible: 3);
         nav.jumpTo(5);
 
         final window = nav.visibleWindow(items);
@@ -143,7 +143,7 @@ void main() {
       });
 
       test('handles empty list', () {
-        final nav = ListNavigation(itemCount: 0, maxVisible: 3);
+        final nav = ListNavigator(itemCount: 0, maxVisible: 3);
         final window = nav.visibleWindow<String>([]);
 
         expect(window.isEmpty, true);
@@ -154,14 +154,14 @@ void main() {
 
     group('dynamic updates', () {
       test('itemCount update clamps selection', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 5);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 5);
         nav.jumpTo(8);
         nav.itemCount = 5; // Reduce count
         expect(nav.selectedIndex, 4); // Clamped to new last index
       });
 
       test('maxVisible update adjusts scroll', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 3);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 3);
         nav.jumpTo(5);
         expect(nav.scrollOffset, 3);
 
@@ -171,7 +171,7 @@ void main() {
       });
 
       test('reset goes back to initial state', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 5);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 5);
         nav.jumpTo(7);
         nav.reset();
         expect(nav.selectedIndex, 0);
@@ -179,7 +179,7 @@ void main() {
       });
 
       test('reset with initialIndex goes to specified position', () {
-        final nav = ListNavigation(itemCount: 10, maxVisible: 5);
+        final nav = ListNavigator(itemCount: 10, maxVisible: 5);
         nav.jumpTo(7);
         nav.reset(initialIndex: 3);
         expect(nav.selectedIndex, 3);

@@ -77,7 +77,7 @@ class TodoDashboard with Themeable {
     final lb = LineBuilder(theme);
 
     // Use centralized focus navigation
-    final focus = FocusNavigation(itemCount: tasks.length);
+    final focus = FocusNavigator(itemCount: tasks.length);
     bool cancelled = false;
     var current = List<TodoTask>.from(tasks);
     final initial = List<TodoTask>.from(tasks);

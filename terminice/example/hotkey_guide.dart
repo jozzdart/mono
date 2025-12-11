@@ -4,12 +4,12 @@ void main() {
   final theme = PromptTheme.dark; // Try .matrix, .fire, .pastel
 
   final guide = HotkeyGuide([
-    [Hints.key('?', theme), 'Show this guide'],
-    [Hints.key('↑ / ↓', theme), 'Navigate'],
-    [Hints.key('← / →', theme), 'Move between panes'],
-    [Hints.key('Enter', theme), 'Select / confirm'],
-    [Hints.key('Esc', theme), 'Back / close'],
-    [Hints.key('Ctrl+C', theme), 'Exit'],
+    [HintFormat.key('?', theme), 'Show this guide'],
+    [HintFormat.key('↑ / ↓', theme), 'Navigate'],
+    [HintFormat.key('← / →', theme), 'Move between panes'],
+    [HintFormat.key('Enter', theme), 'Select / confirm'],
+    [HintFormat.key('Esc', theme), 'Back / close'],
+    [HintFormat.key('Ctrl+C', theme), 'Exit'],
   ], theme: theme, title: 'Hotkey Guide');
 
   // Use TerminalSession for raw mode + cursor, RenderOutput for partial clearing
@@ -23,7 +23,7 @@ void main() {
     final top = FrameRenderer.titleWithBorders('Demo App', theme);
     out.writeln('${theme.bold}$top${theme.reset}');
     out.writeln(
-        '${theme.gray}${theme.style.borderVertical}${theme.reset} Press ${Hints.key('?', theme)} to view hotkeys');
+        '${theme.gray}${theme.style.borderVertical}${theme.reset} Press ${HintFormat.key('?', theme)} to view hotkeys');
     out.writeln(FrameRenderer.bottomLine('Demo App', theme));
   }
 

@@ -307,7 +307,7 @@ class ColorPickerPrompt with Themeable {
     try {
       stdin.echoMode = true;
       stdin.lineMode = true;
-      Terminal.showCursor();
+      TerminalControl.showCursor();
       stdout.write('${theme.accent}Hex${theme.reset} (#RRGGBB): ');
       final input = stdin.readLineSync();
       final value = input?.trim();
@@ -316,7 +316,7 @@ class ColorPickerPrompt with Themeable {
     } finally {
       stdin.echoMode = prevEcho == true ? true : false;
       stdin.lineMode = prevLine == true ? true : false;
-      Terminal.hideCursor();
+      TerminalControl.hideCursor();
     }
   }
 }

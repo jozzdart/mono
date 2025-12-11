@@ -50,7 +50,7 @@ class TutorialRunner with Themeable {
     // Use centralized line builder for consistent styling
     final lb = LineBuilder(theme);
     // Use centralized focus navigation
-    final focus = FocusNavigation(itemCount: steps.length);
+    final focus = FocusNavigator(itemCount: steps.length);
     bool cancelled = false;
     var current = List<TutorialStep>.from(steps);
     final initial = List<TutorialStep>.from(steps);

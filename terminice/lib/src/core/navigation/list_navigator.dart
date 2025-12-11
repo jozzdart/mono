@@ -29,7 +29,7 @@ import 'dart:math';
 /// - Automatic scroll to keep selection visible
 /// - Viewport calculation with overflow indicators
 /// - Zero boilerplate in widgets
-class ListNavigation {
+class ListNavigator {
   /// Total number of items in the list.
   int _itemCount;
 
@@ -47,7 +47,7 @@ class ListNavigation {
   /// [itemCount] is the total number of items in the list.
   /// [maxVisible] is the viewport size (how many items can be shown at once).
   /// [initialIndex] is the starting selection (defaults to 0).
-  ListNavigation({
+  ListNavigator({
     required int itemCount,
     required int maxVisible,
     int initialIndex = 0,
@@ -313,4 +313,3 @@ class ListWindow<T> {
   /// Whether the window is not empty.
   bool get isNotEmpty => items.isNotEmpty;
 }
-

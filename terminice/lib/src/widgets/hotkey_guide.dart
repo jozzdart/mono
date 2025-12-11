@@ -49,13 +49,13 @@ class HotkeyGuide with Themeable {
     );
 
     widgetFrame.render(out, (ctx) {
-      final body = Hints.grid(shortcuts, theme).split('\n');
+      final body = HintFormat.grid(shortcuts, theme).split('\n');
       for (final line in body) {
         ctx.gutterLine(line);
       }
 
       if (footerHints.isNotEmpty) {
-        ctx.gutterLine(Hints.comma(footerHints, theme));
+        ctx.gutterLine(HintFormat.comma(footerHints, theme));
       }
     });
   }

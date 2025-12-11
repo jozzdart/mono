@@ -38,7 +38,7 @@ import 'dart:math';
 /// - Focus-first-error helper for validation flows
 /// - Dynamic item count updates
 /// - Zero boilerplate in widgets
-class FocusNavigation {
+class FocusNavigator {
   /// Total number of focusable items.
   int _itemCount;
 
@@ -52,12 +52,13 @@ class FocusNavigation {
   ///
   /// [itemCount] is the total number of focusable items.
   /// [initialIndex] is the starting focus (defaults to 0).
-  FocusNavigation({
+  FocusNavigator({
     required int itemCount,
     int initialIndex = 0,
   })  : _itemCount = max(0, itemCount),
         _focusedIndex = 0,
-        _errors = List<String?>.filled(max(0, itemCount), null, growable: true) {
+        _errors =
+            List<String?>.filled(max(0, itemCount), null, growable: true) {
     _focusedIndex = itemCount > 0 ? initialIndex.clamp(0, itemCount - 1) : 0;
   }
 
@@ -282,4 +283,3 @@ class FocusNavigation {
     return validateOne(_focusedIndex, validator);
   }
 }
-

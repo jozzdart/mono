@@ -261,15 +261,15 @@ class ClockWidget with Themeable {
         }
       });
 
-      out.writeln(Hints.grid([
-        [Hints.key('A', currentTheme), 'toggle analog'],
-        [Hints.key('D', currentTheme), 'toggle digital'],
-        [Hints.key('B', currentTheme), 'both'],
-        [Hints.key('S', currentTheme), 'toggle seconds'],
-        [Hints.key('T', currentTheme), 'cycle theme'],
-        [Hints.key('L', currentTheme), 'layout'],
-        [Hints.key('+/-', currentTheme), 'radius'],
-        [Hints.key('Ctrl+C / Esc', currentTheme), 'exit'],
+      out.writeln(HintFormat.grid([
+        [HintFormat.key('A', currentTheme), 'toggle analog'],
+        [HintFormat.key('D', currentTheme), 'toggle digital'],
+        [HintFormat.key('B', currentTheme), 'both'],
+        [HintFormat.key('S', currentTheme), 'toggle seconds'],
+        [HintFormat.key('T', currentTheme), 'cycle theme'],
+        [HintFormat.key('L', currentTheme), 'layout'],
+        [HintFormat.key('+/-', currentTheme), 'radius'],
+        [HintFormat.key('Ctrl+C / Esc', currentTheme), 'exit'],
       ], currentTheme));
     }
 

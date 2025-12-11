@@ -5,7 +5,7 @@ import 'package:terminice/terminice.dart';
 /// SelectableGridPrompt – composable system for grid-based selection prompts.
 ///
 /// Composes:
-/// - [GridNavigation] for 2D navigation with wrapping
+/// - [GridNavigator] for 2D navigation with wrapping
 /// - [SelectionController] for selection state
 /// - [KeyBindings] for input handling
 /// - [FrameView] for rendering
@@ -73,7 +73,7 @@ class SelectableGridPrompt<T> {
   // INTERNAL STATE
   // ──────────────────────────────────────────────────────────────────────────
 
-  late GridNavigation _grid;
+  late GridNavigator _grid;
   late SelectionController _selection;
   late KeyBindings _bindings;
   late int _computedCellWidth;
@@ -121,7 +121,7 @@ class SelectableGridPrompt<T> {
   // ──────────────────────────────────────────────────────────────────────────
 
   /// Current grid navigation state.
-  GridNavigation get grid => _grid;
+  GridNavigator get grid => _grid;
 
   /// Current selection state.
   SelectionController get selection => _selection;
@@ -318,7 +318,7 @@ class SelectableGridPrompt<T> {
 
     _computeLayout();
 
-    _grid = GridNavigation(
+    _grid = GridNavigator(
       itemCount: items.length,
       columns: _computedColumns,
     );

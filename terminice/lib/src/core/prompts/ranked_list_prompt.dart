@@ -52,7 +52,7 @@ class RankedListPrompt<T> {
   // INTERNAL STATE
   // ──────────────────────────────────────────────────────────────────────────
 
-  late ListNavigation _nav;
+  late ListNavigator _nav;
   late TextInputBuffer _queryInput;
   late KeyBindings _bindings;
   late List<RankedItem<T>> _ranked;
@@ -76,7 +76,7 @@ class RankedListPrompt<T> {
   // ──────────────────────────────────────────────────────────────────────────
 
   /// Current navigation state.
-  ListNavigation get nav => _nav;
+  ListNavigator get nav => _nav;
 
   /// Current search query input.
   TextInputBuffer get queryInput => _queryInput;
@@ -259,7 +259,7 @@ class RankedListPrompt<T> {
     _queryInput = TextInputBuffer();
     _ranked = [];
 
-    _nav = ListNavigation(
+    _nav = ListNavigator(
       itemCount: 0,
       maxVisible: maxVisible,
     );

@@ -237,14 +237,15 @@ class KeyBindings {
 
   /// Generates a hints grid string for display.
   String toHintsGrid(PromptTheme theme) {
-    return Hints.grid(toHintEntries(), theme);
+    return HintFormat.grid(toHintEntries(), theme);
   }
 
   /// Generates a hints bullets string for display.
   String toHintsBullets(PromptTheme theme) {
     final entries = toHintEntries();
-    final segments = entries.map((e) => Hints.hint(e[0], e[1], theme)).toList();
-    return Hints.bullets(segments, theme);
+    final segments =
+        entries.map((e) => HintFormat.hint(e[0], e[1], theme)).toList();
+    return HintFormat.bullets(segments, theme);
   }
 
   // --------------------------------------------------------------------------

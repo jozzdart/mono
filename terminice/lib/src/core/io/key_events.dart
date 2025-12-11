@@ -69,8 +69,8 @@ class KeyEventReader {
     if (byte == 27) {
       // Wait briefly to see if this is an escape sequence
       sleep(const Duration(milliseconds: 30));
-      final next1 = Terminal.tryReadNextByte();
-      final next2 = Terminal.tryReadNextByte();
+      final next1 = TerminalControl.tryReadNextByte();
+      final next2 = TerminalControl.tryReadNextByte();
 
       if (next1 == 91 && next2 != null) {
         switch (next2) {

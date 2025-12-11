@@ -65,7 +65,7 @@ class SearchableListPrompt<T> {
   // INTERNAL STATE
   // ──────────────────────────────────────────────────────────────────────────
 
-  late ListNavigation _nav;
+  late ListNavigator _nav;
   late SelectionController _selection;
   late TextInputBuffer _queryInput;
   late KeyBindings _bindings;
@@ -91,7 +91,7 @@ class SearchableListPrompt<T> {
   // ──────────────────────────────────────────────────────────────────────────
 
   /// Current navigation state.
-  ListNavigation get nav => _nav;
+  ListNavigator get nav => _nav;
 
   /// Current selection state.
   SelectionController get selection => _selection;
@@ -270,7 +270,7 @@ class SearchableListPrompt<T> {
     _searchActive = searchEnabled;
     _queryInput = TextInputBuffer();
 
-    _nav = ListNavigation(
+    _nav = ListNavigator(
       itemCount: _filtered.length,
       maxVisible: maxVisible,
     );

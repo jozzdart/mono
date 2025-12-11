@@ -85,7 +85,7 @@ class SystemDashboard with Themeable {
         });
 
         // Hints
-        out.writeln(Hints.bullets([
+        out.writeln(HintFormat.bullets([
           'Ctrl+C to exit',
           'Theme-aware accents',
         ], theme, dim: true));

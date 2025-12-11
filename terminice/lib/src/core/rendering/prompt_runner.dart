@@ -90,7 +90,7 @@ class TerminalSession {
   /// Whether to enter raw terminal mode (for key input).
   final bool rawMode;
 
-  TerminalState? _termState;
+  TerminalModeState? _termState;
   bool _active = false;
 
   TerminalSession({
@@ -105,15 +105,15 @@ class TerminalSession {
   void start() {
     if (_active) return;
     _active = true;
-    if (rawMode) _termState = Terminal.enterRaw();
-    if (hideCursor) Terminal.hideCursor();
+    if (rawMode) _termState = TerminalControl.enterRaw();
+    if (hideCursor) TerminalControl.hideCursor();
   }
 
   /// Ends the terminal session and restores state.
   void end() {
     if (!_active) return;
     _termState?.restore();
-    if (hideCursor) Terminal.showCursor();
+    if (hideCursor) TerminalControl.showCursor();
     _active = false;
   }
 

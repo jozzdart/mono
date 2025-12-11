@@ -69,7 +69,7 @@ class Banner with Themeable {
       }
     });
 
-    out.writeln(Hints.bullets([
+    out.writeln(HintFormat.bullets([
       'Use different themes for varied vibes',
       'ASCII figlet-style banner',
     ], theme, dim: true));

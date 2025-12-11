@@ -155,7 +155,7 @@ class SurveyForm with Themeable {
     final lb = LineBuilder(theme);
 
     // State per question - use centralized focus navigation
-    final focus = FocusNavigation(itemCount: questions.length);
+    final focus = FocusNavigator(itemCount: questions.length);
     final innerCursor = List<int>.filled(questions.length, 0);
     // Use centralized text input for text questions
     final textValues = List<TextInputBuffer>.generate(

@@ -67,7 +67,7 @@ class HelpCenter with Themeable {
     List<HelpDoc> filtered = List.from(docs);
 
     // Use centralized list navigation for selection & scrolling
-    final nav = ListNavigation(
+    final nav = ListNavigator(
       itemCount: filtered.length,
       maxVisible: maxVisibleResults,
     );

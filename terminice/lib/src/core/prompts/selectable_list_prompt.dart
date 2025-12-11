@@ -3,7 +3,7 @@ import 'package:terminice/terminice.dart';
 /// SelectableListPrompt – composable system for list-based selection prompts.
 ///
 /// Eliminates boilerplate by composing:
-/// - [ListNavigation] for viewport navigation
+/// - [ListNavigator] for viewport navigation
 /// - [SelectionController] for selection state
 /// - [KeyBindings] for input handling
 /// - [FrameView] for rendering
@@ -107,7 +107,7 @@ class SelectableListPrompt<T> {
   // INTERNAL STATE (created on run)
   // ──────────────────────────────────────────────────────────────────────────
 
-  late ListNavigation _nav;
+  late ListNavigator _nav;
   late SelectionController _selection;
   late KeyBindings _bindings;
   bool _cancelled = false;
@@ -129,7 +129,7 @@ class SelectableListPrompt<T> {
   // ──────────────────────────────────────────────────────────────────────────
 
   /// Current navigation state. Available during [run] callbacks.
-  ListNavigation get nav => _nav;
+  ListNavigator get nav => _nav;
 
   /// Current selection state. Available during [run] callbacks.
   SelectionController get selection => _selection;
@@ -304,7 +304,7 @@ class SelectableListPrompt<T> {
   void _initState() {
     _cancelled = false;
 
-    _nav = ListNavigation(
+    _nav = ListNavigator(
       itemCount: items.length,
       maxVisible: maxVisible,
     );

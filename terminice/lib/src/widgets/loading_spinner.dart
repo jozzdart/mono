@@ -93,7 +93,7 @@ class LoadingSpinner with Themeable {
           '${theme.dim}$message${theme.reset}  ${theme.bold}$color$spin${theme.reset}');
     });
 
-    out.writeln(Hints.bullets([
+    out.writeln(HintFormat.bullets([
       'Theme-aware spinner',
       'Style: ${style.name}',
     ], theme, dim: true));

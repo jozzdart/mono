@@ -113,7 +113,7 @@ class Wizard with Themeable {
       }
     });
 
-    stdout.writeln(Hints.bullets([
+    stdout.writeln(HintFormat.bullets([
       'Auto state passing',
       'Back: provide WizardResult.back()',
       'Cancel: WizardResult.cancel()'

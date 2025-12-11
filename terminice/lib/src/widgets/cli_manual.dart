@@ -84,7 +84,7 @@ class CLIManual with Themeable {
     List<ManualPage> filtered = List.from(pages);
 
     // Use centralized list navigation for selection & scrolling
-    final nav = ListNavigation(
+    final nav = ListNavigator(
       itemCount: filtered.length,
       maxVisible: maxVisibleResults,
     );

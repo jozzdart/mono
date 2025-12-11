@@ -211,7 +211,7 @@ class Flashcards with Themeable {
       {required bool flipped, required KeyBindings bindings}) {
     final lb = theme.style.borderVertical;
     out.writeln('');
-    final s = Hints.grid(bindings.toHintEntries(), theme).split('\n');
+    final s = HintFormat.grid(bindings.toHintEntries(), theme).split('\n');
     for (final line in s) {
       out.writeln('${theme.gray}$lb${theme.reset} $line');
     }

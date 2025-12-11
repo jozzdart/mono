@@ -29,7 +29,7 @@ class ThemeDemo {
     final themeNames = themes.keys.toList();
 
     // Use centralized focus navigation
-    final focus = FocusNavigation(itemCount: themeNames.length);
+    final focus = FocusNavigator(itemCount: themeNames.length);
     String selected = themeNames.first;
     bool showPromptPreview = false;
 
@@ -57,7 +57,7 @@ class ThemeDemo {
 
       out.writeln(
           '${theme.gray}${style.borderBottom}${'─' * 25}${theme.reset}');
-      out.writeln(Hints.bullets([
+      out.writeln(HintFormat.bullets([
         '↑↓ to browse',
         'Enter to preview prompt',
         'Esc to exit',

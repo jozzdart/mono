@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:terminice/terminice.dart';
 
-class Hints {
+class HintFormat {
   /// Simple builder for standard bullet-separated line (legacy)
   static String bullets(List<String> segments, PromptTheme theme,
       {bool dim = false}) {

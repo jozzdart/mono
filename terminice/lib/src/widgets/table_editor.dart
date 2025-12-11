@@ -168,15 +168,21 @@ class TableEditor with Themeable {
 
       // Hints - dynamic based on editing state
       final rowsHints = <List<String>>[
-        [Hints.key('↑/↓/←/→', theme), 'move'],
-        [Hints.key('Enter', theme), editing ? 'commit edit' : 'edit / finish'],
-        [Hints.key('Tab', theme), 'next cell'],
-        [Hints.key('a', theme), 'add row below'],
-        [Hints.key('d', theme), 'delete row'],
-        [Hints.key('Esc', theme), editing ? 'cancel edit' : 'cancel editor'],
-        [Hints.key('Type', theme), 'start editing'],
+        [HintFormat.key('↑/↓/←/→', theme), 'move'],
+        [
+          HintFormat.key('Enter', theme),
+          editing ? 'commit edit' : 'edit / finish'
+        ],
+        [HintFormat.key('Tab', theme), 'next cell'],
+        [HintFormat.key('a', theme), 'add row below'],
+        [HintFormat.key('d', theme), 'delete row'],
+        [
+          HintFormat.key('Esc', theme),
+          editing ? 'cancel edit' : 'cancel editor'
+        ],
+        [HintFormat.key('Type', theme), 'start editing'],
       ];
-      out.writeln(Hints.grid(rowsHints, theme));
+      out.writeln(HintFormat.grid(rowsHints, theme));
     }
 
     // Use KeyBindings for declarative key handling

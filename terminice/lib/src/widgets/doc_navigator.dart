@@ -46,7 +46,7 @@ class DocNavigator with Themeable {
     final Map<String, bool> expanded = {root.path: true};
 
     // Use centralized list navigation for selection & scrolling
-    final nav = ListNavigation(
+    final nav = ListNavigator(
       itemCount: 0, // Will be set after first visible() call
       maxVisible: maxVisible,
     );
@@ -325,7 +325,7 @@ class DocNavigator with Themeable {
 
     // Use KeyBindings.back() for "back to tree" scenario
     final backBindings = KeyBindings.back(hintDescription: 'Back to tree');
-    viewerOut.writeln(Hints.grid(backBindings.toHintEntries(), theme));
+    viewerOut.writeln(HintFormat.grid(backBindings.toHintEntries(), theme));
 
     // Wait for back key
     backBindings.waitForKey();

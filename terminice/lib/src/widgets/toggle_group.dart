@@ -61,7 +61,7 @@ class ToggleGroup with Themeable {
     if (items.isEmpty) return const {};
 
     // Use centralized focus navigation
-    final focus = FocusNavigation(itemCount: items.length);
+    final focus = FocusNavigator(itemCount: items.length);
     bool cancelled = false;
     final states = List<bool>.generate(items.length, (i) => items[i].initialOn);
     final initialStates = List<bool>.from(states);

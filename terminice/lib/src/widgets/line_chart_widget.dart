@@ -275,14 +275,14 @@ class LineChartWidget with Themeable {
       });
 
       // Hints
-      out.writeln(Hints.grid([
-        [Hints.key('A', currentTheme), 'toggle autoscale'],
-        [Hints.key('G', currentTheme), 'toggle grid'],
-        [Hints.key('Z', currentTheme), 'toggle zero-line'],
-        [Hints.key('W/S', currentTheme), 'height ±1'],
-        [Hints.key('←/→', currentTheme), 'width ±2'],
-        [Hints.key('T', currentTheme), 'cycle theme'],
-        [Hints.key('Ctrl+C / Esc', currentTheme), 'exit'],
+      out.writeln(HintFormat.grid([
+        [HintFormat.key('A', currentTheme), 'toggle autoscale'],
+        [HintFormat.key('G', currentTheme), 'toggle grid'],
+        [HintFormat.key('Z', currentTheme), 'toggle zero-line'],
+        [HintFormat.key('W/S', currentTheme), 'height ±1'],
+        [HintFormat.key('←/→', currentTheme), 'width ±2'],
+        [HintFormat.key('T', currentTheme), 'cycle theme'],
+        [HintFormat.key('Ctrl+C / Esc', currentTheme), 'exit'],
       ], currentTheme));
     }
 
@@ -315,8 +315,8 @@ class LineChartWidget with Themeable {
 
       // Arrow keys (ESC [ A/B/C/D)
       if (b == 27) {
-        final n1 = Terminal.tryReadNextByte();
-        final n2 = Terminal.tryReadNextByte();
+        final n1 = TerminalControl.tryReadNextByte();
+        final n2 = TerminalControl.tryReadNextByte();
         if (n1 == 91 /*[*/ && n2 != null) {
           if (n2 == 65) {
             // Up

@@ -213,10 +213,10 @@ class DatePickerPrompt with Themeable {
       });
 
       // Footer hints generated from bindings
-      out.writeln(Hints.bullets(
+      out.writeln(HintFormat.bullets(
           bindings
               .toHintEntries()
-              .map((e) => Hints.hint(e[0], e[1], theme))
+              .map((e) => HintFormat.hint(e[0], e[1], theme))
               .toList(),
           theme));
     }

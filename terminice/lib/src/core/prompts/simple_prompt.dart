@@ -552,7 +552,7 @@ class TextPromptSync {
         } else {
           final hints = <String>['Enter to confirm', 'Esc to cancel'];
           if (masked && allowReveal) hints.add('Ctrl+R to reveal');
-          ctx.gutterLine(Hints.comma(hints, theme));
+          ctx.gutterLine(HintFormat.comma(hints, theme));
         }
       });
     }

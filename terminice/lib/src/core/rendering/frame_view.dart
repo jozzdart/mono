@@ -155,7 +155,7 @@ class FrameView {
       case HintStyle.inline:
         final entries = bindings.toHintEntries();
         final hints = entries.map((e) => '${e[0]}: ${e[1]}').toList();
-        out.writeln(Hints.comma(hints, theme));
+        out.writeln(HintFormat.comma(hints, theme));
         break;
       case HintStyle.none:
         break;

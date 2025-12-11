@@ -86,7 +86,7 @@ class ProgressDots with Themeable {
           '${theme.dim}$message${theme.reset} ${theme.accent}$dots${theme.reset}');
     });
 
-    out.writeln(Hints.bullets([
+    out.writeln(HintFormat.bullets([
       'Dots indicator',
       'Theme-aligned borders',
     ], theme, dim: true));

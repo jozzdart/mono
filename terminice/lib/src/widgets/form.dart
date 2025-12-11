@@ -74,7 +74,7 @@ class Form with Themeable {
   /// Runs the interactive form. Returns null if cancelled.
   FormResult? run() {
     // State - use centralized focus navigation for index + error tracking
-    final focus = FocusNavigation(itemCount: fields.length);
+    final focus = FocusNavigator(itemCount: fields.length);
     // Use centralized text input for each field
     final values = List<TextInputBuffer>.generate(
       fields.length,

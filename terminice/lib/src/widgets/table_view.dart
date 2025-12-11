@@ -73,7 +73,7 @@ class TableView with Themeable {
     });
 
     // Hints
-    out.writeln(Hints.bullets([
+    out.writeln(HintFormat.bullets([
       'Arrow-friendly styling',
       'Accent header',
       'Zebra rows',

@@ -106,7 +106,7 @@ class TagSelector with Themeable {
         final summary = count == 0
             ? ctx.lb.emptyMessage('none selected')
             : '${theme.accent}$count selected${theme.reset}';
-        ctx.gutterLine('${Hints.comma([
+        ctx.gutterLine('${HintFormat.comma([
               'Space to toggle',
               'Enter to confirm',
               'Esc to cancel'

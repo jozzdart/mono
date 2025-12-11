@@ -122,7 +122,7 @@ class ProgressBar with Themeable {
           '${theme.dim}($current/$total)${theme.reset}');
     });
 
-    out.writeln(Hints.bullets([
+    out.writeln(HintFormat.bullets([
       'Progress bar',
       'Theme-aware accents',
     ], theme, dim: true));

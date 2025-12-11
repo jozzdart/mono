@@ -41,7 +41,7 @@ import 'dart:math';
 /// // In key handler:
 /// onToggle: () => sel.toggle(grid.focusedIndex),
 /// ```
-class GridNavigation {
+class GridNavigator {
   /// Total number of items in the grid.
   int _itemCount;
 
@@ -56,7 +56,7 @@ class GridNavigation {
   /// [itemCount] is the total number of items.
   /// [columns] is the number of columns (must be >= 1).
   /// [initialIndex] is the starting focus (defaults to 0).
-  GridNavigation({
+  GridNavigator({
     required int itemCount,
     required int columns,
     int initialIndex = 0,
@@ -70,7 +70,7 @@ class GridNavigation {
   ///
   /// Calculates columns based on available width and cell width.
   /// Optionally caps columns with [maxColumns].
-  factory GridNavigation.responsive({
+  factory GridNavigator.responsive({
     required int itemCount,
     required int cellWidth,
     required int availableWidth,
@@ -91,7 +91,7 @@ class GridNavigation {
     // Also cap to item count (no point having more columns than items)
     cols = min(cols, max(1, itemCount));
 
-    return GridNavigation(
+    return GridNavigator(
       itemCount: itemCount,
       columns: cols,
       initialIndex: initialIndex,
@@ -102,7 +102,7 @@ class GridNavigation {
   ///
   /// Calculates columns to create a balanced grid, optionally
   /// constrained by available width and max columns.
-  factory GridNavigation.balanced({
+  factory GridNavigator.balanced({
     required int itemCount,
     int? cellWidth,
     int? availableWidth,
@@ -126,7 +126,7 @@ class GridNavigation {
     // Cap to item count
     cols = min(cols, max(1, itemCount));
 
-    return GridNavigation(
+    return GridNavigator(
       itemCount: itemCount,
       columns: cols,
       initialIndex: initialIndex,
@@ -147,7 +147,8 @@ class GridNavigation {
   int get columns => _columns;
 
   /// Number of rows (calculated from item count and columns).
-  int get rows => _itemCount == 0 ? 0 : ((_itemCount + _columns - 1) ~/ _columns);
+  int get rows =>
+      _itemCount == 0 ? 0 : ((_itemCount + _columns - 1) ~/ _columns);
 
   /// Current focused row (0-indexed).
   int get focusedRow => _focusedIndex ~/ _columns;
@@ -394,4 +395,3 @@ class GridRow<T> {
   /// Whether this row is empty.
   bool get isEmpty => items.isEmpty;
 }
-

@@ -408,7 +408,7 @@ extension ValuePromptRendering on FrameContext {
 
     final percentPart = showPercent ? ' ${theme.dim}$pct%${theme.reset}' : '';
 
-    this.gutterLine(
+    gutterLine(
         '$filledPart${theme.accent}$head${theme.reset}$emptyPart$percentPart');
   }
 
@@ -430,7 +430,7 @@ extension ValuePromptRendering on FrameContext {
       buffer.write('$color$star${theme.reset}');
       if (i < maxStars) buffer.write(' ');
     }
-    this.gutterLine(buffer.toString());
+    gutterLine(buffer.toString());
   }
 
   /// Renders numeric scale display.
@@ -441,7 +441,7 @@ extension ValuePromptRendering on FrameContext {
       buffer.write('$color$i${theme.reset}');
       if (i < max) buffer.write(' ');
     }
-    this.gutterLine(
+    gutterLine(
         '$buffer   ${theme.dim}(${theme.reset}${theme.accent}$value${theme.reset}${theme.dim}/$max)${theme.reset}');
   }
 }
