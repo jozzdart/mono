@@ -153,7 +153,7 @@ class HelpCenter with Themeable {
 
     void render(RenderOutput out) {
       final cols = TerminalInfo.columns;
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: title,
         theme: theme,
         bindings: bindings,

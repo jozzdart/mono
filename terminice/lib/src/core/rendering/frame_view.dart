@@ -52,7 +52,7 @@ import 'package:terminice/terminice.dart';
 /// - Composition over inheritance
 /// - Separation of concerns (frame rendering vs widget logic)
 /// - Backward compatible (use alongside existing patterns)
-class WidgetFrame {
+class FrameView {
   /// Title displayed in the frame header.
   final String title;
 
@@ -68,7 +68,7 @@ class WidgetFrame {
   /// Whether to show a connector line after the header.
   final bool showConnector;
 
-  const WidgetFrame({
+  const FrameView({
     required this.title,
     required this.theme,
     this.bindings,
@@ -691,7 +691,7 @@ String _toneColor(StatTone tone, PromptTheme theme) {
 // ════════════════════════════════════════════════════════════════════════════
 
 /// Extension methods for display-only (non-interactive) widget rendering.
-extension WidgetFrameDisplay on WidgetFrame {
+extension WidgetFrameDisplay on FrameView {
   /// Renders to stdout and returns immediately.
   ///
   /// Use for display-only widgets that don't need interactivity.
@@ -748,7 +748,7 @@ extension WidgetFrameExtension on PromptRunner {
   /// );
   /// ```
   PromptResult runWithFrame({
-    required WidgetFrame frame,
+    required FrameView frame,
     required void Function(FrameContext ctx) content,
     required KeyBindings bindings,
   }) {

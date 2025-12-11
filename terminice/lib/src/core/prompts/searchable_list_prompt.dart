@@ -185,7 +185,7 @@ class SearchableListPrompt<T> {
       _bindings = _bindings + extraBindings;
     }
 
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       bindings: _bindings,

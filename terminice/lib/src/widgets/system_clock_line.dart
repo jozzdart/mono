@@ -71,7 +71,7 @@ class SystemClockLine with Themeable {
         .toList()
       ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
 
-    final frame = WidgetFrame(title: label, theme: theme, showConnector: true);
+    final frame = FrameView(title: label, theme: theme, showConnector: true);
     frame.show((ctx) {
       // Legend
       final nowStr = _fmtTime(now);

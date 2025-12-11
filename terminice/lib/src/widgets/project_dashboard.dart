@@ -94,7 +94,7 @@ class ProjectDashboard with Themeable {
   }
 
   void show() {
-    final frame = WidgetFrame(title: _title(), theme: theme);
+    final frame = FrameView(title: _title(), theme: theme);
     frame.show((ctx) {
       // Overview
       ctx.sectionHeader('Overview');

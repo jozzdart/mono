@@ -54,7 +54,7 @@ class ServiceMonitor with Themeable {
     final label = title ?? 'Service Monitor';
     final results = await _runPings();
 
-    final frame = WidgetFrame(title: label, theme: theme);
+    final frame = FrameView(title: label, theme: theme);
     frame.showTo(out, (ctx) {
       // Column widths
       final nameW =

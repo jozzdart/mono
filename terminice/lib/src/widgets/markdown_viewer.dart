@@ -40,7 +40,7 @@ class MarkdownViewer with Themeable {
 
   void show() {
     final label = title ?? 'Markdown';
-    final frame = WidgetFrame(title: label, theme: theme);
+    final frame = FrameView(title: label, theme: theme);
     frame.show((ctx) {
       _ctx = ctx;
       _renderContent();
@@ -51,7 +51,7 @@ class MarkdownViewer with Themeable {
   /// Use this when animating or updating the widget repeatedly.
   void showTo(RenderOutput out) {
     final label = title ?? 'Markdown';
-    final frame = WidgetFrame(title: label, theme: theme);
+    final frame = FrameView(title: label, theme: theme);
     frame.showTo(out, (ctx) {
       _ctx = ctx;
       _renderContent();

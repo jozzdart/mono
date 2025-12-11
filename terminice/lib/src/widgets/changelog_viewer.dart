@@ -48,7 +48,7 @@ class ChangeLogViewer with Themeable {
   /// Parse, format and print.
   void show() {
     _out = RenderOutput();
-    final frame = WidgetFrame(title: title, theme: theme);
+    final frame = FrameView(title: title, theme: theme);
     frame.showTo(_out, (ctx) {
       _ctx = ctx;
       _renderContent();

@@ -42,7 +42,7 @@ class PackageInspector with Themeable {
   }
 
   void show() {
-    final frame = WidgetFrame(title: _title(), theme: theme);
+    final frame = FrameView(title: _title(), theme: theme);
     frame.show((ctx) {
       ctx.sectionHeader('Overview');
       ctx.labeledAccent('Package', packageName);

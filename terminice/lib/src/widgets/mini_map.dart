@@ -61,7 +61,7 @@ class MiniMap with Themeable {
 
   void show() {
     final title = (label == null || label!.isEmpty) ? 'Mini Map' : label!;
-    final frame = WidgetFrame(title: title, theme: theme);
+    final frame = FrameView(title: title, theme: theme);
     frame.show(_renderContent);
   }
 
@@ -69,7 +69,7 @@ class MiniMap with Themeable {
   /// Use this when animating or updating the widget repeatedly.
   void showTo(RenderOutput out) {
     final title = (label == null || label!.isEmpty) ? 'Mini Map' : label!;
-    final frame = WidgetFrame(title: title, theme: theme);
+    final frame = FrameView(title: title, theme: theme);
     frame.showTo(out, _renderContent);
   }
 

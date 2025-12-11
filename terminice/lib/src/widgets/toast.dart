@@ -78,7 +78,7 @@ class Toast with Themeable {
     final color = _colorForVariant();
     final icon = _iconForVariant();
 
-    final widgetFrame = WidgetFrame(title: label, theme: theme);
+    final widgetFrame = FrameView(title: label, theme: theme);
     widgetFrame.showTo(out, (ctx) {
       final iconPart = '${theme.bold}$color$icon${theme.reset}';
       ctx.gutterLine('$iconPart $message');

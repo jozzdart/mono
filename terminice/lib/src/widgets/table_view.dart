@@ -52,7 +52,7 @@ class TableView with Themeable {
   }
 
   void _render(RenderOutput out) {
-    final widgetFrame = WidgetFrame(title: title, theme: theme);
+    final widgetFrame = FrameView(title: title, theme: theme);
     widgetFrame.showTo(out, (ctx) {
       // Create table renderer with alignments
       final alignments = _convertAlignments();

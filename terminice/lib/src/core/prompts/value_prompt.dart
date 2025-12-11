@@ -109,7 +109,7 @@ class ValuePrompt {
       _bindings = _bindings + extraBindings;
     }
 
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       bindings: _bindings,
@@ -204,7 +204,7 @@ class DiscreteValuePrompt {
       _bindings = _bindings + extraBindings;
     }
 
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       bindings: _bindings,
@@ -350,7 +350,7 @@ class RangeValuePrompt {
       _bindings = _bindings + extraBindings;
     }
 
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       bindings: _bindings,

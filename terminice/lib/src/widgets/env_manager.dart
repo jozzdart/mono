@@ -154,7 +154,7 @@ class EnvManager with Themeable {
 
     void render(RenderOutput out) {
       final heading = 'Env · $currentName';
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: heading,
         theme: theme,
         bindings: bindings,

@@ -48,7 +48,7 @@ class BarChartWidget with Themeable {
 
   void show() {
     final label = (title == null || title!.isEmpty) ? 'Bar Chart' : title!;
-    final frame = WidgetFrame(title: label, theme: theme);
+    final frame = FrameView(title: label, theme: theme);
     frame.show((ctx) {
       if (items.isEmpty) {
         ctx.emptyMessage('no data');

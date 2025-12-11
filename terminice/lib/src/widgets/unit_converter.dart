@@ -48,7 +48,7 @@ class UnitConverter with Themeable {
 
   /// Render the converter panel.
   void show() {
-    final frame = WidgetFrame(title: title, theme: theme);
+    final frame = FrameView(title: title, theme: theme);
     frame.show((ctx) {
       // Length section
       ctx.gutterLine(_sectionHeader('Length · cm ↔ in'));
@@ -188,7 +188,7 @@ class UnitConverter with Themeable {
 
     void render(RenderOutput out) {
       final conv = converters[mode];
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: title,
         theme: theme,
         bindings: bindings,

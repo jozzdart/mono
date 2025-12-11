@@ -268,7 +268,7 @@ class CLIManual with Themeable {
       final linesCount = lines0();
       final style = theme.style;
 
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: title,
         theme: theme,
         hintStyle: HintStyle.none, // Custom hint handling for fixed layout

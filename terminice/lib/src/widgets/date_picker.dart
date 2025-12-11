@@ -136,7 +136,7 @@ class DatePickerPrompt with Themeable {
 
     // Use WidgetFrame for consistent frame rendering
     final paddedTitle = '  $label  ';
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: paddedTitle,
       theme: theme,
       bindings: null, // We handle hints manually for calendar layout

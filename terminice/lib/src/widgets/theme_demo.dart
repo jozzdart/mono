@@ -36,7 +36,7 @@ class ThemeDemo {
     void renderThemePreview(RenderOutput out, String name, PromptTheme theme) {
       final style = theme.style;
 
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: 'Theme Preview',
         theme: theme,
         hintStyle: HintStyle.none,

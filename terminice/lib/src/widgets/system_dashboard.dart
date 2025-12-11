@@ -52,7 +52,7 @@ class SystemDashboard with Themeable {
 
         out.clear();
 
-        final frame = WidgetFrame(
+        final frame = FrameView(
           title: 'System Dashboard',
           theme: theme,
           hintStyle: HintStyle.none, // Manual hints below

@@ -425,7 +425,7 @@ class SurveyForm with Themeable {
     final result = runner.runWithBindings(
       render: (out) {
         final lb = LineBuilder(theme);
-        final widgetFrame = WidgetFrame(
+        final widgetFrame = FrameView(
           title: title,
           theme: theme,
           bindings: bindings,

@@ -167,7 +167,7 @@ class Form with Themeable {
         KeyBindings.cancel(onCancel: () => cancelled = true);
 
     // Use WidgetFrame for consistent frame rendering
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       bindings: bindings,

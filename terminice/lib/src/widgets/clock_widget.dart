@@ -223,7 +223,7 @@ class ClockWidget with Themeable {
       final now = DateTime.now();
 
       // Use WidgetFrame for consistent frame rendering
-      final frame = WidgetFrame(
+      final frame = FrameView(
         title: '$title · ${modeLabel()}',
         theme: currentTheme,
         showConnector: true,

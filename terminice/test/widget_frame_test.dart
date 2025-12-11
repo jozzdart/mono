@@ -4,7 +4,7 @@ import 'package:terminice/terminice.dart';
 void main() {
   group('WidgetFrame', () {
     test('creates with required parameters', () {
-      final frame = WidgetFrame(
+      final frame = FrameView(
         title: 'Test',
         theme: PromptTheme.dark,
       );
@@ -16,7 +16,7 @@ void main() {
 
     test('creates with all parameters', () {
       final bindings = KeyBindings.prompt();
-      final frame = WidgetFrame(
+      final frame = FrameView(
         title: 'Full Test',
         theme: PromptTheme.matrix,
         bindings: bindings,
@@ -30,7 +30,7 @@ void main() {
     });
 
     test('style getter returns theme style', () {
-      final frame = WidgetFrame(
+      final frame = FrameView(
         title: 'Test',
         theme: PromptTheme.fire,
       );
@@ -53,7 +53,7 @@ void main() {
     // compose correctly.
 
     test('WidgetFrame renders with callback', () {
-      final frame = WidgetFrame(
+      final frame = FrameView(
         title: 'Context Test',
         theme: PromptTheme.dark,
       );
@@ -74,7 +74,7 @@ void main() {
 
     test('renderContent renders without hints', () {
       final bindings = KeyBindings.prompt();
-      final frame = WidgetFrame(
+      final frame = FrameView(
         title: 'No Hints',
         theme: PromptTheme.dark,
         bindings: bindings,
@@ -96,11 +96,11 @@ void main() {
   });
 
   group('FrameContext methods', () {
-    late WidgetFrame frame;
+    late FrameView frame;
     late _TestRenderOutput out;
 
     setUp(() {
-      frame = WidgetFrame(
+      frame = FrameView(
         title: 'Methods Test',
         theme: PromptTheme.dark,
         showConnector: true,
@@ -245,7 +245,7 @@ void main() {
     });
 
     test('writeConnector writes connector line when borders enabled', () {
-      final frameWithBorder = WidgetFrame(
+      final frameWithBorder = FrameView(
         title: 'With Border',
         theme: PromptTheme.dark,
       );
@@ -286,4 +286,3 @@ class _TestRenderOutput implements RenderOutput {
     _lineCount = 0;
   }
 }
-

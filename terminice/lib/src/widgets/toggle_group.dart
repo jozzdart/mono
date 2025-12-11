@@ -92,7 +92,7 @@ class ToggleGroup with Themeable {
     );
 
     // Use WidgetFrame for consistent frame rendering
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       bindings: bindings,

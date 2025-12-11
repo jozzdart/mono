@@ -42,7 +42,7 @@ class Breadcrumbs with Themeable {
 
   void show() {
     final titleText = label ?? 'Breadcrumbs';
-    final frame = WidgetFrame(title: titleText, theme: theme);
+    final frame = FrameView(title: titleText, theme: theme);
     frame.show((ctx) {
       ctx.gutterLine(_renderBreadcrumbLine());
     });

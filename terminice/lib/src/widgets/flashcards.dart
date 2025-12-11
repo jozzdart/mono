@@ -139,7 +139,7 @@ class Flashcards with Themeable {
         KeyBindings.cancel(onCancel: () => userQuit = true);
 
     // Use WidgetFrame for consistent frame rendering
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       bindings: null, // We handle hints manually for this complex widget

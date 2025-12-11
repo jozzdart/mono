@@ -79,7 +79,7 @@ class ProgressDots with Themeable {
   }
 
   void _render(RenderOutput out, int phase) {
-    final widgetFrame = WidgetFrame(title: label, theme: theme);
+    final widgetFrame = FrameView(title: label, theme: theme);
     widgetFrame.showTo(out, (ctx) {
       final dots = '.' * ((phase % (maxDots + 1)));
       ctx.gutterLine(

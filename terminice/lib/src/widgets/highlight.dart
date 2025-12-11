@@ -46,7 +46,7 @@ class Highlight with Themeable {
     final label = title ?? _defaultTitle(language);
 
     if (color) {
-      final frame = WidgetFrame(title: label, theme: theme);
+      final frame = FrameView(title: label, theme: theme);
       frame.show((ctx) {
         final highlighter = SyntaxHighlighter(theme);
         for (final line in text.split('\n')) {
@@ -57,7 +57,7 @@ class Highlight with Themeable {
     } else {
       // Non-colored output uses simpler rendering
       final style = theme.style;
-      final frame = WidgetFrame(title: label, theme: theme);
+      final frame = FrameView(title: label, theme: theme);
       frame.show((ctx) {
         for (final line in text.split('\n')) {
           ctx.line('${style.borderVertical} $line');

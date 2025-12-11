@@ -93,7 +93,7 @@ class LaunchPad with Themeable {
         KeyBindings.cancel();
 
     void render(RenderOutput out) {
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: title,
         theme: theme,
         bindings: bindings,

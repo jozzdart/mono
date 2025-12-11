@@ -34,7 +34,7 @@ class StatCards with Themeable {
 
   void show() {
     final label = title == null || title!.isEmpty ? 'Stats' : title!;
-    final frame = WidgetFrame(title: label, theme: theme);
+    final frame = FrameView(title: label, theme: theme);
     frame.show((ctx) {
       for (final item in items) {
         final icon =

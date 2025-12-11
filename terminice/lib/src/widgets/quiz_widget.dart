@@ -75,7 +75,7 @@ class QuizWidget with Themeable {
           KeyBindings.cancel();
 
       // Use WidgetFrame for consistent frame rendering
-      final frame = WidgetFrame(
+      final frame = FrameView(
         title: _title(qi),
         theme: theme,
         bindings: bindings,
@@ -151,7 +151,7 @@ class QuizWidget with Themeable {
     final chosen = q.options[selected];
 
     // Use WidgetFrame for consistent rendering
-    final feedbackFrame = WidgetFrame(
+    final feedbackFrame = FrameView(
       title: _title(qi),
       theme: theme,
     );
@@ -193,7 +193,7 @@ class QuizWidget with Themeable {
     final percent = ((correct / total) * 100).clamp(0, 100).toStringAsFixed(0);
 
     // Use WidgetFrame for consistent rendering
-    final summaryFrame = WidgetFrame(
+    final summaryFrame = FrameView(
       title: 'Quiz Summary',
       theme: theme,
     );

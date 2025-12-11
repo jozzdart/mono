@@ -24,7 +24,7 @@ export 'rendering/rendering.dart';
 export 'rendering/syntax_highlight.dart';
 export 'rendering/table_renderer.dart';
 export 'rendering/text_utils.dart';
-export 'rendering/widget_frame.dart';
+export 'rendering/frame_view.dart';
 export 'style/badge_tone.dart';
 export 'style/prompt_style.dart';
 export 'style/prompt_theme.dart';

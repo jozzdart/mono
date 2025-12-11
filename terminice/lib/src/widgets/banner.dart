@@ -51,7 +51,7 @@ class Banner with Themeable {
   }
 
   void _render(RenderOutput out) {
-    final frame = WidgetFrame(title: 'Banner', theme: theme);
+    final frame = FrameView(title: 'Banner', theme: theme);
     frame.showTo(out, (ctx) {
       // Build mask lines once; use it to produce colored and shadow layers
       final maskLines = _renderMaskLines(text);

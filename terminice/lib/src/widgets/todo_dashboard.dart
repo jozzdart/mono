@@ -240,7 +240,7 @@ class TodoDashboard with Themeable {
         KeyBindings.cancel(onCancel: () => cancelled = true);
 
     void render(RenderOutput out) {
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: title,
         theme: theme,
         bindings: bindings,

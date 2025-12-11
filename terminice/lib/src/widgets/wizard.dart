@@ -77,7 +77,7 @@ class Wizard with Themeable {
 
   void _renderProgress(int index, Map<String, dynamic> state) {
     final lb = LineBuilder(theme);
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       hintStyle: HintStyle.none,

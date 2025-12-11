@@ -200,7 +200,7 @@ class SnippetEditor with Themeable {
         KeyBindings.cancel(onCancel: () => cancelled = true);
 
     void render(RenderOutput out) {
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: _titleWithLang(title),
         theme: theme,
         bindings: bindings,

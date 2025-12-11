@@ -8,7 +8,7 @@ import 'package:terminice/terminice.dart';
 /// - [GridNavigation] for 2D navigation with wrapping
 /// - [SelectionController] for selection state
 /// - [KeyBindings] for input handling
-/// - [WidgetFrame] for rendering
+/// - [FrameView] for rendering
 /// - [PromptRunner] for the interactive loop
 ///
 /// **Design principles:**
@@ -173,7 +173,7 @@ class SelectableGridPrompt<T> {
       _bindings = _bindings + extraBindings;
     }
 
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       bindings: _bindings,
@@ -277,7 +277,7 @@ class SelectableGridPrompt<T> {
       _bindings = _bindings + extraBindings;
     }
 
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       bindings: _bindings,

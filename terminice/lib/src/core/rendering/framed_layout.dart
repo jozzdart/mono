@@ -3,11 +3,11 @@ import 'package:terminice/terminice.dart';
 /// FramedLayout – pure string generator for framed terminal output.
 ///
 /// Generates styled frame strings (top border, connectors, bottom border)
-/// without writing directly to any output. Used internally by [WidgetFrame]
+/// without writing directly to any output. Used internally by [FrameView]
 /// and other rendering components.
 ///
 /// **Design principle:** This class is a pure data/string generator.
-/// For rendering, use [WidgetFrame] which composes with this class
+/// For rendering, use [FrameView] which composes with this class
 /// and handles proper output management.
 ///
 /// **Usage:**

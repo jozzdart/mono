@@ -50,7 +50,7 @@ class MiniAnalytics with Themeable {
   void show() {
     final headerLabel =
         (title == null || title!.isEmpty) ? 'Mini Analytics' : title!;
-    final widgetFrame = WidgetFrame(title: headerLabel, theme: theme);
+    final widgetFrame = FrameView(title: headerLabel, theme: theme);
     widgetFrame.show((ctx) {
       final style = theme.style;
       final growth = _computeGrowthPercent(series);

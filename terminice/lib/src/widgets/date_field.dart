@@ -119,7 +119,7 @@ class DateFieldsPrompt with Themeable {
 
     void render(RenderOutput out) {
       final title = '$label — Choose Date';
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: '  $title  ',
         theme: theme,
         bindings: bindings,

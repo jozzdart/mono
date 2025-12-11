@@ -42,7 +42,7 @@ class HotkeyGuide with Themeable {
 
   /// Renders the guide to a RenderOutput.
   void _render(RenderOutput out) {
-    final widgetFrame = WidgetFrame(
+    final widgetFrame = FrameView(
       title: title,
       theme: theme,
       hintStyle: HintStyle.none,

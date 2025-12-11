@@ -248,7 +248,7 @@ class ConfigEditor with Themeable {
     void render(RenderOutput out) {
       final lang = resolveLang();
       final header = '$title · ${lang.toUpperCase()}';
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: header,
         theme: theme,
         bindings: bindings,

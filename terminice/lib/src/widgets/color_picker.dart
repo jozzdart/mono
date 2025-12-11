@@ -90,7 +90,7 @@ class ColorPickerPrompt with Themeable {
     final bindings = _buildBindings();
 
     // Use WidgetFrame for consistent frame rendering
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: label,
       theme: theme,
       bindings: bindings,

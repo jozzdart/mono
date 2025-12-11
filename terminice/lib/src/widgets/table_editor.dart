@@ -128,7 +128,7 @@ class TableEditor with Themeable {
     }
 
     void render(RenderOutput out) {
-      final widgetFrame = WidgetFrame(
+      final widgetFrame = FrameView(
         title: title,
         theme: theme,
         hintStyle: HintStyle.none, // Custom hints based on editing state

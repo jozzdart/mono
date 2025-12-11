@@ -232,7 +232,7 @@ class LineChartWidget with Themeable {
       }
 
       // Use WidgetFrame for consistent frame rendering
-      final wf = WidgetFrame(
+      final wf = FrameView(
         title: title,
         theme: currentTheme,
         hintStyle: HintStyle.none, // Manual hints below

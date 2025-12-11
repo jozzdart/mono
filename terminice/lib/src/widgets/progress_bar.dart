@@ -83,7 +83,7 @@ class ProgressBar with Themeable {
   }
 
   void _render(RenderOutput out, int current, int total, int shimmerPhase) {
-    final widgetFrame = WidgetFrame(title: label, theme: theme);
+    final widgetFrame = FrameView(title: label, theme: theme);
     widgetFrame.showTo(out, (ctx) {
       final ratio = total > 0 ? current / total : 0.0;
       final filled = (ratio * width).clamp(0, width).round();

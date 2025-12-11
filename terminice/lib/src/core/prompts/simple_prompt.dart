@@ -103,7 +103,7 @@ class SimplePrompt<T> {
     final state = PromptState<T>(initialValue);
     final bindings = buildBindings(state);
 
-    final frame = WidgetFrame(
+    final frame = FrameView(
       title: title,
       theme: theme,
       bindings: bindings,
@@ -519,7 +519,7 @@ class TextPromptSync {
 
     // Render function
     void renderFrame(RenderOutput out) {
-      final frame = WidgetFrame(
+      final frame = FrameView(
         title: title,
         theme: theme,
         bindings: null, // Manual hints below

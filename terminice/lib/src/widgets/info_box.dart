@@ -60,7 +60,7 @@ class InfoBox with Themeable {
   /// Render the box to stdout.
   void show() {
     final label = title ?? _defaultTitle(type);
-    final frame = WidgetFrame(title: label, theme: theme);
+    final frame = FrameView(title: label, theme: theme);
     frame.show((ctx) {
       final tone = _toStatTone(type);
       final icon = _iconFor(type);

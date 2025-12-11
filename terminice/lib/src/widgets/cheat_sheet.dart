@@ -37,7 +37,7 @@ class CheatSheet with Themeable {
 
   /// Renders the cheat sheet once. Non-interactive.
   void show() {
-    final frame = WidgetFrame(title: title, theme: theme);
+    final frame = FrameView(title: title, theme: theme);
     frame.show((ctx) {
       // Create table renderer with Command (left), Shortcut (center), Usage (left)
       final renderer = TableRenderer.withAlignments(

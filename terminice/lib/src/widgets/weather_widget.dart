@@ -9,7 +9,7 @@ enum TemperatureUnit { celsius, fahrenheit }
 
 /// A themed CLI widget that shows live weather using the Open‑Meteo API.
 ///
-/// Aligns with ThemeDemo styling via [PromptTheme] and [WidgetFrame].
+/// Aligns with ThemeDemo styling via [PromptTheme] and [FrameView].
 ///
 /// **Mixins:** Implements [Themeable] for fluent theme configuration:
 /// ```dart
@@ -74,7 +74,7 @@ class WeatherWidget with Themeable {
       final iconDesc = _iconAndDescription(weather.weatherCode);
 
       final frame =
-          WidgetFrame(title: '$title – ${loc.displayName}', theme: theme);
+          FrameView(title: '$title – ${loc.displayName}', theme: theme);
       frame.showTo(out, (ctx) {
         ctx.gutterLine(
             '${theme.info}Now${theme.reset}: ${iconDesc.icon} ${iconDesc.description}');

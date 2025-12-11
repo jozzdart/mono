@@ -83,7 +83,7 @@ class LoadingSpinner with Themeable {
 
   void _render(RenderOutput out, int frameIndex) {
     final frames = _framesForStyle(style);
-    final widgetFrame = WidgetFrame(title: label, theme: theme);
+    final widgetFrame = FrameView(title: label, theme: theme);
 
     final color = (frameIndex % 2 == 0) ? theme.accent : theme.highlight;
 

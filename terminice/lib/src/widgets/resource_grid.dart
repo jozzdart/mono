@@ -52,7 +52,7 @@ class ResourceGrid with Themeable {
   }
 
   void show() {
-    final frame = WidgetFrame(title: title, theme: theme);
+    final frame = FrameView(title: title, theme: theme);
     frame.show((ctx) {
       final style = theme.style;
 
