@@ -3,6 +3,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 export 'core/core.dart';
+export 'prompts/prompts.dart';
 
 // Central API
 export 'terminice_api.dart';
@@ -12,12 +13,7 @@ export 'terminice_api.dart';
 // ════════════════════════════════════════════════════════════════════════════
 
 // Text Input
-export 'widgets/text_prompt.dart';
-export 'widgets/password.dart';
-export 'widgets/multi_line_input.dart';
 
-// Confirmation & Choice
-export 'widgets/confirm_prompt.dart';
 export 'widgets/search_select.dart';
 export 'widgets/checkbox_menu.dart';
 export 'widgets/grid_select.dart';
@@ -25,11 +21,6 @@ export 'widgets/choice_map.dart';
 export 'widgets/toggle_group.dart';
 export 'widgets/tag_selector.dart';
 export 'widgets/command_palette.dart';
-
-// Numeric Input
-export 'widgets/slider_prompt.dart';
-export 'widgets/rating_prompt.dart';
-export 'widgets/range_prompt.dart';
 
 // Date & Time
 export 'widgets/date_field.dart';
