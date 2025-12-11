@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:terminice/src/system/list_navigation.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   group('ListNavigation', () {
@@ -187,5 +187,3 @@ void main() {
     });
   });
 }
-
-

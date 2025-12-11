@@ -1,6 +1,10 @@
 export 'io/key_bindings.dart';
 export 'io/key_events.dart';
 export 'io/terminal.dart';
+export 'navigation/focus_navigation.dart';
+export 'navigation/grid_navigation.dart';
+export 'navigation/list_navigation.dart';
+export 'navigation/selection_controller.dart';
 export 'rendering/frame_renderer.dart';
 export 'rendering/framed_layout.dart';
 export 'rendering/highlighter.dart';

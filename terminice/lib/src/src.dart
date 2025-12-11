@@ -4,12 +4,6 @@
 
 export 'core/core.dart';
 
-// Navigation & Selection
-export 'system/list_navigation.dart';
-export 'system/grid_navigation.dart';
-export 'system/focus_navigation.dart';
-export 'system/selection_controller.dart';
-
 // Input Handling
 export 'system/text_input_buffer.dart';
 

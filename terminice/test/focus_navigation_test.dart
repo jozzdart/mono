@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:terminice/src/system/focus_navigation.dart';
+import 'package:terminice/terminice.dart';
 
 void main() {
   group('FocusNavigation', () {
@@ -351,4 +351,3 @@ void main() {
     });
   });
 }
-
