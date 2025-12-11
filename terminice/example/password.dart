@@ -11,10 +11,10 @@ void main() {
 }
 
 void _runWithTheme(PromptTheme theme) {
-  final password = PasswordPrompt(
+  final password = terminice.password(
     prompt: 'Enter your password',
     theme: theme,
-  ).run();
+  );
 
   if (password == null || password.isEmpty) {
     stdout.writeln(

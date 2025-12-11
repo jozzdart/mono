@@ -152,3 +152,37 @@ class RangePrompt with Themeable {
     ctx.labeledAccent('Active', activeLabel);
   }
 }
+
+extension RangePromptExtensions on Terminice {
+  /// Range prompt for selecting a start/end range.
+  ///
+  /// Returns `(start, end)` tuple.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final (start, end) = terminice.range('Price Range');
+  /// ```
+  (num, num) range(
+    String label, {
+    num min = 0,
+    num max = 100,
+    num startInitial = 20,
+    num endInitial = 80,
+    num step = 1,
+    int width = 28,
+    String unit = '%',
+    PromptTheme? theme,
+  }) {
+    return RangePrompt(
+      label,
+      min: min,
+      max: max,
+      startInitial: startInitial,
+      endInitial: endInitial,
+      step: step,
+      width: width,
+      unit: unit,
+      theme: theme ?? defaultTheme,
+    ).run();
+  }
+}

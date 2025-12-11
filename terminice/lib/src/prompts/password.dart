@@ -57,3 +57,30 @@ class PasswordPrompt with Themeable {
     ).run();
   }
 }
+
+extension PasswordPromptExtensions on Terminice {
+  /// Password input prompt with masked characters.
+  ///
+  /// Returns the entered password, or empty string if cancelled.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final pwd = terminice.password(label: 'Password');
+  /// final secret = terminice.arcane.password(label: 'Secret');
+  /// ```
+  String? password({
+    required String prompt,
+    bool required = true,
+    String maskChar = '•',
+    bool allowReveal = true,
+    PromptTheme? theme,
+  }) {
+    return PasswordPrompt(
+      prompt: prompt,
+      required: required,
+      maskChar: maskChar,
+      allowReveal: allowReveal,
+      theme: theme ?? defaultTheme,
+    ).run();
+  }
+}

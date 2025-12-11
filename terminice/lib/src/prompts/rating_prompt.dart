@@ -68,3 +68,29 @@ class RatingPrompt with Themeable {
     }
   }
 }
+
+extension RatingPromptExtensions on Terminice {
+  /// Rating prompt (1-5 stars or custom max).
+  ///
+  /// Returns the selected rating.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final rating = terminice.rating('Rate this product');
+  /// ```
+  int rating(
+    String prompt, {
+    int maxStars = 5,
+    int initial = 3,
+    List<String>? labels,
+    PromptTheme? theme,
+  }) {
+    return RatingPrompt(
+      prompt,
+      maxStars: maxStars,
+      initial: initial,
+      labels: labels,
+      theme: theme ?? defaultTheme,
+    ).run();
+  }
+}

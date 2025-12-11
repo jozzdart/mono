@@ -223,3 +223,29 @@ class MultiLineInputPrompt with Themeable {
     return lines.join('\n');
   }
 }
+
+extension MultiLineInputPromptExtensions on Terminice {
+  /// Multi-line text input with cursor navigation.
+  ///
+  /// Returns the entered text, or `null` if cancelled.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final notes = terminice.multiLine(label: 'Notes');
+  /// ```
+  String? multiLine({
+    required String label,
+    int maxLines = 200,
+    int visibleLines = 10,
+    bool allowEmpty = true,
+    PromptTheme? theme,
+  }) {
+    return MultiLineInputPrompt(
+      label: label,
+      maxLines: maxLines,
+      visibleLines: visibleLines,
+      allowEmpty: allowEmpty,
+      theme: theme ?? defaultTheme,
+    ).run();
+  }
+}

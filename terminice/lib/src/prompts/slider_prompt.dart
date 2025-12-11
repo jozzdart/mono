@@ -75,3 +75,35 @@ class SliderPrompt with Themeable {
     );
   }
 }
+
+extension SliderPromptExtensions on Terminice {
+  /// Slider prompt for selecting a numeric value.
+  ///
+  /// Returns the selected value.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final volume = terminice.slider('Volume', initial: 50);
+  /// ```
+  num slider(
+    String label, {
+    num min = 0,
+    num max = 100,
+    num initial = 50,
+    num step = 1,
+    int width = 28,
+    String unit = '%',
+    PromptTheme? theme,
+  }) {
+    return SliderPrompt(
+      label,
+      min: min,
+      max: max,
+      initial: initial,
+      step: step,
+      width: width,
+      unit: unit,
+      theme: theme ?? defaultTheme,
+    ).run();
+  }
+}

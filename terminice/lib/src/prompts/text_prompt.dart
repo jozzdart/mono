@@ -55,3 +55,29 @@ class TextPrompt with Themeable {
     ).run();
   }
 }
+
+extension TextPromptExtensions on Terminice {
+  /// Text input prompt with optional validation and placeholder.
+  ///
+  /// Returns the entered text, or null if cancelled.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final name = terminice.text(prompt: 'Your name');
+  /// ```
+  String? text({
+    required String prompt,
+    String? placeholder,
+    String Function(String)? validator,
+    bool required = true,
+    PromptTheme? theme,
+  }) {
+    return TextPrompt(
+      prompt: prompt,
+      placeholder: placeholder,
+      validator: validator,
+      required: required,
+      theme: theme ?? defaultTheme,
+    ).run();
+  }
+}

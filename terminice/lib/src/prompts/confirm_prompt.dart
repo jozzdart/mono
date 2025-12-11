@@ -64,3 +64,33 @@ class ConfirmPrompt with Themeable {
     ).run();
   }
 }
+
+extension ConfirmPromptExtensions on Terminice {
+  /// Confirmation prompt with Yes/No options.
+  ///
+  /// Returns true if confirmed, false otherwise.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// if (terminice.confirm(label: 'Delete', message: 'Are you sure?')) {
+  ///   // User confirmed
+  /// }
+  /// ```
+  bool confirm({
+    required String label,
+    required String message,
+    String yesLabel = 'Yes',
+    String noLabel = 'No',
+    bool defaultYes = true,
+    PromptTheme? theme,
+  }) {
+    return ConfirmPrompt(
+      label: label,
+      message: message,
+      yesLabel: yesLabel,
+      noLabel: noLabel,
+      defaultYes: defaultYes,
+      theme: theme ?? defaultTheme,
+    ).run();
+  }
+}
