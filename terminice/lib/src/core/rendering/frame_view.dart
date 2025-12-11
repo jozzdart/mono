@@ -691,7 +691,7 @@ String _toneColor(StatTone tone, PromptTheme theme) {
 // ════════════════════════════════════════════════════════════════════════════
 
 /// Extension methods for display-only (non-interactive) widget rendering.
-extension WidgetFrameDisplay on FrameView {
+extension FrameViewDisplayExtensions on FrameView {
   /// Renders to stdout and returns immediately.
   ///
   /// Use for display-only widgets that don't need interactivity.
@@ -730,7 +730,7 @@ extension WidgetFrameDisplay on FrameView {
 }
 
 /// Extension to simplify WidgetFrame usage with PromptRunner.
-extension WidgetFrameExtension on PromptRunner {
+extension PromptRunnerFrameExtension on PromptRunner {
   /// Runs a prompt with WidgetFrame-based rendering.
   ///
   /// Convenience method that combines PromptRunner with WidgetFrame
