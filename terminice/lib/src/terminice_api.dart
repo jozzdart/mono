@@ -907,7 +907,7 @@ class Terminice {
   /// ```dart
   /// print('Status: ${terminice.badge('OK', tone: BadgeTone.success)}');
   /// ```
-  String badge(
+  void badge(
     String text, {
     BadgeTone tone = BadgeTone.info,
     bool inverted = true,
@@ -922,7 +922,7 @@ class Terminice {
       bracketed: bracketed,
       bold: bold,
       theme: theme ?? defaultTheme,
-    ).render();
+    ).show();
   }
 
   /// Create a success badge string.

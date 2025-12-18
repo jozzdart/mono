@@ -19,7 +19,7 @@ void main() {
     width: 68,
     height: 14,
     tick: const Duration(milliseconds: 120),
-    duration: const Duration(seconds: 10),
+    duration: const Duration(seconds: 20),
     yAutoScale: true,
     grid: ChartGrid.dots,
     generator: nextValue,

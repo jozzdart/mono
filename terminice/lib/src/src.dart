@@ -4,7 +4,8 @@
 
 export 'core/core.dart';
 export 'prompts/prompts.dart';
-
+export 'selectors/selectors.dart';
+export 'pickers/pickers.dart';
 // Central API
 export 'terminice_api.dart';
 
@@ -14,23 +15,11 @@ export 'terminice_api.dart';
 
 // Text Input
 
-export 'widgets/search_select.dart';
-export 'widgets/checkbox_menu.dart';
-export 'widgets/grid_select.dart';
-export 'widgets/choice_map.dart';
-export 'widgets/toggle_group.dart';
-export 'widgets/tag_selector.dart';
-export 'widgets/command_palette.dart';
-
 // Date & Time
-export 'widgets/date_field.dart';
-export 'widgets/date_picker.dart';
 
 // File & Navigation
-export 'widgets/file_pickers.dart';
-export 'widgets/path_navigator.dart';
+
 export 'widgets/tree_explorer.dart';
-export 'widgets/color_picker.dart';
 
 // Forms & Wizards
 export 'widgets/form.dart';
@@ -66,10 +55,10 @@ export 'widgets/toast.dart';
 export 'widgets/highlight.dart';
 
 // Progress & Status
-export 'widgets/progress_bar.dart';
-export 'widgets/progress_dots.dart';
-export 'widgets/loading_spinner.dart';
-export 'widgets/status_line.dart';
+export 'indicators/progress_bar.dart';
+export 'indicators/progress_dots.dart';
+export 'indicators/loading_spinner.dart';
+export 'indicators/status_line.dart';
 
 // Charts & Analytics
 export 'widgets/bar_chart.dart';
@@ -91,14 +80,14 @@ export 'widgets/weather_widget.dart';
 
 // Launchers & Guides
 export 'widgets/launch_pad.dart';
-export 'widgets/hotkey_guide.dart';
+export 'guides/hotkey_guide.dart';
 export 'widgets/mini_map.dart';
 
 // Documentation & Help
 export 'widgets/changelog_viewer.dart';
-export 'widgets/help_center.dart';
+export 'guides/help_center.dart';
 export 'widgets/tutorial_runner.dart';
-export 'widgets/cheat_sheet.dart';
+export 'guides/cheat_sheet.dart';
 export 'widgets/cli_manual.dart';
 export 'widgets/doc_navigator.dart';
 export 'widgets/package_inspector.dart';
@@ -107,4 +96,4 @@ export 'widgets/code_playground.dart';
 
 // Utilities
 export 'widgets/unit_converter.dart';
-export 'widgets/theme_demo.dart';
+export 'guides/theme_demo.dart';

@@ -1,7 +1,7 @@
-export 'confirm_prompt.dart';
-export 'multi_line_input.dart';
+export 'confirm.dart';
+export 'multiline.dart';
 export 'password.dart';
-export 'range_prompt.dart';
-export 'rating_prompt.dart';
-export 'slider_prompt.dart';
-export 'text_prompt.dart';
+export 'range.dart';
+export 'rating.dart';
+export 'slider.dart';
+export 'text.dart';

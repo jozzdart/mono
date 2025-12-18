@@ -20,4 +20,13 @@ void main() {
   );
 
   chart.show();
+  chart.withFireTheme().show();
+  chart.withMatrixTheme().show();
+  chart.withPastelTheme().show();
+  chart.withDarkTheme().show();
+  chart.withOceanTheme().show();
+  chart.withMonochromeTheme().show();
+  chart.withNeonTheme().show();
+  chart.withArcaneTheme().show();
+  chart.withPhantomTheme().show();
 }

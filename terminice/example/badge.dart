@@ -4,6 +4,11 @@ import 'package:terminice/terminice.dart';
 
 void main() {
   final theme = PromptTheme.pastel;
+  terminice.badge('Build', tone: BadgeTone.success);
+  terminice.badge('Tests', tone: BadgeTone.danger);
+  terminice.badge('Docs', tone: BadgeTone.info);
+  terminice.badge('Linter', tone: BadgeTone.warning);
+  terminice.badge('Cache', tone: BadgeTone.neutral);
 
   stdout.writeln('\n${theme.bold}Inline Badges${theme.reset}');
   stdout.writeln(
