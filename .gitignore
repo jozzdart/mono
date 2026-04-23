@@ -32,3 +32,5 @@ build/
 mono_cli/mono.yaml
 mono/mono.yaml
 mono/mono.yaml
+.claude-plugin
+.cursor
