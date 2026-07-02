@@ -1,3 +1,7 @@
+## UPCOMING
+
+- Fixed new lints warnings related to @override annotations.
+
 ## 0.0.8
 
 - Breaking: Replaced `packages`/`projects` with `dart_projects` and `flutter_projects` maps in `mono.yaml` (loader, writer, workspace IO updated).

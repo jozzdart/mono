@@ -2,13 +2,13 @@ import 'package:mono_cli/mono_cli.dart';
 import 'package:mono_core/mono_core.dart';
 
 class FallbackCommand extends Command {
-  const FallbackCommand();
-
   @override
   String get name => 'fallback';
 
   @override
   String get description => 'Fallback command';
+
+  const FallbackCommand();
 
   @override
   Future<int> run(CliContext context) => runCommand(
@@ -35,7 +35,6 @@ class TaskCommand extends Command {
   @override
   String get name => 'task';
 
-  @override
   const TaskCommand();
 
   /// Attempts to run an arbitrary task by name as a top-level command.
